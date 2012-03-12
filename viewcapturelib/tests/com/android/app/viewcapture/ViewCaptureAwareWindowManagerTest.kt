@@ -19,7 +19,6 @@ package com.android.app.viewcapture
 import android.content.Context
 import android.content.Intent
 import android.hardware.display.DisplayManager
-import android.platform.test.annotations.EnableFlags
 import android.platform.test.flag.junit.SetFlagsRule
 import android.testing.AndroidTestingRunner
 import android.view.Display.DEFAULT_DISPLAY
@@ -31,7 +30,6 @@ import android.window.WindowContext
 import androidx.test.ext.junit.rules.ActivityScenarioRule
 import androidx.test.filters.SmallTest
 import androidx.test.platform.app.InstrumentationRegistry
-import com.android.window.flags.Flags
 import com.google.common.truth.Truth.assertWithMessage
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -74,7 +72,6 @@ class ViewCaptureAwareWindowManagerTest {
         }
     }
 
-    @EnableFlags(Flags.FLAG_ENABLE_WINDOW_CONTEXT_OVERRIDE_TYPE)
     @Test
     fun useWithWindowContext_attachWindow_attachToViewCaptureAwareWm() {
         val windowContext =

@@ -62,7 +62,7 @@ internal constructor(private val context: Context, executor: Executor) :
         val dataSourceParams =
             DataSourceParams.Builder()
                 .setBufferExhaustedPolicy(
-                    DataSourceParams.PERFETTO_DS_BUFFER_EXHAUSTED_POLICY_STALL_AND_ABORT
+                    DataSourceParams.PERFETTO_DS_BUFFER_EXHAUSTED_POLICY_STALL_AND_DROP
                 )
                 .setNoFlush(true)
                 .setWillNotifyOnStop(false)
