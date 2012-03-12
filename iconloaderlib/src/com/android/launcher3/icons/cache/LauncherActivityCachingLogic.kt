@@ -54,14 +54,16 @@ object LauncherActivityCachingLogic : CachingLogic<LauncherActivityInfo> {
             context.packageManager.getActivityInfo(info.componentName, 0)
         }
         cache.iconFactory.use { li ->
-            val iconOptions: IconOptions = IconOptions().setUser(info.user)
-            iconOptions
-                .setIsArchived(
-                    useNewIconForArchivedApps() &&
-                        VERSION.SDK_INT >= 35 &&
-                        activityInfo.isArchived
-                )
-                .setSourceHint(getSourceHint(info, cache))
+            val iconOptions: IconOptions =
+                IconOptions()
+                    .setUser(info.user)
+                    .assumeFullBleedIcon(
+                        // b/358123888: Pre-archived apps can have BitmapDrawables without insets
+                        useNewIconForArchivedApps() &&
+                            VERSION.SDK_INT >= 35 &&
+                            activityInfo.isArchived
+                    )
+                    .setSourceHint(getSourceHint(info, cache))
             val iconDrawable = cache.iconProvider.getIcon(activityInfo, li.fullResIconDpi)
             if (VERSION.SDK_INT >= 30 && context.packageManager.isDefaultApplicationIcon(iconDrawable)) {
                 Log.w(

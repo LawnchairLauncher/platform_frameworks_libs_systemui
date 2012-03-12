@@ -17,6 +17,8 @@ package com.android.launcher3.icons;
 
 import static android.graphics.Paint.FILTER_BITMAP_FLAG;
 
+import static com.android.launcher3.icons.LuminanceComputer.createDefaultLuminanceComputer;
+
 import android.annotation.TargetApi;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
@@ -32,11 +34,10 @@ import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.InsetDrawable;
 import android.os.Build;
 
 import androidx.annotation.WorkerThread;
-
-import com.android.launcher3.icons.mono.MonoIconThemeController.ClippedMonoDrawable;
 
 import java.nio.ByteBuffer;
 
@@ -55,17 +56,17 @@ public class MonochromeIconFactory extends Drawable {
     private final byte[] mPixels;
 
     private final int mBitmapSize;
-    private final int mEdgePixelLength;
 
     private final Paint mDrawPaint;
     private final Rect mSrcRect;
+
+    private double mLuminanceDiff = Double.NaN;
 
     public MonochromeIconFactory(int iconBitmapSize) {
         float extraFactor = AdaptiveIconDrawable.getExtraInsetFraction();
         float viewPortScale = 1 / (1 + 2 * extraFactor);
         mBitmapSize = Math.round(iconBitmapSize * 2 * viewPortScale);
         mPixels = new byte[mBitmapSize * mBitmapSize];
-        mEdgePixelLength = mBitmapSize * (mBitmapSize - iconBitmapSize) / 2;
 
         mFlatBitmap = Bitmap.createBitmap(mBitmapSize, mBitmapSize, Config.ARGB_8888);
         mFlatCanvas = new Canvas(mFlatBitmap);
@@ -97,22 +98,55 @@ public class MonochromeIconFactory extends Drawable {
     }
 
     /**
+     *  Kept to layout lib compilation
+     * @deprecated use {@link #wrap(AdaptiveIconDrawable)} instead
+     */
+    @Deprecated
+    public Drawable wrap(AdaptiveIconDrawable icon, Path unused) {
+        return wrap(icon);
+    }
+
+    /**
      * Creates a monochrome version of the provided drawable
      */
     @WorkerThread
-    public Drawable wrap(AdaptiveIconDrawable icon, Path shapePath) {
+    public Drawable wrap(AdaptiveIconDrawable icon) {
         mFlatCanvas.drawColor(Color.BLACK);
-        drawDrawable(icon.getBackground());
-        drawDrawable(icon.getForeground());
+        Drawable bg = icon.getBackground();
+        Drawable fg = icon.getForeground();
+        if (bg != null && fg != null) {
+            LuminanceComputer computer = createDefaultLuminanceComputer();
+            // Calculate foreground luminance on black first to account for any transparent pixels
+            drawDrawable(fg);
+            double fgLuminance = computer.computeLuminance(mFlatBitmap);
+
+            // Start drawing from scratch and calculate background luminance
+            mFlatCanvas.drawColor(Color.BLACK);
+            drawDrawable(bg);
+            double bgLuminance = computer.computeLuminance(mFlatBitmap);
+
+            drawDrawable(fg);
+            mLuminanceDiff = fgLuminance - bgLuminance;
+        } else {
+            // We do not have separate layer information.
+            // Try to calculate everything from a single layer
+            drawDrawable(bg);
+            drawDrawable(fg);
+
+            LuminanceComputer computer = createDefaultLuminanceComputer(ComputationType.SPREAD);
+            mLuminanceDiff = computer.computeLuminance(mFlatBitmap, /* scale= */ true);
+        }
         generateMono();
-        return new ClippedMonoDrawable(this, shapePath);
+        return new InsetDrawable(this, -AdaptiveIconDrawable.getExtraInsetFraction());
+    }
+
+    public double getLuminanceDiff() {
+        return mLuminanceDiff;
     }
 
     @WorkerThread
     private void generateMono() {
         mAlphaCanvas.drawBitmap(mFlatBitmap, 0, 0, mCopyPaint);
-
-        // Scale the end points:
         ByteBuffer buffer = ByteBuffer.wrap(mPixels);
         buffer.rewind();
         mAlphaBitmap.copyPixelsToBuffer(buffer);
@@ -128,22 +162,10 @@ public class MonochromeIconFactory extends Drawable {
             // rescale pixels to increase contrast
             float range = max - min;
 
-            // In order to check if the colors should be flipped, we just take the average color
-            // of top and bottom edge which should correspond to be background color. If the edge
-            // colors have more opacity, we flip the colors;
-            int sum = 0;
-            for (int i = 0; i < mEdgePixelLength; i++) {
-                sum += (mPixels[i] & 0xFF);
-                sum += (mPixels[mPixels.length - 1 - i] & 0xFF);
-            }
-            float edgeAverage = sum / (mEdgePixelLength * 2f);
-            float edgeMapped = (edgeAverage - min) / range;
-            boolean flipColor = edgeMapped > .5f;
-
             for (int i = 0; i < mPixels.length; i++) {
                 int p = mPixels[i] & 0xFF;
                 int p2 = Math.round((p - min) * 0xFF / range);
-                mPixels[i] = flipColor ? (byte) (255 - p2) : (byte) (p2);
+                mPixels[i] = (byte) (p2);
             }
 
             // Second phase of processing, aimed on increasing the contrast

@@ -81,7 +81,7 @@ public class ShadowGenerator {
     }
 
     /** package private **/
-    void addPathShadow(Path path, Canvas out) {
+    public void addPathShadow(Path path, Canvas out) {
         if (ENABLE_SHADOWS) {
             mDrawPaint.setMaskFilter(mDefaultBlurMaskFilter);
 

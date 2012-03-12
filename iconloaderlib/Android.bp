@@ -32,6 +32,9 @@ android_library {
         "src/**/*.java",
         "src/**/*.kt",
     ],
+    kotlincflags: [
+        "-Xjvm-default=all",
+    ],
 }
 
 android_library {
@@ -55,5 +58,8 @@ android_library {
     apex_available: [
         "//apex_available:platform",
         "com.android.permission",
+    ],
+    kotlincflags: [
+        "-Xjvm-default=all",
     ],
 }
