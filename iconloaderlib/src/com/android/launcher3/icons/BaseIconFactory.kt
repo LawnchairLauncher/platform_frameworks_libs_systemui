@@ -456,12 +456,12 @@ constructor(
     }
 
     companion object {
-        private const val DEFAULT_WRAPPER_BACKGROUND = Color.WHITE
+        const val DEFAULT_WRAPPER_BACKGROUND = Color.WHITE
 
         // Ratio of icon visible area to full icon size for a square shaped icon
         private const val MAX_SQUARE_AREA_FACTOR = 375.0 / 576
 
-        private val LEGACY_ICON_SCALE =
+        val LEGACY_ICON_SCALE =
             sqrt(MAX_SQUARE_AREA_FACTOR).toFloat() *
                 .7f *
                 (1f / (1 + 2 * AdaptiveIconDrawable.getExtraInsetFraction()))

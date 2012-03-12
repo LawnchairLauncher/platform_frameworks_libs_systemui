@@ -29,8 +29,10 @@ import android.graphics.Shader.TileMode.CLAMP
 import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.LayerDrawable
+import android.os.Build
 import android.os.SystemClock
 import android.util.Log
+import androidx.annotation.RequiresApi
 import com.android.launcher3.icons.BitmapInfo.Extender
 import com.android.launcher3.icons.FastBitmapDrawableDelegate.Companion.drawShaderInBounds
 import com.android.launcher3.icons.FastBitmapDrawableDelegate.DelegateFactory
@@ -46,6 +48,7 @@ class ClockDrawableWrapper
 private constructor(base: AdaptiveIconDrawable, private val animationInfo: ClockAnimationInfo) :
     AdaptiveIconDrawable(base.background, base.foreground), Extender {
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun getMonochrome(): Drawable? {
         val monoLayer =
             (animationInfo.baseDrawableState.newDrawable().mutate() as? AdaptiveIconDrawable)
@@ -217,7 +220,7 @@ private constructor(base: AdaptiveIconDrawable, private val animationInfo: Clock
 
         private const val TAG = "ClockDrawableWrapper"
 
-        private const val DISABLE_SECONDS = true
+        private const val DISABLE_SECONDS = false  // Lawnchair-TODO: Make it a toggle for seconds hand
         private const val NO_COLOR = Color.TRANSPARENT
 
         // Time after which the clock icon should check for an update. The actual invalidate
