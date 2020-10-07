@@ -12,6 +12,7 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.PaintFlagsDrawFilter;
 import android.graphics.Rect;
 import android.graphics.RectF;
@@ -56,6 +57,10 @@ public class BaseIconFactory implements AutoCloseable {
     private Drawable mWrapperIcon;
     private int mWrapperBackgroundColor = DEFAULT_WRAPPER_BACKGROUND;
 
+    private final Paint mTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+    private static final float PLACEHOLDER_TEXT_SIZE = 20f;
+    private static int PLACEHOLDER_BACKGROUND_COLOR = Color.rgb(240, 240, 240);
+
     protected BaseIconFactory(Context context, int fillResIconDpi, int iconBitmapSize,
             boolean shapeDetection) {
         mContext = context.getApplicationContext();
@@ -68,6 +73,10 @@ public class BaseIconFactory implements AutoCloseable {
 
         mCanvas = new Canvas();
         mCanvas.setDrawFilter(new PaintFlagsDrawFilter(DITHER_FLAG, FILTER_BITMAP_FLAG));
+        mTextPaint.setTextAlign(Paint.Align.CENTER);
+        mTextPaint.setColor(PLACEHOLDER_BACKGROUND_COLOR);
+        mTextPaint.setTextSize(context.getResources().getDisplayMetrics().density *
+                PLACEHOLDER_TEXT_SIZE);
         clear();
     }
 
@@ -111,6 +120,28 @@ public class BaseIconFactory implements AutoCloseable {
             // Icon not found.
         }
         return null;
+    }
+
+    /**
+     * Create a placeholder icon using the passed in text.
+     *
+     * @param placeholder used for foreground element in the icon bitmap
+     * @param color used for the foreground text color
+     * @return
+     */
+    public BitmapInfo createIconBitmap(String placeholder, int color) {
+        if (!ATLEAST_OREO) return null;
+
+        Bitmap placeholderBitmap = Bitmap.createBitmap(mIconBitmapSize, mIconBitmapSize,
+                Bitmap.Config.ARGB_8888);
+        mTextPaint.setColor(color);
+        Canvas canvas = new Canvas(placeholderBitmap);
+        canvas.drawText(placeholder, mIconBitmapSize / 2, mIconBitmapSize * 5 / 8, mTextPaint);
+        AdaptiveIconDrawable drawable = new AdaptiveIconDrawable(
+                new ColorDrawable(PLACEHOLDER_BACKGROUND_COLOR),
+                new BitmapDrawable(mContext.getResources(), placeholderBitmap));
+        Bitmap icon = createIconBitmap(drawable, 1f);
+        return BitmapInfo.of(icon, extractColor(icon));
     }
 
     public BitmapInfo createIconBitmap(Bitmap icon) {
