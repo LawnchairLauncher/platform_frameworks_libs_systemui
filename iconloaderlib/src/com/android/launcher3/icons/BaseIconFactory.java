@@ -20,6 +20,7 @@ import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.InsetDrawable;
 import android.os.Build;
 import android.os.Process;
 import android.os.UserHandle;
@@ -150,6 +151,20 @@ public class BaseIconFactory implements AutoCloseable {
         }
 
         return BitmapInfo.of(icon, extractColor(icon));
+    }
+
+    /**
+     * Creates an icon from the bitmap cropped to the current device icon shape
+     */
+    public BitmapInfo createShapedIconBitmap(Bitmap icon, UserHandle user) {
+        Drawable d = new FixedSizeBitmapDrawable(icon);
+        if (ATLEAST_OREO) {
+            float inset = AdaptiveIconDrawable.getExtraInsetFraction();
+            inset = inset / (1 + 2 * inset);
+            d = new AdaptiveIconDrawable(new ColorDrawable(Color.BLACK),
+                    new InsetDrawable(d, inset, inset, inset, inset));
+        }
+        return createBadgedIconBitmap(d, user, true);
     }
 
     public BitmapInfo createBadgedIconBitmap(Drawable icon, UserHandle user,
