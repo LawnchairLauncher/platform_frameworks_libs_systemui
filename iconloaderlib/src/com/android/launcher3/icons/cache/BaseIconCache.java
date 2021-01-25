@@ -396,7 +396,7 @@ public abstract class BaseIconCache {
         }
         if (icon != null) {
             BaseIconFactory li = getIconFactory();
-            entry.bitmap = li.createIconBitmap(icon);
+            entry.bitmap = li.createShapedIconBitmap(icon, user);
             li.close();
         }
         if (!TextUtils.isEmpty(title) && entry.bitmap.icon != null) {

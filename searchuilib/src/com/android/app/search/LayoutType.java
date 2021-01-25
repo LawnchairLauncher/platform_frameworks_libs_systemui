@@ -17,7 +17,7 @@
 package com.android.app.search;
 
 /**
- * Constants to be used with {@link android.app.search.SearchTarget}.
+ * Constants to be used with {@link SearchTarget}.
  */
 public class LayoutType {
 
@@ -47,6 +47,10 @@ public class LayoutType {
     // TODO: add diagram
     public static final String ICON_DOUBLE_HORIZONTAL_TEXT_BUTTON =
         "icon_texts_button";
+
+
+    // TODO: add diagram
+    public static final String ICON_SLICE = "slice";
 
     // TODO: add diagram
     public static final String TEXT_HEADER = "header";

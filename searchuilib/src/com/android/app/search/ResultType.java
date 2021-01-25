@@ -28,6 +28,7 @@ public class ResultType {
     public static final int ACTION = 1 << 3;
     public static final int SETTING = 1 << 4;
     public static final int SCREENSHOT = 1 << 5;
-    public static final int TIPS = 1 << 2;
-    public static final int WIDGETS = 1 << 3;
+    public static final int TIPS = 1 << 6;
+    public static final int WIDGETS = 1 << 7;
+    public static final int PLAY = 1 << 8;
 }
