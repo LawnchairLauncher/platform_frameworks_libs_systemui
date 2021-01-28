@@ -31,4 +31,5 @@ public class ResultType {
     public static final int TIPS = 1 << 6;
     public static final int WIDGETS = 1 << 7;
     public static final int PLAY = 1 << 8;
+    public static final int SUGGEST = 1 << 9;
 }
