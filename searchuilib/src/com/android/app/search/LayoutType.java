@@ -49,6 +49,7 @@ public class LayoutType {
         "icon_texts_button";
 
 
+    public static final String THUMBNAIL = "thumbnail";
     // TODO: add diagram
     public static final String ICON_SLICE = "slice";
 
