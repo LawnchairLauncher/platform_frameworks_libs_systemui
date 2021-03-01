@@ -11,6 +11,8 @@ import android.util.ArrayMap;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.android.launcher3.icons.Utilities;
+
 import org.xmlpull.v1.XmlPullParser;
 
 import java.util.ArrayList;
@@ -29,18 +31,20 @@ public class IconPackProvider {
         return iconPacks.get(packageName);
     }
 
+    public static int getIconPackLength(String packageName) {
+        return iconPacks.get(packageName).getTotalIcons();
+    }
+
     public static IconPack loadAndGetIconPack(Context context){
-//        TODO: Make this effective after adding settings and prefs
-//        SharedPreferences prefs = Utilities.getPrefs(context);
-//        String packageName = prefs.getString("pref_iconPackPackage", "");
-//        if("".equals(packageName)){
-//            return null;
-//        }
-//        if(!iconPacks.containsKey(packageName)){
-//            loadIconPack(context, packageName);
-//        }
-//        return getIconPack(packageName);
-        return null;
+        SharedPreferences prefs = Utilities.getPrefs(context);
+        String packageName = prefs.getString("pref_iconPackPackage", "");
+        if("".equals(packageName)){
+            return null;
+        }
+        if(!iconPacks.containsKey(packageName)){
+            loadIconPack(context, packageName);
+        }
+        return getIconPack(packageName);
     }
 
     public static void loadIconPack(Context context, String packageName) {

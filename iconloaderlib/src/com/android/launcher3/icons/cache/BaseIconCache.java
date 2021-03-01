@@ -463,10 +463,17 @@ public abstract class BaseIconCache {
                     BaseIconFactory li = getIconFactory();
                     // Load the full res icon for the application, but if useLowResIcon is set, then
                     // only keep the low resolution icon instead of the larger full-sized icon
-                    BitmapInfo iconInfo = li.createBadgedIconBitmap(
-                            IconPack.getIconStatic(mContext, appInfo.loadIcon(mPackageManager),
-                                    mPackageManager, appInfo, packageName),
-                            user, appInfo.targetSdkVersion, isInstantApp(appInfo));
+                    IconPack iconPack = IconPackProvider.loadAndGetIconPack(mContext);
+                    Drawable icon = appInfo.loadIcon(mPackageManager);
+                    if (iconPack != null) {
+                        Drawable iconPackDrawable = iconPack.getIcon(packageName, icon,
+                                appInfo.loadLabel(mPackageManager));
+                        if (iconPackDrawable != null) {
+                            icon = iconPackDrawable;
+                        }
+                    }
+                    BitmapInfo iconInfo = li.createBadgedIconBitmap(icon, user,
+                            appInfo.targetSdkVersion, isInstantApp(appInfo));
                     li.close();
 
                     entry.title = appInfo.loadLabel(mPackageManager);

@@ -202,15 +202,7 @@ public class IconPack {
         return new BitmapDrawable(mLoadedIconPackResource, bitmap);
     }
 
-    public static Drawable getIconStatic(Context context, Drawable defaultIcon, PackageManager pm, ApplicationInfo appInfo, String packageName) {
-        IconPack iconPack = IconPackProvider.loadAndGetIconPack(context);
-        Drawable ret = defaultIcon;
-        if (iconPack != null) {
-            Drawable iconPackDrawable = iconPack.getIcon(packageName, defaultIcon, appInfo.loadLabel(pm));
-            if (iconPackDrawable != null) {
-                ret = iconPackDrawable;
-            }
-        }
-        return ret;
+    public int getTotalIcons() {
+        return mIconBackStrings.size();
     }
 }
