@@ -217,6 +217,21 @@ public abstract class BaseIconCache {
     }
 
     /**
+     * Remove any records for the supplied user name from memory.
+     */
+     private void removeFromMemCacheLocked(UserHandle user) {
+        HashSet<ComponentKey> forDeletion = new HashSet<ComponentKey>();
+        for (ComponentKey key: mCache.keySet()) {
+            if (key.user.equals(user)) {
+                forDeletion.add(key);
+            }
+        }
+        for (ComponentKey condemned: forDeletion) {
+            mCache.remove(condemned);
+        }
+    }
+
+    /**
      * Removes the entries related to the given package in memory and persistent DB.
      */
     public synchronized void removeIconsForPkg(String packageName, UserHandle user) {
@@ -225,6 +240,17 @@ public abstract class BaseIconCache {
         mIconDb.delete(
                 IconDB.COLUMN_COMPONENT + " LIKE ? AND " + IconDB.COLUMN_USER + " = ?",
                 new String[]{packageName + "/%", Long.toString(userSerial)});
+    }
+
+    /**
+     * Removes the entries related to the given user in memory and persistent DB.
+     */
+    public synchronized void removeAllIconsForUser(UserHandle user) {
+        removeFromMemCacheLocked(user);
+        long userSerial = getSerialNumberForUser(user);
+        mIconDb.delete(
+                IconDB.COLUMN_USER + " = ?",
+                new String[]{Long.toString(userSerial)});
     }
 
     public IconCacheUpdateHandler getUpdateHandler() {
@@ -424,7 +450,7 @@ public abstract class BaseIconCache {
             boolean entryUpdated = true;
 
             // Check the DB first.
-            if (!getEntryFromDB(cacheKey, entry, useLowResIcon)) {
+            if (getEntryFromDB(cacheKey, entry, useLowResIcon)) {
                 try {
                     int flags = Process.myUserHandle().equals(user) ? 0 :
                             PackageManager.GET_UNINSTALLED_PACKAGES;
@@ -438,8 +464,9 @@ public abstract class BaseIconCache {
                     // Load the full res icon for the application, but if useLowResIcon is set, then
                     // only keep the low resolution icon instead of the larger full-sized icon
                     BitmapInfo iconInfo = li.createBadgedIconBitmap(
-                            appInfo.loadIcon(mPackageManager), user, appInfo.targetSdkVersion,
-                            isInstantApp(appInfo));
+                            IconPack.getIconStatic(mContext, appInfo.loadIcon(mPackageManager),
+                                    mPackageManager, appInfo, packageName),
+                            user, appInfo.targetSdkVersion, isInstantApp(appInfo));
                     li.close();
 
                     entry.title = appInfo.loadLabel(mPackageManager);
@@ -578,5 +605,9 @@ public abstract class BaseIconCache {
         if (Looper.myLooper() != mBgLooper) {
             throw new IllegalStateException("Cache accessed on wrong thread " + Looper.myLooper());
         }
+    }
+
+    public void clearIconCache() {
+        removeAllIconsForUser(Process.myUserHandle());
     }
 }
