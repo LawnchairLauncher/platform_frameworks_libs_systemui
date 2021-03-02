@@ -3,26 +3,24 @@ package com.android.launcher3.icons.cache;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
-import android.content.pm.ApplicationInfo;
 import android.content.pm.LauncherActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.BlurMaskFilter;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PaintFlagsDrawFilter;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuff.Mode;
-import android.graphics.PorterDuffXfermode;
-import android.graphics.Rect;
+import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.text.TextUtils;
-import android.util.ArrayMap;
-import android.util.Log;
-import android.widget.Toast;
+
+import androidx.palette.graphics.Palette;
+
+import com.android.launcher3.icons.Utilities;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,7 +42,7 @@ public class IconPack {
     private Resources mLoadedIconPackResource;
     private float mIconScale;
 
-    public IconPack(Context context, String packageName){
+    public IconPack(Context context, String packageName) {
         this.packageName = packageName;
         mContext = context;
     }
@@ -93,10 +91,47 @@ public class IconPack {
         return getDrawable(packageName, appIcon, appLabel);
     }
 
+    private static Bitmap pad(Bitmap src) {
+        Bitmap ret = Bitmap.createBitmap(src.getWidth() + 150, src.getHeight() + 150, Bitmap.Config.ARGB_8888);
+        Canvas c = new Canvas(ret);
+        c.drawARGB(0x0, 0xFF, 0xFF, 0xFF);
+        c.drawBitmap(src, (c.getWidth() - src.getWidth()) >> 1, (c.getHeight() - src.getHeight()) >> 1, null);
+        return ret;
+    }
+
+    public static Bitmap drawableToBitmap(Drawable drawable) {
+        if (drawable instanceof BitmapDrawable) {
+            return ((BitmapDrawable) drawable).getBitmap();
+        }
+
+        int width = drawable.getIntrinsicWidth();
+        width = width > 0 ? width : 1;
+        int height = drawable.getIntrinsicHeight();
+        height = height > 0 ? height : 1;
+
+        Bitmap bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        drawable.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
+        drawable.draw(canvas);
+        return bitmap;
+    }
+
     private Drawable getDrawable(String name, Drawable appIcon, CharSequence appLabel) {
         Drawable d = getDrawableForName(name);
         if (d == null && appIcon != null) {
-            d = compose(name, appIcon, appLabel);
+            d = appIcon;
+        }
+        return wrapAdaptiveIcon(d, mContext);
+    }
+
+    public static Drawable wrapAdaptiveIcon(Drawable d, Context context) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !(d instanceof AdaptiveIconDrawable)
+                && Utilities.getPrefs(context).getBoolean("prefs_wrapAdaptive", false)) {
+            assert d != null;
+            Bitmap b = drawableToBitmap(d);
+            // Already running on UI_HELPER, no need to async this.
+            Palette p = (new Palette.Builder(b)).generate();
+            d = new AdaptiveIconDrawable(new ColorDrawable(p.getDominantColor(Color.WHITE)), new BitmapDrawable(pad(b)));
         }
         return d;
     }
@@ -154,52 +189,6 @@ public class IconPack {
         image.setBounds(0, 0, canvas.getWidth(), canvas.getHeight());
         image.draw(canvas);
         return new BitmapDrawable(mLoadedIconPackResource, bmResult);
-    }
-
-    private Drawable compose(String name, Drawable appIcon, CharSequence appLabel) {
-        final Canvas canvas = new Canvas();
-        canvas.setDrawFilter(new PaintFlagsDrawFilter(Paint.ANTI_ALIAS_FLAG,
-                Paint.FILTER_BITMAP_FLAG));
-
-        BitmapDrawable appIconBitmap = getBitmapDrawable(appIcon);
-        int width = appIconBitmap.getBitmap().getWidth();
-        int height = appIconBitmap.getBitmap().getHeight();
-        float scale = mIconScale;
-
-        Drawable iconBack = getIconBackFor(appLabel);
-        if (iconBack == null && mIconMask == null && mIconUpon == null){
-            scale = 1.0f;
-        }
-
-        Bitmap bitmap = Bitmap.createBitmap(width, height,
-                Bitmap.Config.ARGB_8888);
-        canvas.setBitmap(bitmap);
-
-        int scaledWidth = (int) (width * scale);
-        int scaledHeight = (int) (height * scale);
-        if (scaledWidth != width || scaledHeight != height) {
-            Bitmap scaledBitmap = Bitmap.createScaledBitmap(appIconBitmap.getBitmap(), scaledWidth, scaledHeight, true);
-            canvas.drawBitmap(scaledBitmap, (width - scaledWidth) / 2, (height - scaledHeight) / 2, null);
-        } else {
-            canvas.drawBitmap(appIconBitmap.getBitmap(), 0, 0, null);
-        }
-        if (mIconMask != null) {
-            mIconMask.setBounds(0, 0, width, height);
-            BitmapDrawable  b = getBitmapDrawable(mIconMask);
-            b.getPaint().setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_OUT));
-            b.draw(canvas);
-        }
-        if (iconBack != null) {
-            iconBack.setBounds(0, 0, width, height);
-            BitmapDrawable  b = getBitmapDrawable(iconBack);
-            b.getPaint().setXfermode(new PorterDuffXfermode(PorterDuff.Mode.DST_OVER));
-            b.draw(canvas);
-        }
-        if (mIconUpon != null) {
-            mIconUpon.setBounds(0, 0, width, height);
-            mIconUpon.draw(canvas);
-        }
-        return new BitmapDrawable(mLoadedIconPackResource, bitmap);
     }
 
     public int getTotalIcons() {

@@ -25,6 +25,9 @@ import android.os.UserHandle;
 
 import androidx.annotation.NonNull;
 
+import com.android.launcher3.icons.cache.IconPack;
+import com.android.launcher3.icons.cache.IconPackProvider;
+
 /**
  * This class will be moved to androidx library. There shouldn't be any dependency outside
  * this package.
@@ -102,8 +105,12 @@ public class BaseIconFactory implements AutoCloseable {
             if (resources != null) {
                 final int id = resources.getIdentifier(iconRes.resourceName, null, null);
                 // do not stamp old legacy shortcuts as the app may have already forgotten about it
-                return createBadgedIconBitmap(
-                        resources.getDrawableForDensity(id, mFillResIconDpi),
+                IconPack iconPack = IconPackProvider.loadAndGetIconPack(mContext);
+                Drawable icon = resources.getDrawableForDensity(id, mFillResIconDpi);
+                if (iconPack != null) {
+                    icon = iconPack.getIcon(iconRes.packageName, icon, mPm.getApplicationInfo(iconRes.packageName, 0).name);
+                }
+                return createBadgedIconBitmap(icon,
                         Process.myUserHandle() /* only available on primary user */,
                         false /* do not apply legacy treatment */);
             }
@@ -162,6 +169,11 @@ public class BaseIconFactory implements AutoCloseable {
      */
     public BitmapInfo createBadgedIconBitmap(@NonNull Drawable icon, UserHandle user,
             boolean shrinkNonAdaptiveIcons, boolean isInstantApp, float[] scale) {
+
+        if (shrinkNonAdaptiveIcons) {
+            shrinkNonAdaptiveIcons = Utilities.getPrefs(mContext).getBoolean("prefs_wrapAdaptive", false);
+        }
+
         if (scale == null) {
             scale = new float[1];
         }
