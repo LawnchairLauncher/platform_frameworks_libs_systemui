@@ -2,6 +2,7 @@ package com.android.launcher3.icons.cache;
 
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.content.pm.LauncherActivityInfo;
 import android.content.pm.PackageManager;
@@ -125,13 +126,16 @@ public class IconPack {
     }
 
     public static Drawable wrapAdaptiveIcon(Drawable d, Context context) {
+        SharedPreferences sharedPrefs = Utilities.getPrefs(context);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && !(d instanceof AdaptiveIconDrawable)
-                && Utilities.getPrefs(context).getBoolean("prefs_wrapAdaptive", false)) {
+                && sharedPrefs.getBoolean("prefs_wrapAdaptive", false)) {
             assert d != null;
             Bitmap b = drawableToBitmap(d);
             // Already running on UI_HELPER, no need to async this.
             Palette p = (new Palette.Builder(b)).generate();
-            d = new AdaptiveIconDrawable(new ColorDrawable(p.getDominantColor(Color.WHITE)), new BitmapDrawable(pad(b)));
+            boolean makeColoredBackgrounds = sharedPrefs.getBoolean("pref_makeColoredBackgrounds", false);
+            ColorDrawable backgroundColor = makeColoredBackgrounds ? new ColorDrawable(p.getDominantColor(Color.WHITE)) : new ColorDrawable(Color.WHITE);
+            d = new AdaptiveIconDrawable(backgroundColor, new BitmapDrawable(pad(b)));
         }
         return d;
     }
