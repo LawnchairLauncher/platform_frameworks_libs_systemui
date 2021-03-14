@@ -20,7 +20,7 @@ android_library {
     name: "search_ui",
 
     sdk_version: "current",
-    min_sdk_version: "current",
+    min_sdk_version: "26",
 
     srcs: [
         "src/**/*.java",
