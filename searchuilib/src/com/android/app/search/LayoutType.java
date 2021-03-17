@@ -61,4 +61,7 @@ public class LayoutType {
 
     // horizontal bar to be inserted between fallback search results and low confidence section
     public static final String DIVIDER = "divider";
+
+    // horizontal bar to be inserted between fallback search results and low confidence section
+    public static final String EMPTY_DIVIDER = "empty_divider";
 }
