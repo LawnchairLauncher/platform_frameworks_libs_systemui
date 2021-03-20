@@ -56,6 +56,9 @@ public class LayoutType {
     // Live widget search result
     public static final String WIDGET_LIVE = "widget_live";
 
+    // Layout type used to display people tiles using shortcut info
+    public static final String PEOPLE_TILE = "people_tile";
+
     // text based header to group various layouts in low confidence section of the results.
     public static final String TEXT_HEADER = "header";
 
