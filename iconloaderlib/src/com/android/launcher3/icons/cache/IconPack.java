@@ -93,7 +93,7 @@ public class IconPack {
     }
 
     private static Bitmap pad(Bitmap src) {
-        Bitmap ret = Bitmap.createBitmap(src.getWidth() + 150, src.getHeight() + 150, Bitmap.Config.ARGB_8888);
+        Bitmap ret = Bitmap.createBitmap(src.getWidth() + 200, src.getHeight() + 200, Bitmap.Config.ARGB_8888);
         Canvas c = new Canvas(ret);
         c.drawARGB(0x0, 0xFF, 0xFF, 0xFF);
         c.drawBitmap(src, (c.getWidth() - src.getWidth()) >> 1, (c.getHeight() - src.getHeight()) >> 1, null);
