@@ -19,10 +19,13 @@ import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.text.TextUtils;
 
+import androidx.annotation.ColorInt;
+import androidx.core.graphics.ColorUtils;
 import androidx.palette.graphics.Palette;
 
 import com.android.launcher3.icons.Utilities;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -134,10 +137,20 @@ public class IconPack {
             // Already running on UI_HELPER, no need to async this.
             Palette p = (new Palette.Builder(b)).generate();
             boolean makeColoredBackgrounds = sharedPrefs.getBoolean("pref_makeColoredBackgrounds", false);
-            ColorDrawable backgroundColor = makeColoredBackgrounds ? new ColorDrawable(p.getDominantColor(Color.WHITE)) : new ColorDrawable(Color.WHITE);
+            ColorDrawable backgroundColor = makeColoredBackgrounds ? new ColorDrawable(makeBackgroundColor(p.getDominantColor(Color.WHITE))) : new ColorDrawable(Color.WHITE);
             d = new AdaptiveIconDrawable(backgroundColor, new BitmapDrawable(pad(b)));
         }
         return d;
+    }
+
+    private static @ColorInt int makeBackgroundColor(@ColorInt int dominantColor) {
+        if (dominantColor != Color.WHITE) {
+            float[] outHsl = new float[]{0F, 0F, 0F};
+            ColorUtils.colorToHSL(dominantColor, outHsl);
+            outHsl[2] = 0.9F;
+            return ColorUtils.HSLToColor(outHsl);
+        }
+        return dominantColor;
     }
 
     private Drawable getIconBackFor(CharSequence tag) {
