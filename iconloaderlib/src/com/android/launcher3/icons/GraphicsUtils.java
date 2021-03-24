@@ -15,10 +15,16 @@
  */
 package com.android.launcher3.icons;
 
+import android.content.Context;
+import android.content.res.TypedArray;
 import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.Region;
 import android.graphics.RegionIterator;
+import android.graphics.drawable.AdaptiveIconDrawable;
+import android.graphics.drawable.ColorDrawable;
 import android.util.Log;
 
 import androidx.annotation.ColorInt;
@@ -81,5 +87,36 @@ public class GraphicsUtils {
      */
     public static void noteNewBitmapCreated() {
         sOnNewBitmapRunnable.run();
+    }
+
+
+    /**
+     * Returns the default path to be used by an icon
+     */
+    public static Path getShapePath(int size) {
+        AdaptiveIconDrawable drawable = new AdaptiveIconDrawable(
+                new ColorDrawable(Color.BLACK), new ColorDrawable(Color.BLACK));
+        drawable.setBounds(0, 0, size, size);
+        return new Path(drawable.getIconMask());
+    }
+
+    /**
+     * Returns the color associated with the attribute
+     */
+    public static int getAttrColor(Context context, int attr) {
+        TypedArray ta = context.obtainStyledAttributes(new int[]{attr});
+        int colorAccent = ta.getColor(0, 0);
+        ta.recycle();
+        return colorAccent;
+    }
+
+    /**
+     * Returns the alpha corresponding to the theme attribute {@param attr}
+     */
+    public static float getFloat(Context context, int attr, float defValue) {
+        TypedArray ta = context.obtainStyledAttributes(new int[]{attr});
+        float value = ta.getFloat(0, defValue);
+        ta.recycle();
+        return value;
     }
 }
