@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
 **
-** Copyright 2018, The Android Open Source Project
+** Copyright 2021, The Android Open Source Project
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -17,14 +17,7 @@
 */
 -->
 <resources>
-
-    <!-- Various configurations to control the simple cache implementation -->
-
-    <dimen name="default_icon_bitmap_size">56dp</dimen>
-    <bool name="simple_cache_enable_im_memory">false</bool>
-    <string name="cache_db_name" translatable="false">app_icons.db</string>
-
-    <string name="calendar_component_name" translatable="false"></string>
-    <string name="clock_component_name" translatable="false"></string>
+    <attr name="disabledIconAlpha" format="float" />
+    <attr name="loadingIconColor" format="color" />
 
 </resources>
