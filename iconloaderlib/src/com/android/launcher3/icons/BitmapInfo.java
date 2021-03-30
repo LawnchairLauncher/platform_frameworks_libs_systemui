@@ -15,6 +15,7 @@
  */
 package com.android.launcher3.icons;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 
@@ -42,6 +43,17 @@ public class BitmapInfo {
 
     public final boolean isLowRes() {
         return LOW_RES_ICON == icon;
+    }
+
+    /**
+     * Creates a drawable for the provided BitmapInfo
+     */
+    public FastBitmapDrawable newIcon(Context context) {
+        FastBitmapDrawable drawable = isLowRes()
+                ? new PlaceHolderIconDrawable(this, context)
+                : new FastBitmapDrawable(this);
+        drawable.mDisabledAlpha = GraphicsUtils.getFloat(context, R.attr.disabledIconAlpha, 1f);
+        return drawable;
     }
 
     public static BitmapInfo fromBitmap(@NonNull Bitmap bitmap) {
