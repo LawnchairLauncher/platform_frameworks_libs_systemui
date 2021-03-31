@@ -17,7 +17,6 @@
 package com.android.launcher3.icons;
 
 import android.animation.ObjectAnimator;
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -25,7 +24,6 @@ import android.graphics.ColorFilter;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
@@ -35,7 +33,6 @@ import android.view.animation.DecelerateInterpolator;
 import android.view.animation.Interpolator;
 
 import androidx.annotation.Nullable;
-
 
 public class FastBitmapDrawable extends Drawable {
 
@@ -60,8 +57,6 @@ public class FastBitmapDrawable extends Drawable {
     private boolean mIsPressed;
     private boolean mIsDisabled;
     float mDisabledAlpha = 1f;
-    private float mRoundedCornersRadius = 0f;
-    private final Path mClipPath = new Path();
 
     // Animator and properties for the fast bitmap drawable's scale
     private static final Property<FastBitmapDrawable, Float> SCALE
@@ -103,13 +98,6 @@ public class FastBitmapDrawable extends Drawable {
 
     @Override
     public final void draw(Canvas canvas) {
-        if (mRoundedCornersRadius > 0) {
-            float radius = mRoundedCornersRadius * mScale;
-            mClipPath.reset();
-            mClipPath.addRoundRect(0, 0, getIntrinsicWidth(), getIntrinsicHeight(),
-                    radius, radius, Path.Direction.CCW);
-            canvas.clipPath(mClipPath);
-        }
         if (mScale != 1f) {
             int count = canvas.save();
             Rect bounds = getBounds();
@@ -167,14 +155,6 @@ public class FastBitmapDrawable extends Drawable {
 
     public float getAnimatedScale() {
         return mScaleAnimation == null ? 1 : mScale;
-    }
-
-    public void setRoundedCornersRadius(float radius) {
-        mRoundedCornersRadius = radius;
-    }
-
-    public float getRoundedCornersRadius() {
-        return mRoundedCornersRadius;
     }
 
     @Override
