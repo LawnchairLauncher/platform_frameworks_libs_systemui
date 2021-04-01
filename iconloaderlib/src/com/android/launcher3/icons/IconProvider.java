@@ -103,7 +103,7 @@ public class IconProvider {
      * on the UI
      */
     public Drawable getIconForUI(ActivityInfo info, UserHandle user) {
-        Drawable icon = getIcon(info, user);
+        Drawable icon = getIcon(info);
         if (icon instanceof BitmapInfo.Extender) {
             ((Extender) icon).prepareToDrawOnUi();
         }
@@ -121,8 +121,10 @@ public class IconProvider {
     /**
      * Loads the icon for the provided activity info
      */
-    public Drawable getIcon(ActivityInfo info, UserHandle user) {
-        return getIcon(info.applicationInfo.packageName, user, info, mContext.getPackageManager(),
+    public Drawable getIcon(ActivityInfo info) {
+        return getIcon(info.applicationInfo.packageName,
+                UserHandle.getUserHandleForUid(info.applicationInfo.uid),
+                info, mContext.getPackageManager(),
                 AI_LOADER);
     }
 
