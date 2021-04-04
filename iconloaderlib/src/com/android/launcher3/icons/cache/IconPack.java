@@ -96,10 +96,20 @@ public class IconPack {
     }
 
     private static Bitmap pad(Bitmap src) {
-        Bitmap ret = Bitmap.createBitmap(src.getWidth() + 200, src.getHeight() + 200, Bitmap.Config.ARGB_8888);
+        int dpi = (int) Resources.getSystem().getDisplayMetrics().density;
+        int newSrcSize = 192;
+        int retSize = newSrcSize + 200;
+        int cOffsetTopLeft = (retSize - newSrcSize) / 2;
+
+        Bitmap newSrc = Bitmap.createScaledBitmap(src, newSrcSize, newSrcSize, true);
+        newSrc.setDensity(dpi);
+
+        Bitmap ret = Bitmap.createBitmap(retSize, retSize, Bitmap.Config.ARGB_8888);
+        ret.setDensity(dpi);
+
         Canvas c = new Canvas(ret);
-        c.drawARGB(0x0, 0xFF, 0xFF, 0xFF);
-        c.drawBitmap(src, (c.getWidth() - src.getWidth()) >> 1, (c.getHeight() - src.getHeight()) >> 1, null);
+        c.drawBitmap(newSrc, cOffsetTopLeft, cOffsetTopLeft, null);
+
         return ret;
     }
 
