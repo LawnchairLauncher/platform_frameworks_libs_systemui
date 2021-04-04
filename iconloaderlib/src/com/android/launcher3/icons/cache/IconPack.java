@@ -136,18 +136,18 @@ public class IconPack {
             Bitmap b = drawableToBitmap(d);
             // Already running on UI_HELPER, no need to async this.
             Palette p = (new Palette.Builder(b)).generate();
-            boolean makeColoredBackgrounds = sharedPrefs.getBoolean("pref_makeColoredBackgrounds", false);
-            ColorDrawable backgroundColor = makeColoredBackgrounds ? new ColorDrawable(makeBackgroundColor(p.getDominantColor(Color.WHITE))) : new ColorDrawable(Color.WHITE);
+            ColorDrawable backgroundColor = new ColorDrawable(makeBackgroundColor(p.getDominantColor(Color.WHITE), sharedPrefs));
             d = new AdaptiveIconDrawable(backgroundColor, new BitmapDrawable(pad(b)));
         }
         return d;
     }
 
-    private static @ColorInt int makeBackgroundColor(@ColorInt int dominantColor) {
+    private static @ColorInt int makeBackgroundColor(@ColorInt int dominantColor, SharedPreferences sharedPrefs) {
+        float lightness = sharedPrefs.getFloat("pref_coloredBackgroundLightness", 0.9F);
         if (dominantColor != Color.WHITE) {
             float[] outHsl = new float[]{0F, 0F, 0F};
             ColorUtils.colorToHSL(dominantColor, outHsl);
-            outHsl[2] = 0.9F;
+            outHsl[2] = lightness;
             return ColorUtils.HSLToColor(outHsl);
         }
         return dominantColor;
