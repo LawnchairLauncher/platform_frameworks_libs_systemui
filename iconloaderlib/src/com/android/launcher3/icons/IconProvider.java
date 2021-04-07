@@ -16,6 +16,8 @@
 
 package com.android.launcher3.icons;
 
+import static android.content.res.Resources.ID_NULL;
+
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -26,6 +28,7 @@ import android.content.pm.LauncherActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Resources;
+import android.content.res.XmlResourceParser;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
@@ -33,10 +36,13 @@ import android.os.Process;
 import android.os.UserHandle;
 import android.os.UserManager;
 import android.text.TextUtils;
+import android.util.ArrayMap;
 import android.util.Log;
 
-import com.android.launcher3.util.ComponentKey;
+import com.android.launcher3.icons.ThemedIconDrawable.ThemeData;
 import com.android.launcher3.util.SafeCloseable;
+
+import org.xmlpull.v1.XmlPullParser;
 
 import java.util.Calendar;
 import java.util.function.BiConsumer;
@@ -47,24 +53,36 @@ import java.util.function.Supplier;
  */
 public class IconProvider {
 
+    private static final String TAG_ICON = "icon";
+    private static final String ATTR_PACKAGE = "package";
+    private static final String ATTR_DRAWABLE = "drawable";
+
     private static final String TAG = "IconProvider";
     private static final boolean DEBUG = false;
 
     private static final String ICON_METADATA_KEY_PREFIX = ".dynamic_icons";
 
     private static final String SYSTEM_STATE_SEPARATOR = " ";
+    private static final String THEMED_ICON_MAP_FILE = "grayscale_icon_map";
 
-    // Default value returned if there are problems getting resources.
-    private static final int NO_ID = 0;
+    private ArrayMap<String, ThemeData> mThemedIconMap;
 
     private final Context mContext;
     private final ComponentName mCalendar;
     private final ComponentName mClock;
 
     public IconProvider(Context context) {
+        this(context, false);
+    }
+
+    public IconProvider(Context context, boolean supportsIconTheme) {
         mContext = context;
         mCalendar = parseComponentOrNull(context, R.string.calendar_component_name);
         mClock = parseComponentOrNull(context, R.string.clock_component_name);
+        if (!supportsIconTheme) {
+            // Initialize an empty map if theming is not supported
+            mThemedIconMap = new ArrayMap<>();
+        }
     }
 
     /**
@@ -115,6 +133,7 @@ public class IconProvider {
     private Drawable getIconWithOverrides(String packageName, UserHandle user, int iconDpi,
             Supplier<Drawable> fallback) {
         Drawable icon = null;
+
         if (mCalendar != null && mCalendar.getPackageName().equals(packageName)) {
             icon = loadCalendarDrawable(iconDpi);
         } else if (mClock != null
@@ -122,9 +141,11 @@ public class IconProvider {
                 && Process.myUserHandle().equals(user)) {
             icon = loadClockDrawable(iconDpi);
         }
-        return icon == null ? fallback.get() : icon;
-    }
+        icon = icon == null ? fallback.get() : icon;
 
+        ThemeData td = getThemedIconMap().get(packageName);
+        return td != null ? td.wrapDrawable(icon) : icon;
+    }
 
     private Drawable loadActivityInfoIcon(ActivityInfo ai, int density) {
         final int iconRes = ai.getIconResource();
@@ -144,6 +165,44 @@ public class IconProvider {
         return icon;
     }
 
+    private ArrayMap<String, ThemeData> getThemedIconMap() {
+        if (mThemedIconMap != null) {
+            return mThemedIconMap;
+        }
+        ArrayMap<String, ThemeData> map = new ArrayMap<>();
+        try {
+            Resources res = mContext.getResources();
+            int resID = res.getIdentifier(THEMED_ICON_MAP_FILE, "xml", mContext.getPackageName());
+            if (resID != 0) {
+                XmlResourceParser parser = res.getXml(resID);
+                final int depth = parser.getDepth();
+
+                int type;
+
+                while ((type = parser.next()) != XmlPullParser.START_TAG
+                        && type != XmlPullParser.END_DOCUMENT);
+
+                while (((type = parser.next()) != XmlPullParser.END_TAG ||
+                        parser.getDepth() > depth) && type != XmlPullParser.END_DOCUMENT) {
+                    if (type != XmlPullParser.START_TAG) {
+                        continue;
+                    }
+                    if (TAG_ICON.equals(parser.getName())) {
+                        String pkg = parser.getAttributeValue(null, ATTR_PACKAGE);
+                        int iconId = parser.getAttributeResourceValue(null, ATTR_DRAWABLE, 0);
+                        if (iconId != 0 && !TextUtils.isEmpty(pkg)) {
+                            map.put(pkg, new ThemeData(res, iconId));
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Unable to parse icon map", e);
+        }
+        mThemedIconMap = map;
+        return mThemedIconMap;
+    }
+
     private Drawable loadCalendarDrawable(int iconDpi) {
         PackageManager pm = mContext.getPackageManager();
         try {
@@ -153,7 +212,7 @@ public class IconProvider {
                     .metaData;
             final Resources resources = pm.getResourcesForApplication(mCalendar.getPackageName());
             final int id = getDynamicIconId(metadata, resources);
-            if (id != NO_ID) {
+            if (id != ID_NULL) {
                 if (DEBUG) Log.d(TAG, "Got icon #" + id);
                 return resources.getDrawableForDensity(id, iconDpi, null /* theme */);
             }
@@ -170,11 +229,6 @@ public class IconProvider {
         return ClockDrawableWrapper.forPackage(mContext, mClock.getPackageName(), iconDpi);
     }
 
-    protected boolean isClockIcon(ComponentKey key) {
-        return mClock != null && mClock.equals(key.componentName)
-                && Process.myUserHandle().equals(key.user);
-    }
-
     /**
      * @param metadata metadata of the default activity of Calendar
      * @param resources from the Calendar package
@@ -182,20 +236,20 @@ public class IconProvider {
      */
     private int getDynamicIconId(Bundle metadata, Resources resources) {
         if (metadata == null) {
-            return NO_ID;
+            return ID_NULL;
         }
         String key = mCalendar.getPackageName() + ICON_METADATA_KEY_PREFIX;
-        final int arrayId = metadata.getInt(key, NO_ID);
-        if (arrayId == NO_ID) {
-            return NO_ID;
+        final int arrayId = metadata.getInt(key, ID_NULL);
+        if (arrayId == ID_NULL) {
+            return ID_NULL;
         }
         try {
-            return resources.obtainTypedArray(arrayId).getResourceId(getDay(), NO_ID);
+            return resources.obtainTypedArray(arrayId).getResourceId(getDay(), ID_NULL);
         } catch (Resources.NotFoundException e) {
             if (DEBUG) {
                 Log.d(TAG, "package defines '" + key + "' but corresponding array not found");
             }
-            return NO_ID;
+            return ID_NULL;
         }
     }
 

@@ -18,7 +18,7 @@ package {
 
 android_library {
     name: "iconloader_base",
-    sdk_version: "28",
+    sdk_version: "current",
     min_sdk_version: "21",
     static_libs: [
         "androidx.core_core",
