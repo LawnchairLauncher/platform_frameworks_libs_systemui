@@ -18,8 +18,12 @@ package com.android.launcher3.icons;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.os.Build;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 
 public class BitmapInfo {
 
@@ -46,6 +50,14 @@ public class BitmapInfo {
     }
 
     /**
+     * Returns a serialized version of BitmapInfo
+     */
+    @Nullable
+    public byte[] toByteArray() {
+        return isNullOrLowRes() ? null : GraphicsUtils.flattenBitmap(icon);
+    }
+
+    /**
      * Creates a drawable for the provided BitmapInfo
      */
     public FastBitmapDrawable newIcon(Context context) {
@@ -54,6 +66,23 @@ public class BitmapInfo {
                 : new FastBitmapDrawable(this);
         drawable.mDisabledAlpha = GraphicsUtils.getFloat(context, R.attr.disabledIconAlpha, 1f);
         return drawable;
+    }
+
+    /**
+     * Returns a BitmapInfo previously serialized using {@link #toByteArray()};
+     */
+    @NonNull
+    public static BitmapInfo fromByteArray(byte[] data, int color) {
+        BitmapFactory.Options decodeOptions;
+        if (BitmapRenderer.USE_HARDWARE_BITMAP && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            decodeOptions = new BitmapFactory.Options();
+            decodeOptions.inPreferredConfig = Bitmap.Config.HARDWARE;
+        } else {
+            decodeOptions = null;
+        }
+        return BitmapInfo.of(
+                BitmapFactory.decodeByteArray(data, 0, data.length, decodeOptions),
+                color);
     }
 
     public static BitmapInfo fromBitmap(@NonNull Bitmap bitmap) {
@@ -77,8 +106,8 @@ public class BitmapInfo {
         }
 
         /**
-         * Notifies the drawable that it will be drawn directly in the UI, without any preprocessing
+         * Called to draw the UI independent of any runtime configurations like time or theme
          */
-        default void prepareToDrawOnUi() { }
+        default void drawForPersistence(Canvas canvas) { }
     }
 }
