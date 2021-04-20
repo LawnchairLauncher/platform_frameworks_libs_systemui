@@ -129,6 +129,7 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
                 foreground.setDrawable(info.secondLayerIndex, null);
                 info.secondLayerIndex = INVALID_VALUE;
             }
+            info.applyTime(Calendar.getInstance(), foreground);
             return wrapper;
         } catch (Exception e) {
             Log.d(TAG, "Unable to load clock drawable info", e);
@@ -149,8 +150,19 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
     }
 
     @Override
-    public void prepareToDrawOnUi() {
+    public void drawForPersistence(Canvas canvas) {
+        LayerDrawable foreground = (LayerDrawable) getForeground();
+        resetLevel(foreground, mAnimationInfo.hourLayerIndex);
+        resetLevel(foreground, mAnimationInfo.minuteLayerIndex);
+        resetLevel(foreground, mAnimationInfo.secondLayerIndex);
+        draw(canvas);
         mAnimationInfo.applyTime(Calendar.getInstance(), (LayerDrawable) getForeground());
+    }
+
+    private void resetLevel(LayerDrawable drawable, int index) {
+        if (index != INVALID_VALUE) {
+            drawable.getDrawable(index).setLevel(0);
+        }
     }
 
     private static class AnimationInfo {

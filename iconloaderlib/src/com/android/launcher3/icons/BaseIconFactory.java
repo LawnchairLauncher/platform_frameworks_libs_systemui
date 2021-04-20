@@ -27,6 +27,8 @@ import android.os.UserHandle;
 
 import androidx.annotation.NonNull;
 
+import com.android.launcher3.icons.BitmapInfo.Extender;
+
 /**
  * This class will be moved to androidx library. There shouldn't be any dependency outside
  * this package.
@@ -342,7 +344,11 @@ public class BaseIconFactory implements AutoCloseable {
             int offset = Math.max((int) Math.ceil(BLUR_FACTOR * size),
                     Math.round(size * (1 - scale) / 2 ));
             icon.setBounds(offset, offset, size - offset, size - offset);
-            icon.draw(mCanvas);
+            if (icon instanceof BitmapInfo.Extender) {
+                ((Extender) icon).drawForPersistence(mCanvas);
+            } else {
+                icon.draw(mCanvas);
+            }
         } else {
             if (icon instanceof BitmapDrawable) {
                 BitmapDrawable bitmapDrawable = (BitmapDrawable) icon;
