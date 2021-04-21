@@ -42,6 +42,7 @@ public class LayoutType {
 
     // will replace ICON_DOUBLE_* ICON_SINGLE_* layouts
     public static final String ICON_HORIZONTAL_TEXT = "icon_row";
+    public static final String HORIZONTAL_MEDIUM_TEXT = "icon_row_medium";
     public static final String SMALL_ICON_HORIZONTAL_TEXT = "short_icon_row";
 
     // This layout creates square thumbnail image (currently 3 column)
@@ -67,4 +68,7 @@ public class LayoutType {
 
     // horizontal bar to be inserted between fallback search results and low confidence section
     public static final String EMPTY_DIVIDER = "empty_divider";
+
+    // layout representing quick calculations
+    public static final String CALCULATOR = "calculator";
 }
