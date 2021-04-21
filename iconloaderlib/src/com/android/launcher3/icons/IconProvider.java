@@ -24,6 +24,7 @@ import android.content.IntentFilter;
 import android.content.pm.ActivityInfo;
 import android.content.pm.LauncherActivityInfo;
 import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
@@ -34,13 +35,12 @@ import android.os.UserManager;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.android.launcher3.icons.BitmapInfo.Extender;
 import com.android.launcher3.util.ComponentKey;
 import com.android.launcher3.util.SafeCloseable;
 
 import java.util.Calendar;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 /**
  * Class to handle icon loading from different packages
@@ -56,13 +56,6 @@ public class IconProvider {
 
     // Default value returned if there are problems getting resources.
     private static final int NO_ID = 0;
-
-    private static final BiFunction<LauncherActivityInfo, Integer, Drawable> LAI_LOADER =
-            LauncherActivityInfo::getIcon;
-
-    private static final BiFunction<ActivityInfo, PackageManager, Drawable> AI_LOADER =
-            ActivityInfo::loadUnbadgedIcon;
-
 
     private final Context mContext;
     private final ComponentName mCalendar;
@@ -87,58 +80,68 @@ public class IconProvider {
     }
 
     /**
-     * Loads the icon for the provided LauncherActivityInfo such that it can be drawn directly
-     * on the UI
-     */
-    public Drawable getIconForUI(LauncherActivityInfo info, int iconDpi) {
-        Drawable icon = getIcon(info, iconDpi);
-        if (icon instanceof BitmapInfo.Extender) {
-            ((Extender) icon).prepareToDrawOnUi();
-        }
-        return icon;
-    }
-
-    /**
      * Loads the icon for the provided ActivityInfo such that it can be drawn directly
      * on the UI
+     * @deprecated Use {@link #getIcon}
      */
     public Drawable getIconForUI(ActivityInfo info, UserHandle user) {
-        Drawable icon = getIcon(info);
-        if (icon instanceof BitmapInfo.Extender) {
-            ((Extender) icon).prepareToDrawOnUi();
-        }
-        return icon;
+        return getIcon(info);
     }
 
     /**
      * Loads the icon for the provided LauncherActivityInfo
      */
     public Drawable getIcon(LauncherActivityInfo info, int iconDpi) {
-        return getIcon(info.getApplicationInfo().packageName, info.getUser(),
-                info, iconDpi, LAI_LOADER);
+        return getIconWithOverrides(info.getApplicationInfo().packageName, info.getUser(), iconDpi,
+                () -> info.getIcon(iconDpi));
     }
 
     /**
      * Loads the icon for the provided activity info
      */
     public Drawable getIcon(ActivityInfo info) {
-        return getIcon(info.applicationInfo.packageName,
-                UserHandle.getUserHandleForUid(info.applicationInfo.uid),
-                info, mContext.getPackageManager(),
-                AI_LOADER);
+        return getIcon(info, mContext.getResources().getConfiguration().densityDpi);
     }
 
-    private <T, P> Drawable getIcon(String packageName, UserHandle user, T obj, P param,
-            BiFunction<T, P, Drawable> loader) {
+    /**
+     * Loads the icon for the provided activity info
+     */
+    public Drawable getIcon(ActivityInfo info, int iconDpi) {
+        return getIconWithOverrides(info.applicationInfo.packageName,
+                UserHandle.getUserHandleForUid(info.applicationInfo.uid),
+                iconDpi, () -> loadActivityInfoIcon(info, iconDpi));
+    }
+
+    private Drawable getIconWithOverrides(String packageName, UserHandle user, int iconDpi,
+            Supplier<Drawable> fallback) {
         Drawable icon = null;
         if (mCalendar != null && mCalendar.getPackageName().equals(packageName)) {
-            icon = loadCalendarDrawable(0);
+            icon = loadCalendarDrawable(iconDpi);
         } else if (mClock != null
                 && mClock.getPackageName().equals(packageName)
                 && Process.myUserHandle().equals(user)) {
-            icon = loadClockDrawable(0);
+            icon = loadClockDrawable(iconDpi);
         }
-        return icon == null ? loader.apply(obj, param) : icon;
+        return icon == null ? fallback.get() : icon;
+    }
+
+
+    private Drawable loadActivityInfoIcon(ActivityInfo ai, int density) {
+        final int iconRes = ai.getIconResource();
+        Drawable icon = null;
+        // Get the preferred density icon from the app's resources
+        if (density != 0 && iconRes != 0) {
+            try {
+                final Resources resources = mContext.getPackageManager()
+                        .getResourcesForApplication(ai.applicationInfo);
+                icon = resources.getDrawableForDensity(iconRes, density);
+            } catch (NameNotFoundException | Resources.NotFoundException exc) { }
+        }
+        // Get the default density icon
+        if (icon == null) {
+            icon = ai.loadIcon(mContext.getPackageManager());
+        }
+        return icon;
     }
 
     private Drawable loadCalendarDrawable(int iconDpi) {
@@ -202,7 +205,6 @@ public class IconProvider {
     private int getDay() {
         return Calendar.getInstance().get(Calendar.DAY_OF_MONTH) - 1;
     }
-
 
     /**
      * Registers a callback to listen for calendar icon changes.
