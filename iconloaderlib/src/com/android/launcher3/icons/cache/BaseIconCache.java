@@ -32,7 +32,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Handler;
@@ -49,8 +48,6 @@ import androidx.annotation.VisibleForTesting;
 
 import com.android.launcher3.icons.BaseIconFactory;
 import com.android.launcher3.icons.BitmapInfo;
-import com.android.launcher3.icons.BitmapRenderer;
-import com.android.launcher3.icons.GraphicsUtils;
 import com.android.launcher3.util.ComponentKey;
 import com.android.launcher3.util.SQLiteCacheHelper;
 
@@ -94,7 +91,6 @@ public abstract class BaseIconCache {
     protected String mSystemState = "";
 
     private final String mDbFileName;
-    private final BitmapFactory.Options mDecodeOptions;
     private final Looper mBgLooper;
 
     public BaseIconCache(Context context, String dbFileName, Looper bgLooper,
@@ -120,13 +116,6 @@ public abstract class BaseIconCache {
                     return value;
                 }
             };
-        }
-
-        if (BitmapRenderer.USE_HARDWARE_BITMAP && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            mDecodeOptions = new BitmapFactory.Options();
-            mDecodeOptions.inPreferredConfig = Bitmap.Config.HARDWARE;
-        } else {
-            mDecodeOptions = null;
         }
 
         updateSystemState();
@@ -492,10 +481,10 @@ public abstract class BaseIconCache {
                 if (!lowRes) {
                     byte[] data = c.getBlob(2);
                     try {
-                        entry.bitmap = BitmapInfo.of(
-                                BitmapFactory.decodeByteArray(data, 0, data.length, mDecodeOptions),
-                                entry.bitmap.color);
-                    } catch (Exception e) { }
+                        entry.bitmap = BitmapInfo.fromByteArray(data, entry.bitmap.color);
+                    } catch (Exception e) {
+                        return false;
+                    }
                 }
                 return true;
             }
@@ -564,8 +553,7 @@ public abstract class BaseIconCache {
     private ContentValues newContentValues(BitmapInfo bitmapInfo, String label,
             String packageName, @Nullable String keywords) {
         ContentValues values = new ContentValues();
-        values.put(IconDB.COLUMN_ICON,
-                bitmapInfo.isLowRes() ? null : GraphicsUtils.flattenBitmap(bitmapInfo.icon));
+        values.put(IconDB.COLUMN_ICON, bitmapInfo.toByteArray());
         values.put(IconDB.COLUMN_ICON_COLOR, bitmapInfo.color);
 
         values.put(IconDB.COLUMN_LABEL, label);
