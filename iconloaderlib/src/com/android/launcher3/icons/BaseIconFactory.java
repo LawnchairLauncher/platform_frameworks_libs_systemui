@@ -199,7 +199,7 @@ public class BaseIconFactory implements AutoCloseable {
 
     /**
      * Creates bitmap using the source drawable and various parameters.
-     * The bitmap is visually normalized with other icons and has enough spacing to add shadow.
+     * The bitmap is visually normalized with other icons.
      *
      * @param icon                      source of the icon
      * @param user                      info can be used for a badge
@@ -210,15 +210,36 @@ public class BaseIconFactory implements AutoCloseable {
      */
     public BitmapInfo createBadgedIconBitmap(@NonNull Drawable icon, UserHandle user,
             boolean shrinkNonAdaptiveIcons, boolean isInstantApp, float[] scale) {
+        return createBadgedIconBitmap(icon, user, shrinkNonAdaptiveIcons, isInstantApp, scale,
+                false /* addShadow */);
+    }
+
+    /**
+     * Creates bitmap using the source drawable and various parameters.
+     * The bitmap is visually normalized with other icons and has enough spacing to add shadow.
+     *
+     * @param icon                      source of the icon
+     * @param user                      info can be used for a badge
+     * @param shrinkNonAdaptiveIcons    {@code true} if non adaptive icons should be treated
+     * @param isInstantApp              info can be used for a badge
+     * @param scale                     returns the scale result from normalization
+     * @param addShadow                 If true, adds a shadow under the icon.
+     * @return a bitmap suitable for disaplaying as an icon at various system UIs.
+     */
+    private BitmapInfo createBadgedIconBitmap(@NonNull Drawable icon, UserHandle user,
+            boolean shrinkNonAdaptiveIcons, boolean isInstantApp, float[] scale,
+            boolean addShadow) {
         if (scale == null) {
             scale = new float[1];
         }
         icon = normalizeAndWrapToAdaptiveIcon(icon, shrinkNonAdaptiveIcons, null, scale);
         Bitmap bitmap = createIconBitmap(icon, scale[0]);
         if (ATLEAST_OREO && icon instanceof AdaptiveIconDrawable) {
-            mCanvas.setBitmap(bitmap);
-            getShadowGenerator().recreateIcon(Bitmap.createBitmap(bitmap), mCanvas);
-            mCanvas.setBitmap(null);
+            if (addShadow) {
+                mCanvas.setBitmap(bitmap);
+                getShadowGenerator().recreateIcon(Bitmap.createBitmap(bitmap), mCanvas);
+                mCanvas.setBitmap(null);
+            }
         }
 
         if (isInstantApp) {
