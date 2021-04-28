@@ -450,7 +450,7 @@ public abstract class BaseIconCache {
             boolean entryUpdated = true;
 
             // Check the DB first.
-            if (getEntryFromDB(cacheKey, entry, useLowResIcon)) {
+            if (!getEntryFromDB(cacheKey, entry, useLowResIcon)) {
                 try {
                     int flags = Process.myUserHandle().equals(user) ? 0 :
                             PackageManager.GET_UNINSTALLED_PACKAGES;
