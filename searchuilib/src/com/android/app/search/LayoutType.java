@@ -27,22 +27,14 @@ public class LayoutType {
     //      text
     public static final String ICON_SINGLE_VERTICAL_TEXT = "icon";
 
-    // Below three layouts (to be deprecated) and two layouts render
+    // Below three layouts render
     // {@link SearchTarget}s in following layout.
     //     ------                            ------   ------
     //    |      | title                    |(opt)|  |(opt)|
     //    | icon | subtitle (optional)      | icon|  | icon|
     //     ------                            ------  ------
-    @Deprecated
-    public static final String ICON_SINGLE_HORIZONTAL_TEXT = "icon_text_row";
-    @Deprecated
-    public static final String ICON_DOUBLE_HORIZONTAL_TEXT = "icon_texts_row";
-    @Deprecated
-    public static final String ICON_DOUBLE_HORIZONTAL_TEXT_BUTTON = "icon_texts_button";
-
-    // will replace ICON_DOUBLE_* ICON_SINGLE_* layouts
     public static final String ICON_HORIZONTAL_TEXT = "icon_row";
-    public static final String HORIZONTAL_MEDIUM_TEXT = "icon_row_medium";
+    public static final String MEDIUM_ICON_HORIZONTAL_TEXT = "medium_icon_row";
     public static final String SMALL_ICON_HORIZONTAL_TEXT = "short_icon_row";
 
     // This layout creates square thumbnail image (currently 3 column)
