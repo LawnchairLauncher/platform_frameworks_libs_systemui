@@ -137,7 +137,7 @@ public abstract class BaseIconCache {
     /**
      * Opens and returns an icon factory. The factory is recycled by the caller.
      */
-    protected abstract BaseIconFactory getIconFactory();
+    public abstract BaseIconFactory getIconFactory();
 
     public void updateIconParams(int iconDpi, int iconPixelSize) {
         mWorkerHandler.post(() -> updateIconParamsBg(iconDpi, iconPixelSize));
@@ -479,14 +479,14 @@ public abstract class BaseIconCache {
                 }
 
                 if (!lowRes) {
-                    byte[] data = c.getBlob(2);
                     try {
-                        entry.bitmap = BitmapInfo.fromByteArray(data, entry.bitmap.color);
+                        entry.bitmap = BitmapInfo.fromByteArray(
+                                c.getBlob(2), entry.bitmap.color, cacheKey.user, this, mContext);
                     } catch (Exception e) {
                         return false;
                     }
                 }
-                return true;
+                return entry.bitmap != null;
             }
         } catch (SQLiteException e) {
             Log.d(TAG, "Error reading icon cache", e);
