@@ -29,7 +29,10 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Process;
 import android.os.SystemClock;
+import android.os.UserHandle;
 import android.util.Log;
+
+import androidx.annotation.Nullable;
 
 import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
@@ -138,15 +141,16 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
     }
 
     @Override
-    public BitmapInfo getExtendedInfo(Bitmap bitmap, int color, BaseIconFactory iconFactory) {
+    public BitmapInfo getExtendedInfo(Bitmap bitmap, int color,
+            BaseIconFactory iconFactory, float normalizationScale, UserHandle user) {
         iconFactory.disableColorExtraction();
-        float [] scale = new float[1];
         AdaptiveIconDrawable background = new AdaptiveIconDrawable(
                 getBackground().getConstantState().newDrawable(), null);
         BitmapInfo bitmapInfo = iconFactory.createBadgedIconBitmap(background,
-                Process.myUserHandle(), mTargetSdkVersion, false, scale);
+                Process.myUserHandle(), mTargetSdkVersion, false);
 
-        return new ClockBitmapInfo(bitmap, color, scale[0], mAnimationInfo, bitmapInfo.icon);
+        return new ClockBitmapInfo(bitmap, color, normalizationScale,
+                mAnimationInfo, bitmapInfo.icon);
     }
 
     @Override
@@ -231,6 +235,12 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
             ClockIconDrawable d = new ClockIconDrawable(this);
             d.mDisabledAlpha = GraphicsUtils.getFloat(context, R.attr.disabledIconAlpha, 1f);
             return d;
+        }
+
+        @Nullable
+        @Override
+        public byte[] toByteArray() {
+            return null;
         }
     }
 
