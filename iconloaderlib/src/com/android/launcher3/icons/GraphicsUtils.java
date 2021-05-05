@@ -57,10 +57,7 @@ public class GraphicsUtils {
      * Compresses the bitmap to a byte array for serialization.
      */
     public static byte[] flattenBitmap(Bitmap bitmap) {
-        // Try go guesstimate how much space the icon will take when serialized
-        // to avoid unnecessary allocations/copies during the write (4 bytes per pixel).
-        int size = bitmap.getWidth() * bitmap.getHeight() * 4;
-        ByteArrayOutputStream out = new ByteArrayOutputStream(size);
+        ByteArrayOutputStream out = new ByteArrayOutputStream(getExpectedBitmapSize(bitmap));
         try {
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
             out.flush();
@@ -70,6 +67,14 @@ public class GraphicsUtils {
             Log.w(TAG, "Could not write bitmap");
             return null;
         }
+    }
+
+    /**
+     * Try go guesstimate how much space the icon will take when serialized to avoid unnecessary
+     * allocations/copies during the write (4 bytes per pixel).
+     */
+    static int getExpectedBitmapSize(Bitmap bitmap) {
+        return bitmap.getWidth() * bitmap.getHeight() * 4;
     }
 
     public static int getArea(Region r) {
