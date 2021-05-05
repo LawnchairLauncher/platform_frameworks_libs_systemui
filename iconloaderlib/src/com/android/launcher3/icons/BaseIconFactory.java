@@ -59,6 +59,7 @@ public class BaseIconFactory implements AutoCloseable {
 
     private Drawable mWrapperIcon;
     private int mWrapperBackgroundColor = DEFAULT_WRAPPER_BACKGROUND;
+    private Bitmap mUserBadgeBitmap;
 
     private final Paint mTextPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
     private static final float PLACEHOLDER_TEXT_SIZE = 20f;
@@ -256,8 +257,25 @@ public class BaseIconFactory implements AutoCloseable {
         }
         int color = extractColor(bitmap);
         return icon instanceof BitmapInfo.Extender
-                ? ((BitmapInfo.Extender) icon).getExtendedInfo(bitmap, color, this)
+                ? ((BitmapInfo.Extender) icon).getExtendedInfo(bitmap, color, this, scale[0], user)
                 : BitmapInfo.of(bitmap, color);
+    }
+
+    public Bitmap getUserBadgeBitmap(UserHandle user) {
+        if (mUserBadgeBitmap == null) {
+            Bitmap bitmap = Bitmap.createBitmap(
+                    mIconBitmapSize, mIconBitmapSize, Bitmap.Config.ARGB_8888);
+            Drawable badgedDrawable = mPm.getUserBadgedIcon(
+                    new FixedSizeBitmapDrawable(bitmap), user);
+            if (badgedDrawable instanceof BitmapDrawable) {
+                mUserBadgeBitmap = ((BitmapDrawable) badgedDrawable).getBitmap();
+            } else {
+                badgedDrawable.setBounds(0, 0, mIconBitmapSize, mIconBitmapSize);
+                mUserBadgeBitmap = BitmapRenderer.createSoftwareBitmap(
+                        mIconBitmapSize, mIconBitmapSize, badgedDrawable::draw);
+            }
+        }
+        return mUserBadgeBitmap;
     }
 
     public Bitmap createScaledBitmapWithoutShadow(Drawable icon, boolean shrinkNonAdaptiveIcons) {
