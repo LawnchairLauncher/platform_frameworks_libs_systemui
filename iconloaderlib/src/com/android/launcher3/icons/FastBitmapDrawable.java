@@ -55,7 +55,7 @@ public class FastBitmapDrawable extends Drawable {
     @Nullable private ColorFilter mColorFilter;
 
     private boolean mIsPressed;
-    private boolean mIsDisabled;
+    protected boolean mIsDisabled;
     float mDisabledAlpha = 1f;
 
     // Animator and properties for the fast bitmap drawable's scale

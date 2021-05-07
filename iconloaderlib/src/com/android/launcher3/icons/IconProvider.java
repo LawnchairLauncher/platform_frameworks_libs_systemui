@@ -16,6 +16,11 @@
 
 package com.android.launcher3.icons;
 
+import static android.content.Intent.ACTION_DATE_CHANGED;
+import static android.content.Intent.ACTION_TIMEZONE_CHANGED;
+import static android.content.Intent.ACTION_TIME_CHANGED;
+import static android.content.res.Resources.ID_NULL;
+
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -26,20 +31,26 @@ import android.content.pm.LauncherActivityInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Resources;
+import android.content.res.XmlResourceParser;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.PatternMatcher;
 import android.os.Process;
 import android.os.UserHandle;
 import android.os.UserManager;
 import android.text.TextUtils;
+import android.util.ArrayMap;
 import android.util.Log;
 
-import com.android.launcher3.util.ComponentKey;
+import com.android.launcher3.icons.ThemedIconDrawable.ThemeData;
 import com.android.launcher3.util.SafeCloseable;
 
+import org.xmlpull.v1.XmlPullParser;
+
 import java.util.Calendar;
-import java.util.function.BiConsumer;
+import java.util.Collections;
+import java.util.Map;
 import java.util.function.Supplier;
 
 /**
@@ -47,24 +58,49 @@ import java.util.function.Supplier;
  */
 public class IconProvider {
 
+    private final String ACTION_OVERLAY_CHANGED = "android.intent.action.OVERLAY_CHANGED";
+    private static final int CONFIG_ICON_MASK_RES_ID = Resources.getSystem().getIdentifier(
+            "config_icon_mask", "string", "android");
+
+    private static final String TAG_ICON = "icon";
+    private static final String ATTR_PACKAGE = "package";
+    private static final String ATTR_DRAWABLE = "drawable";
+
     private static final String TAG = "IconProvider";
     private static final boolean DEBUG = false;
 
     private static final String ICON_METADATA_KEY_PREFIX = ".dynamic_icons";
 
     private static final String SYSTEM_STATE_SEPARATOR = " ";
+    private static final String THEMED_ICON_MAP_FILE = "grayscale_icon_map";
 
-    // Default value returned if there are problems getting resources.
-    private static final int NO_ID = 0;
+    private static final Map<String, ThemeData> DISABLED_MAP = Collections.emptyMap();
+
+    private Map<String, ThemeData> mThemedIconMap;
 
     private final Context mContext;
     private final ComponentName mCalendar;
     private final ComponentName mClock;
 
     public IconProvider(Context context) {
+        this(context, false);
+    }
+
+    public IconProvider(Context context, boolean supportsIconTheme) {
         mContext = context;
         mCalendar = parseComponentOrNull(context, R.string.calendar_component_name);
         mClock = parseComponentOrNull(context, R.string.clock_component_name);
+        if (!supportsIconTheme) {
+            // Initialize an empty map if theming is not supported
+            mThemedIconMap = DISABLED_MAP;
+        }
+    }
+
+    /**
+     * Enables or disables icon theme support
+     */
+    public void setIconThemeSupported(boolean isSupported) {
+        mThemedIconMap = isSupported ? null : DISABLED_MAP;
     }
 
     /**
@@ -77,15 +113,6 @@ public class IconProvider {
         } else {
             return systemState;
         }
-    }
-
-    /**
-     * Loads the icon for the provided ActivityInfo such that it can be drawn directly
-     * on the UI
-     * @deprecated Use {@link #getIcon}
-     */
-    public Drawable getIconForUI(ActivityInfo info, UserHandle user) {
-        return getIcon(info);
     }
 
     /**
@@ -115,6 +142,7 @@ public class IconProvider {
     private Drawable getIconWithOverrides(String packageName, UserHandle user, int iconDpi,
             Supplier<Drawable> fallback) {
         Drawable icon = null;
+
         if (mCalendar != null && mCalendar.getPackageName().equals(packageName)) {
             icon = loadCalendarDrawable(iconDpi);
         } else if (mClock != null
@@ -122,9 +150,11 @@ public class IconProvider {
                 && Process.myUserHandle().equals(user)) {
             icon = loadClockDrawable(iconDpi);
         }
-        return icon == null ? fallback.get() : icon;
-    }
+        icon = icon == null ? fallback.get() : icon;
 
+        ThemeData td = getThemedIconMap().get(packageName);
+        return td != null ? td.wrapDrawable(icon) : icon;
+    }
 
     private Drawable loadActivityInfoIcon(ActivityInfo ai, int density) {
         final int iconRes = ai.getIconResource();
@@ -144,6 +174,44 @@ public class IconProvider {
         return icon;
     }
 
+    private Map<String, ThemeData> getThemedIconMap() {
+        if (mThemedIconMap != null) {
+            return mThemedIconMap;
+        }
+        ArrayMap<String, ThemeData> map = new ArrayMap<>();
+        try {
+            Resources res = mContext.getResources();
+            int resID = res.getIdentifier(THEMED_ICON_MAP_FILE, "xml", mContext.getPackageName());
+            if (resID != 0) {
+                XmlResourceParser parser = res.getXml(resID);
+                final int depth = parser.getDepth();
+
+                int type;
+
+                while ((type = parser.next()) != XmlPullParser.START_TAG
+                        && type != XmlPullParser.END_DOCUMENT);
+
+                while (((type = parser.next()) != XmlPullParser.END_TAG ||
+                        parser.getDepth() > depth) && type != XmlPullParser.END_DOCUMENT) {
+                    if (type != XmlPullParser.START_TAG) {
+                        continue;
+                    }
+                    if (TAG_ICON.equals(parser.getName())) {
+                        String pkg = parser.getAttributeValue(null, ATTR_PACKAGE);
+                        int iconId = parser.getAttributeResourceValue(null, ATTR_DRAWABLE, 0);
+                        if (iconId != 0 && !TextUtils.isEmpty(pkg)) {
+                            map.put(pkg, new ThemeData(res, iconId));
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Unable to parse icon map", e);
+        }
+        mThemedIconMap = map;
+        return mThemedIconMap;
+    }
+
     private Drawable loadCalendarDrawable(int iconDpi) {
         PackageManager pm = mContext.getPackageManager();
         try {
@@ -153,7 +221,7 @@ public class IconProvider {
                     .metaData;
             final Resources resources = pm.getResourcesForApplication(mCalendar.getPackageName());
             final int id = getDynamicIconId(metadata, resources);
-            if (id != NO_ID) {
+            if (id != ID_NULL) {
                 if (DEBUG) Log.d(TAG, "Got icon #" + id);
                 return resources.getDrawableForDensity(id, iconDpi, null /* theme */);
             }
@@ -170,11 +238,6 @@ public class IconProvider {
         return ClockDrawableWrapper.forPackage(mContext, mClock.getPackageName(), iconDpi);
     }
 
-    protected boolean isClockIcon(ComponentKey key) {
-        return mClock != null && mClock.equals(key.componentName)
-                && Process.myUserHandle().equals(key.user);
-    }
-
     /**
      * @param metadata metadata of the default activity of Calendar
      * @param resources from the Calendar package
@@ -182,20 +245,20 @@ public class IconProvider {
      */
     private int getDynamicIconId(Bundle metadata, Resources resources) {
         if (metadata == null) {
-            return NO_ID;
+            return ID_NULL;
         }
         String key = mCalendar.getPackageName() + ICON_METADATA_KEY_PREFIX;
-        final int arrayId = metadata.getInt(key, NO_ID);
-        if (arrayId == NO_ID) {
-            return NO_ID;
+        final int arrayId = metadata.getInt(key, ID_NULL);
+        if (arrayId == ID_NULL) {
+            return ID_NULL;
         }
         try {
-            return resources.obtainTypedArray(arrayId).getResourceId(getDay(), NO_ID);
+            return resources.obtainTypedArray(arrayId).getResourceId(getDay(), ID_NULL);
         } catch (Resources.NotFoundException e) {
             if (DEBUG) {
                 Log.d(TAG, "package defines '" + key + "' but corresponding array not found");
             }
-            return NO_ID;
+            return ID_NULL;
         }
     }
 
@@ -206,60 +269,99 @@ public class IconProvider {
         return Calendar.getInstance().get(Calendar.DAY_OF_MONTH) - 1;
     }
 
-    /**
-     * Registers a callback to listen for calendar icon changes.
-     * The callback receives the packageName for the calendar icon
-     */
-    public static SafeCloseable registerIconChangeListener(Context context,
-            BiConsumer<String, UserHandle> callback, Handler handler) {
-        ComponentName calendar = parseComponentOrNull(context, R.string.calendar_component_name);
-        ComponentName clock = parseComponentOrNull(context, R.string.clock_component_name);
-
-        if (calendar == null && clock == null) {
-            return () -> { };
-        }
-
-        BroadcastReceiver receiver = new DateTimeChangeReceiver(callback);
-        final IntentFilter filter = new IntentFilter(Intent.ACTION_TIMEZONE_CHANGED);
-        if (calendar != null) {
-            filter.addAction(Intent.ACTION_TIME_CHANGED);
-            filter.addAction(Intent.ACTION_DATE_CHANGED);
-        }
-        context.registerReceiver(receiver, filter, null, handler);
-
-        return () -> context.unregisterReceiver(receiver);
+    private static ComponentName parseComponentOrNull(Context context, int resId) {
+        String cn = context.getString(resId);
+        return TextUtils.isEmpty(cn) ? null : ComponentName.unflattenFromString(cn);
     }
 
-    private static class DateTimeChangeReceiver extends BroadcastReceiver {
+    /**
+     * Returns a string representation of the current system icon state
+     */
+    public String getSystemIconState() {
+        return (CONFIG_ICON_MASK_RES_ID == ID_NULL
+                ? "" : mContext.getResources().getString(CONFIG_ICON_MASK_RES_ID))
+                + (mThemedIconMap == DISABLED_MAP ? ",no-theme" : ",with-theme");
+    }
 
-        private final BiConsumer<String, UserHandle> mCallback;
+    /**
+     * Registers a callback to listen for various system dependent icon changes.
+     */
+    public SafeCloseable registerIconChangeListener(IconChangeListener listener, Handler handler) {
+        return new IconChangeReceiver(listener, handler);
+    }
 
-        DateTimeChangeReceiver(BiConsumer<String, UserHandle> callback) {
+    private class IconChangeReceiver extends BroadcastReceiver implements SafeCloseable {
+
+        private final IconChangeListener mCallback;
+        private String mIconState;
+
+        IconChangeReceiver(IconChangeListener callback, Handler handler) {
             mCallback = callback;
+            mIconState = getSystemIconState();
+
+
+            IntentFilter packageFilter = new IntentFilter(ACTION_OVERLAY_CHANGED);
+            packageFilter.addDataScheme("package");
+            packageFilter.addDataSchemeSpecificPart("android", PatternMatcher.PATTERN_LITERAL);
+            mContext.registerReceiver(this, packageFilter, null, handler);
+
+            if (mCalendar != null || mClock != null) {
+                final IntentFilter filter = new IntentFilter(ACTION_TIMEZONE_CHANGED);
+                if (mCalendar != null) {
+                    filter.addAction(Intent.ACTION_TIME_CHANGED);
+                    filter.addAction(ACTION_DATE_CHANGED);
+                }
+                mContext.registerReceiver(this, filter, null, handler);
+            }
         }
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (Intent.ACTION_TIMEZONE_CHANGED.equals(intent.getAction())) {
-                ComponentName clock = parseComponentOrNull(context, R.string.clock_component_name);
-                if (clock != null) {
-                    mCallback.accept(clock.getPackageName(), Process.myUserHandle());
-                }
-            }
-
-            ComponentName calendar =
-                    parseComponentOrNull(context, R.string.calendar_component_name);
-            if (calendar != null) {
-                for (UserHandle user
-                        : context.getSystemService(UserManager.class).getUserProfiles()) {
-                    mCallback.accept(calendar.getPackageName(), user);
+            switch (intent.getAction()) {
+                case ACTION_TIMEZONE_CHANGED:
+                    if (mClock != null) {
+                        mCallback.onAppIconChanged(mClock.getPackageName(), Process.myUserHandle());
+                    }
+                    // follow through
+                case ACTION_DATE_CHANGED:
+                case ACTION_TIME_CHANGED:
+                    if (mCalendar != null) {
+                        for (UserHandle user
+                                : context.getSystemService(UserManager.class).getUserProfiles()) {
+                            mCallback.onAppIconChanged(mCalendar.getPackageName(), user);
+                        }
+                    }
+                    break;
+                case ACTION_OVERLAY_CHANGED: {
+                    String newState = getSystemIconState();
+                    if (!mIconState.equals(newState)) {
+                        mIconState = newState;
+                        mCallback.onSystemIconStateChanged(mIconState);
+                    }
+                    break;
                 }
             }
         }
+
+        @Override
+        public void close() {
+            mContext.unregisterReceiver(this);
+        }
     }
 
-    private static ComponentName parseComponentOrNull(Context context, int resId) {
-        String cn = context.getString(resId);
-        return TextUtils.isEmpty(cn) ? null : ComponentName.unflattenFromString(cn);
+    /**
+     * Listener for receiving icon changes
+     */
+    public interface IconChangeListener {
+
+        /**
+         * Called when the icon for a particular app changes
+         */
+        void onAppIconChanged(String packageName, UserHandle user);
+
+        /**
+         * Called when the global icon state changed, which can typically affect all icons
+         */
+        void onSystemIconStateChanged(String iconState);
     }
 }
