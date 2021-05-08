@@ -84,7 +84,7 @@ public class BaseIconFactory implements AutoCloseable {
         clear();
     }
 
-    protected BaseIconFactory(Context context, int fillResIconDpi, int iconBitmapSize) {
+    public BaseIconFactory(Context context, int fillResIconDpi, int iconBitmapSize) {
         this(context, fillResIconDpi, iconBitmapSize, false);
     }
 
