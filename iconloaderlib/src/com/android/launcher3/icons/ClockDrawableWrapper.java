@@ -257,8 +257,8 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
             super(clockInfo);
 
             mInfo = clockInfo;
-
-            mFullDrawable = (AdaptiveIconDrawable) mInfo.animInfo.baseDrawableState.newDrawable();
+            mFullDrawable = (AdaptiveIconDrawable) mInfo.animInfo.baseDrawableState
+                    .newDrawable().mutate();
             mForeground = (LayerDrawable) mFullDrawable.getForeground();
         }
 
