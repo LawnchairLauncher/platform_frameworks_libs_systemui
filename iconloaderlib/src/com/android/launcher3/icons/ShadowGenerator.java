@@ -32,6 +32,9 @@ import android.graphics.RectF;
  * Utility class to add shadows to bitmaps.
  */
 public class ShadowGenerator {
+
+    public static final boolean ENABLE_SHADOWS = false;
+
     public static final float BLUR_FACTOR = 0.5f/48;
 
     // Percent of actual icon size
@@ -60,17 +63,20 @@ public class ShadowGenerator {
 
     public synchronized void recreateIcon(Bitmap icon, BlurMaskFilter blurMaskFilter,
             int ambientAlpha, int keyAlpha, Canvas out) {
-        int[] offset = new int[2];
-        mBlurPaint.setMaskFilter(blurMaskFilter);
-        Bitmap shadow = icon.extractAlpha(mBlurPaint, offset);
+        if (ENABLE_SHADOWS) {
+            int[] offset = new int[2];
+            mBlurPaint.setMaskFilter(blurMaskFilter);
+            Bitmap shadow = icon.extractAlpha(mBlurPaint, offset);
 
-        // Draw ambient shadow
-        mDrawPaint.setAlpha(ambientAlpha);
-        out.drawBitmap(shadow, offset[0], offset[1], mDrawPaint);
+            // Draw ambient shadow
+            mDrawPaint.setAlpha(ambientAlpha);
+            out.drawBitmap(shadow, offset[0], offset[1], mDrawPaint);
 
-        // Draw key shadow
-        mDrawPaint.setAlpha(keyAlpha);
-        out.drawBitmap(shadow, offset[0], offset[1] + KEY_SHADOW_DISTANCE * mIconSize, mDrawPaint);
+            // Draw key shadow
+            mDrawPaint.setAlpha(keyAlpha);
+            out.drawBitmap(shadow, offset[0], offset[1] + KEY_SHADOW_DISTANCE * mIconSize,
+                    mDrawPaint);
+        }
 
         // Draw the icon
         mDrawPaint.setAlpha(255);
@@ -84,15 +90,18 @@ public class ShadowGenerator {
     public static float getScaleForBounds(RectF bounds) {
         float scale = 1;
 
-        // For top, left & right, we need same space.
-        float minSide = Math.min(Math.min(bounds.left, bounds.right), bounds.top);
-        if (minSide < BLUR_FACTOR) {
-            scale = (HALF_DISTANCE - BLUR_FACTOR) / (HALF_DISTANCE - minSide);
-        }
+        if (ENABLE_SHADOWS) {
+            // For top, left & right, we need same space.
+            float minSide = Math.min(Math.min(bounds.left, bounds.right), bounds.top);
+            if (minSide < BLUR_FACTOR) {
+                scale = (HALF_DISTANCE - BLUR_FACTOR) / (HALF_DISTANCE - minSide);
+            }
 
-        float bottomSpace = BLUR_FACTOR + KEY_SHADOW_DISTANCE;
-        if (bounds.bottom < bottomSpace) {
-            scale = Math.min(scale, (HALF_DISTANCE - bottomSpace) / (HALF_DISTANCE - bounds.bottom));
+            float bottomSpace = BLUR_FACTOR + KEY_SHADOW_DISTANCE;
+            if (bounds.bottom < bottomSpace) {
+                scale = Math.min(scale,
+                        (HALF_DISTANCE - bottomSpace) / (HALF_DISTANCE - bounds.bottom));
+            }
         }
         return scale;
     }
@@ -115,8 +124,13 @@ public class ShadowGenerator {
         }
 
         public Builder setupBlurForSize(int height) {
-            shadowBlur = height * 1f / 24;
-            keyShadowDistance = height * 1f / 16;
+            if (ENABLE_SHADOWS) {
+                shadowBlur = height * 1f / 24;
+                keyShadowDistance = height * 1f / 16;
+            } else {
+                shadowBlur = 0;
+                keyShadowDistance = 0;
+            }
             return this;
         }
 
@@ -141,15 +155,17 @@ public class ShadowGenerator {
             Paint p = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
             p.setColor(color);
 
-            // Key shadow
-            p.setShadowLayer(shadowBlur, 0, keyShadowDistance,
-                    setColorAlphaBound(Color.BLACK, keyShadowAlpha));
-            c.drawRoundRect(bounds, radius, radius, p);
+            if (ENABLE_SHADOWS) {
+                // Key shadow
+                p.setShadowLayer(shadowBlur, 0, keyShadowDistance,
+                        setColorAlphaBound(Color.BLACK, keyShadowAlpha));
+                c.drawRoundRect(bounds, radius, radius, p);
 
-            // Ambient shadow
-            p.setShadowLayer(shadowBlur, 0, 0,
-                    setColorAlphaBound(Color.BLACK, ambientShadowAlpha));
-            c.drawRoundRect(bounds, radius, radius, p);
+                // Ambient shadow
+                p.setShadowLayer(shadowBlur, 0, 0,
+                        setColorAlphaBound(Color.BLACK, ambientShadowAlpha));
+                c.drawRoundRect(bounds, radius, radius, p);
+            }
 
             if (Color.alpha(color) < 255) {
                 // Clear any content inside the pill-rect for translucent fill.
