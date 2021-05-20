@@ -255,7 +255,10 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
         }
     }
 
-    private static int[] getColors(Context context) {
+    /**
+     * Get an int array representing background and foreground colors for themed icons
+     */
+    public static int[] getColors(Context context) {
         Resources res = context.getResources();
         int[] colors = new int[2];
         if ((res.getConfiguration().uiMode & UI_MODE_NIGHT_MASK) == UI_MODE_NIGHT_YES) {
