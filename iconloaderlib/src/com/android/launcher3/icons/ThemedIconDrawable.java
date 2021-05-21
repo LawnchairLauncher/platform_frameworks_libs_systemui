@@ -67,7 +67,7 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
     private final Rect mBadgeBounds;
 
     protected ThemedIconDrawable(ThemedConstantState constantState) {
-        super(constantState.mBitmap, constantState.mIconColor, constantState.mIsDisabled);
+        super(constantState.mBitmap, constantState.colorFg, constantState.mIsDisabled);
         bitmapInfo = constantState.bitmapInfo;
         colorBg = constantState.colorBg;
         colorFg = constantState.colorFg;
