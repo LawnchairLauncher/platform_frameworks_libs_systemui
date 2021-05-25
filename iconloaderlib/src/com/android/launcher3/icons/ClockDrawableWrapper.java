@@ -297,9 +297,9 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
             if (themeData != null) {
                 ClockDrawableWrapper wrapper = fromThemeData(context, themeData);
                 if (wrapper != null) {
-                    ColorFilter bgFilter = new PorterDuffColorFilter(
-                            getColors(context)[0], Mode.SRC_ATOP);
-                    ClockBitmapInfo bitmapInfo = new ClockBitmapInfo(icon, color, scale,
+                    int[] colors = getColors(context);
+                    ColorFilter bgFilter = new PorterDuffColorFilter(colors[0], Mode.SRC_ATOP);
+                    ClockBitmapInfo bitmapInfo = new ClockBitmapInfo(icon, colors[1], scale,
                             wrapper.mAnimationInfo, mFlattenedBackground, themeData) {
 
                         @Override
