@@ -120,6 +120,13 @@ public class FastBitmapDrawable extends Drawable {
         return mIconColor;
     }
 
+    /**
+     * Returns if this represents a themed icon
+     */
+    public boolean isThemed() {
+        return false;
+    }
+
     @Override
     public void setColorFilter(ColorFilter cf) {
         mColorFilter = cf;
