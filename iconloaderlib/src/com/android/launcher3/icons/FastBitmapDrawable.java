@@ -113,6 +113,20 @@ public class FastBitmapDrawable extends Drawable {
         canvas.drawBitmap(mBitmap, null, bounds, mPaint);
     }
 
+    /**
+     * Returns the primary icon color
+     */
+    public int getIconColor() {
+        return mIconColor;
+    }
+
+    /**
+     * Returns if this represents a themed icon
+     */
+    public boolean isThemed() {
+        return false;
+    }
+
     @Override
     public void setColorFilter(ColorFilter cf) {
         mColorFilter = cf;
