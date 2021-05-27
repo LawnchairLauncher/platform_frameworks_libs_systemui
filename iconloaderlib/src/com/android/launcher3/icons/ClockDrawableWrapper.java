@@ -281,15 +281,22 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
         public final Bitmap mFlattenedBackground;
 
         public final ThemeData themeData;
+        public final ColorFilter bgFilter;
 
         ClockBitmapInfo(Bitmap icon, int color, float scale, AnimationInfo animInfo,
                 Bitmap background, ThemeData themeData) {
+            this(icon, color, scale, animInfo, background, themeData, null);
+        }
+
+        ClockBitmapInfo(Bitmap icon, int color, float scale, AnimationInfo animInfo,
+                Bitmap background, ThemeData themeData, ColorFilter bgFilter) {
             super(icon, color);
             this.scale = scale;
             this.animInfo = animInfo;
             this.offset = (int) Math.ceil(ShadowGenerator.BLUR_FACTOR * icon.getWidth());
             this.mFlattenedBackground = background;
             this.themeData = themeData;
+            this.bgFilter = bgFilter;
         }
 
         @Override
@@ -299,18 +306,9 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
                 if (wrapper != null) {
                     int[] colors = getColors(context);
                     ColorFilter bgFilter = new PorterDuffColorFilter(colors[0], Mode.SRC_ATOP);
-                    ClockBitmapInfo bitmapInfo = new ClockBitmapInfo(icon, colors[1], scale,
-                            wrapper.mAnimationInfo, mFlattenedBackground, themeData) {
-
-                        @Override
-                        void drawBackground(Canvas canvas, Rect bounds, Paint paint) {
-                            ColorFilter oldFilter = paint.getColorFilter();
-                            paint.setColorFilter(bgFilter);
-                            super.drawBackground(canvas, bounds, paint);
-                            paint.setColorFilter(oldFilter);
-                        }
-                    };
-                    return bitmapInfo.newIcon(context);
+                    return new ClockBitmapInfo(icon, colors[1], scale,
+                            wrapper.mAnimationInfo, mFlattenedBackground, themeData, bgFilter)
+                            .newIcon(context);
                 }
             }
             return super.newThemedIcon(context);
@@ -331,7 +329,12 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
 
         void drawBackground(Canvas canvas, Rect bounds, Paint paint) {
             // draw the background that is already flattened to a bitmap
+            ColorFilter oldFilter = paint.getColorFilter();
+            if (bgFilter != null) {
+                paint.setColorFilter(bgFilter);
+            }
             canvas.drawBitmap(mFlattenedBackground, null, bounds, paint);
+            paint.setColorFilter(oldFilter);
         }
     }
 
@@ -376,6 +379,11 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
             mForeground.draw(canvas);
 
             reschedule();
+        }
+
+        @Override
+        public boolean isThemed() {
+            return mInfo.bgFilter != null;
         }
 
         @Override
