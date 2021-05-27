@@ -101,6 +101,11 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
     }
 
     @Override
+    public boolean isThemed() {
+        return true;
+    }
+
+    @Override
     public ConstantState getConstantState() {
         return new ThemedConstantState(bitmapInfo, colorBg, colorFg, mIsDisabled);
     }
