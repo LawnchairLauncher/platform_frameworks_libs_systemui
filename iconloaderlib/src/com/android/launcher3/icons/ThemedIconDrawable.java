@@ -41,7 +41,6 @@ import android.util.Log;
 import androidx.annotation.Nullable;
 
 import com.android.launcher3.icons.BitmapInfo.Extender;
-import com.android.launcher3.icons.ClockDrawableWrapper.ClockBitmapInfo;
 import com.android.launcher3.icons.cache.BaseIconCache;
 
 import java.io.ByteArrayInputStream;
@@ -286,8 +285,8 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
         Resources res = context.getResources();
         int[] colors = new int[2];
         if ((res.getConfiguration().uiMode & UI_MODE_NIGHT_MASK) == UI_MODE_NIGHT_YES) {
-            colors[0] = GraphicsUtils.getAttrColor(context, android.R.attr.colorBackgroundFloating);
-            colors[1] = GraphicsUtils.getAttrColor(context, android.R.attr.colorAccent);
+            colors[0] = res.getColor(android.R.color.system_neutral1_800);
+            colors[1] = res.getColor(android.R.color.system_accent1_100);
         } else {
             colors[0] = res.getColor(android.R.color.system_accent1_100);
             colors[1] = res.getColor(android.R.color.system_neutral2_700);
