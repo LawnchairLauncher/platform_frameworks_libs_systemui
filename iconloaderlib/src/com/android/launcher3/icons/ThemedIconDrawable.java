@@ -20,9 +20,12 @@ import static android.content.res.Configuration.UI_MODE_NIGHT_YES;
 import static android.content.res.Resources.ID_NULL;
 
 import static com.android.launcher3.icons.GraphicsUtils.getExpectedBitmapSize;
+import static com.android.launcher3.icons.IconProvider.ICON_TYPE_CALENDAR;
+import static com.android.launcher3.icons.IconProvider.ICON_TYPE_CLOCK;
 
 import android.content.Context;
 import android.content.res.Resources;
+import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -63,7 +66,7 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
     private final Rect mBadgeBounds;
 
     protected ThemedIconDrawable(ThemedConstantState constantState) {
-        super(constantState.mBitmap, constantState.mIconColor, constantState.mIsDisabled);
+        super(constantState.mBitmap, constantState.colorFg, constantState.mIsDisabled);
         bitmapInfo = constantState.bitmapInfo;
         colorBg = constantState.colorBg;
         colorFg = constantState.colorFg;
@@ -72,6 +75,7 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
         mBgWrapper = new AdaptiveIconDrawable(new ColorDrawable(colorBg), null);
         mBadgeBounds = bitmapInfo.mUserBadge == null ? null :
                 new Rect(0, 0, bitmapInfo.mUserBadge.getWidth(), bitmapInfo.mUserBadge.getHeight());
+
     }
 
     @Override
@@ -93,6 +97,11 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
         if (mBadgeBounds != null) {
             canvas.drawBitmap(bitmapInfo.mUserBadge, mBadgeBounds, getBounds(), mPaint);
         }
+    }
+
+    @Override
+    public boolean isThemed() {
+        return true;
     }
 
     @Override
@@ -147,7 +156,7 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
             if (isNullOrLowRes()) {
                 return null;
             }
-            String resName = mThemeData.mResources.getResourceName(mThemeData.mIconID);
+            String resName = mThemeData.mResources.getResourceName(mThemeData.mResID);
             ByteArrayOutputStream out = new ByteArrayOutputStream(
                     getExpectedBitmapSize(icon) + 3 + resName.length());
             try {
@@ -200,30 +209,46 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
     public static class ThemeData {
 
         final Resources mResources;
-        final int mIconID;
+        final int mResID;
 
-        public ThemeData(Resources resources, int iconID) {
+        public ThemeData(Resources resources, int resID) {
             mResources = resources;
-            mIconID = iconID;
+            mResID = resID;
         }
 
         Drawable loadMonochromeDrawable(int accentColor) {
-            Drawable d = mResources.getDrawable(mIconID).mutate();
+            Drawable d = mResources.getDrawable(mResID).mutate();
             d.setTint(accentColor);
-            d = new InsetDrawable(d, .15f);
+            d = new InsetDrawable(d, .2f);
             return d;
         }
 
-        public Drawable wrapDrawable(Drawable original) {
-            return (original instanceof AdaptiveIconDrawable)
-                    ? new ThemedAdaptiveIcon((AdaptiveIconDrawable) original, this)
-                    : original;
+        public Drawable wrapDrawable(Drawable original, int iconType) {
+            if (!(original instanceof AdaptiveIconDrawable)) {
+                return original;
+            }
+            AdaptiveIconDrawable aid = (AdaptiveIconDrawable) original;
+            String resourceType = mResources.getResourceTypeName(mResID);
+            if (iconType == ICON_TYPE_CALENDAR && "array".equals(resourceType)) {
+                TypedArray ta = mResources.obtainTypedArray(mResID);
+                int id = ta.getResourceId(IconProvider.getDay(), ID_NULL);
+                ta.recycle();
+                return id == ID_NULL ? original
+                        : new ThemedAdaptiveIcon(aid, new ThemeData(mResources, id));
+            } else if (iconType == ICON_TYPE_CLOCK && "array".equals(resourceType)) {
+                ((ClockDrawableWrapper) original).mThemeData = this;
+                return original;
+            } else if ("drawable".equals(resourceType)) {
+                return new ThemedAdaptiveIcon(aid, this);
+            } else {
+                return original;
+            }
         }
     }
 
-    public static class ThemedAdaptiveIcon extends AdaptiveIconDrawable implements Extender {
+    static class ThemedAdaptiveIcon extends AdaptiveIconDrawable implements Extender {
 
-        private final ThemeData mThemeData;
+        protected final ThemeData mThemeData;
 
         public ThemedAdaptiveIcon(AdaptiveIconDrawable parent, ThemeData themeData) {
             super(parent.getBackground(), parent.getForeground());
@@ -243,9 +268,7 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
             draw(canvas);
         }
 
-        /**
-         * Returns a new icon with theme applied
-         */
+        @Override
         public Drawable getThemedDrawable(Context context) {
             int[] colors = getColors(context);
             Drawable bg = new ColorDrawable(colors[0]);
@@ -263,7 +286,7 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
         int[] colors = new int[2];
         if ((res.getConfiguration().uiMode & UI_MODE_NIGHT_MASK) == UI_MODE_NIGHT_YES) {
             colors[0] = res.getColor(android.R.color.system_neutral1_800);
-            colors[1] = res.getColor(android.R.color.system_neutral2_200);
+            colors[1] = res.getColor(android.R.color.system_accent1_100);
         } else {
             colors[0] = res.getColor(android.R.color.system_accent1_100);
             colors[1] = res.getColor(android.R.color.system_neutral2_700);
