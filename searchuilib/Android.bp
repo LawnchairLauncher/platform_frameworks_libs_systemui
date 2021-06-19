@@ -1,4 +1,4 @@
-// Copyright (C) 2018 The Android Open Source Project
+// Copyright (C) 2020 The Android Open Source Project
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -17,32 +17,12 @@ package {
 }
 
 android_library {
-    name: "iconloader_base",
-    sdk_version: "current",
-    min_sdk_version: "21",
-    static_libs: [
-        "androidx.core_core",
-    ],
-    resource_dirs: [
-        "res",
-    ],
-    srcs: [
-        "src/**/*.java",
-    ],
-}
+    name: "search_ui",
 
-android_library {
-    name: "iconloader",
-    sdk_version: "system_current",
-    min_sdk_version: "21",
-    static_libs: [
-        "androidx.core_core",
-    ],
-    resource_dirs: [
-        "res",
-    ],
+    sdk_version: "current",
+    min_sdk_version: "26",
+
     srcs: [
         "src/**/*.java",
-        "src_full_lib/**/*.java",
     ],
 }
