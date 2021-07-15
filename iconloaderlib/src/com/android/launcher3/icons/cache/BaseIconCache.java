@@ -32,7 +32,6 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteException;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Handler;
@@ -49,8 +48,6 @@ import androidx.annotation.VisibleForTesting;
 
 import com.android.launcher3.icons.BaseIconFactory;
 import com.android.launcher3.icons.BitmapInfo;
-import com.android.launcher3.icons.BitmapRenderer;
-import com.android.launcher3.icons.GraphicsUtils;
 import com.android.launcher3.util.ComponentKey;
 import com.android.launcher3.util.SQLiteCacheHelper;
 
@@ -94,7 +91,6 @@ public abstract class BaseIconCache {
     protected String mSystemState = "";
 
     private final String mDbFileName;
-    private final BitmapFactory.Options mDecodeOptions;
     private final Looper mBgLooper;
 
     public BaseIconCache(Context context, String dbFileName, Looper bgLooper,
@@ -122,13 +118,6 @@ public abstract class BaseIconCache {
             };
         }
 
-        if (BitmapRenderer.USE_HARDWARE_BITMAP && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            mDecodeOptions = new BitmapFactory.Options();
-            mDecodeOptions.inPreferredConfig = Bitmap.Config.HARDWARE;
-        } else {
-            mDecodeOptions = null;
-        }
-
         updateSystemState();
         mIconDpi = iconDpi;
         mIconDb = new IconDB(context, dbFileName, iconPixelSize);
@@ -148,7 +137,7 @@ public abstract class BaseIconCache {
     /**
      * Opens and returns an icon factory. The factory is recycled by the caller.
      */
-    protected abstract BaseIconFactory getIconFactory();
+    public abstract BaseIconFactory getIconFactory();
 
     public void updateIconParams(int iconDpi, int iconPixelSize) {
         mWorkerHandler.post(() -> updateIconParamsBg(iconDpi, iconPixelSize));
@@ -396,7 +385,7 @@ public abstract class BaseIconCache {
         }
         if (icon != null) {
             BaseIconFactory li = getIconFactory();
-            entry.bitmap = li.createIconBitmap(icon);
+            entry.bitmap = li.createShapedIconBitmap(icon, user);
             li.close();
         }
         if (!TextUtils.isEmpty(title) && entry.bitmap.icon != null) {
@@ -490,14 +479,14 @@ public abstract class BaseIconCache {
                 }
 
                 if (!lowRes) {
-                    byte[] data = c.getBlob(2);
                     try {
-                        entry.bitmap = BitmapInfo.of(
-                                BitmapFactory.decodeByteArray(data, 0, data.length, mDecodeOptions),
-                                entry.bitmap.color);
-                    } catch (Exception e) { }
+                        entry.bitmap = BitmapInfo.fromByteArray(
+                                c.getBlob(2), entry.bitmap.color, cacheKey.user, this, mContext);
+                    } catch (Exception e) {
+                        return false;
+                    }
                 }
-                return true;
+                return entry.bitmap != null;
             }
         } catch (SQLiteException e) {
             Log.d(TAG, "Error reading icon cache", e);
@@ -521,7 +510,7 @@ public abstract class BaseIconCache {
      * Cache class to store the actual entries on disk
      */
     public static final class IconDB extends SQLiteCacheHelper {
-        private static final int RELEASE_VERSION = 27;
+        private static final int RELEASE_VERSION = 30;
 
         public static final String TABLE_NAME = "icons";
         public static final String COLUMN_ROWID = "rowid";
@@ -564,8 +553,7 @@ public abstract class BaseIconCache {
     private ContentValues newContentValues(BitmapInfo bitmapInfo, String label,
             String packageName, @Nullable String keywords) {
         ContentValues values = new ContentValues();
-        values.put(IconDB.COLUMN_ICON,
-                bitmapInfo.isLowRes() ? null : GraphicsUtils.flattenBitmap(bitmapInfo.icon));
+        values.put(IconDB.COLUMN_ICON, bitmapInfo.toByteArray());
         values.put(IconDB.COLUMN_ICON_COLOR, bitmapInfo.color);
 
         values.put(IconDB.COLUMN_LABEL, label);
