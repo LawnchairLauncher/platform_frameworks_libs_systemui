@@ -88,7 +88,7 @@ public class SimpleIconCache extends BaseIconCache {
     }
 
     @Override
-    protected BaseIconFactory getIconFactory() {
+    public BaseIconFactory getIconFactory() {
         return IconFactory.obtain(mContext);
     }
 
