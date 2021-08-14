@@ -67,4 +67,81 @@
             column="9"/>
     </issue>
 
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `new android.graphics.drawable.AdaptiveIconDrawable`"
+        errorLine1="        AdaptiveIconDrawable drawable = new AdaptiveIconDrawable("
+        errorLine2="                                        ~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/libs/systemui/iconloaderlib/src/com/android/launcher3/icons/GraphicsUtils.java"
+            line="97"
+            column="41"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 26 (current min is 21): `android.graphics.drawable.AdaptiveIconDrawable#getIconMask`"
+        errorLine1="        return new Path(drawable.getIconMask());"
+        errorLine2="                                 ~~~~~~~~~~~">
+        <location
+            file="frameworks/libs/systemui/iconloaderlib/src/com/android/launcher3/icons/GraphicsUtils.java"
+            line="100"
+            column="34"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Method reference requires API level 22 (current min is 21): `ActivityInfo::loadUnbadgedIcon`"
+        errorLine1="            ActivityInfo::loadUnbadgedIcon;"
+        errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/libs/systemui/iconloaderlib/src/com/android/launcher3/icons/IconProvider.java"
+            line="64"
+            column="13"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 24 (current min is 21): `android.os.UserHandle#getUserHandleForUid`"
+        errorLine1="                UserHandle.getUserHandleForUid(info.applicationInfo.uid),"
+        errorLine2="                           ~~~~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/libs/systemui/iconloaderlib/src/com/android/launcher3/icons/IconProvider.java"
+            line="126"
+            column="28"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 21): `android.content.Context#getSystemService`"
+        errorLine1="                        : context.getSystemService(UserManager.class).getUserProfiles()) {"
+        errorLine2="                                  ~~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/libs/systemui/iconloaderlib/src/com/android/launcher3/icons/IconProvider.java"
+            line="252"
+            column="35"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Class requires API level 23 (current min is 21): `android.graphics.drawable.DrawableWrapper`"
+        errorLine1="public class RoundDrawableWrapper extends DrawableWrapper {"
+        errorLine2="                                          ~~~~~~~~~~~~~~~">
+        <location
+            file="frameworks/libs/systemui/iconloaderlib/src/com/android/launcher3/icons/RoundDrawableWrapper.java"
+            line="29"
+            column="43"/>
+    </issue>
+
+    <issue
+        id="NewApi"
+        message="Call requires API level 23 (current min is 21): `new android.graphics.drawable.DrawableWrapper`"
+        errorLine1="        super(dr);"
+        errorLine2="        ~~~~~">
+        <location
+            file="frameworks/libs/systemui/iconloaderlib/src/com/android/launcher3/icons/RoundDrawableWrapper.java"
+            line="36"
+            column="9"/>
+    </issue>
+
 </issues>

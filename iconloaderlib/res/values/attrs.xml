@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
 **
-** Copyright 2018, The Android Open Source Project
+** Copyright 2021, The Android Open Source Project
 **
 ** Licensed under the Apache License, Version 2.0 (the "License");
 ** you may not use this file except in compliance with the License.
@@ -17,8 +17,7 @@
 */
 -->
 <resources>
-    <color name="legacy_icon_background">#FFFFFF</color>
+    <attr name="disabledIconAlpha" format="float" />
+    <attr name="loadingIconColor" format="color" />
 
-    <!-- Yellow 600, used for highlighting "important" conversations in settings & notifications -->
-    <color name="important_conversation">#f9ab00</color>
 </resources>
