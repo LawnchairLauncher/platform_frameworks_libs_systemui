@@ -38,6 +38,7 @@ import android.os.Handler;
 import android.os.LocaleList;
 import android.os.Looper;
 import android.os.Process;
+import android.os.Trace;
 import android.os.UserHandle;
 import android.text.TextUtils;
 import android.util.Log;
@@ -306,6 +307,20 @@ public abstract class BaseIconCache {
             @NonNull ComponentName componentName, @NonNull UserHandle user,
             @NonNull Supplier<T> infoProvider, @NonNull CachingLogic<T> cachingLogic,
             boolean usePackageIcon, boolean useLowResIcon) {
+        return cacheLocked(
+                componentName,
+                user,
+                infoProvider,
+                cachingLogic,
+                null,
+                usePackageIcon,
+                useLowResIcon);
+    }
+
+    protected <T> CacheEntry cacheLocked(
+            @NonNull ComponentName componentName, @NonNull UserHandle user,
+            @NonNull Supplier<T> infoProvider, @NonNull CachingLogic<T> cachingLogic,
+            @Nullable Cursor cursor, boolean usePackageIcon, boolean useLowResIcon) {
         assertWorkerThread();
         ComponentKey cacheKey = new ComponentKey(componentName, user);
         CacheEntry entry = mCache.get(cacheKey);
@@ -318,8 +333,10 @@ public abstract class BaseIconCache {
             // Check the DB first.
             T object = null;
             boolean providerFetchedOnce = false;
-
-            if (!getEntryFromDB(cacheKey, entry, useLowResIcon)) {
+            boolean cacheEntryUpdated = cursor == null
+                    ? getEntryFromDB(cacheKey, entry, useLowResIcon)
+                    : updateTitleAndIcon(cacheKey, entry, cursor, useLowResIcon);
+            if (!cacheEntryUpdated) {
                 object = infoProvider.get();
                 providerFetchedOnce = true;
 
@@ -459,6 +476,7 @@ public abstract class BaseIconCache {
 
     protected boolean getEntryFromDB(ComponentKey cacheKey, CacheEntry entry, boolean lowRes) {
         Cursor c = null;
+        Trace.beginSection("loadIconIndividually");
         try {
             c = mIconDb.query(
                     lowRes ? IconDB.COLUMNS_LOW_RES : IconDB.COLUMNS_HIGH_RES,
@@ -467,26 +485,7 @@ public abstract class BaseIconCache {
                             cacheKey.componentName.flattenToString(),
                             Long.toString(getSerialNumberForUser(cacheKey.user))});
             if (c.moveToNext()) {
-                // Set the alpha to be 255, so that we never have a wrong color
-                entry.bitmap = BitmapInfo.of(LOW_RES_ICON, setColorAlphaBound(c.getInt(0), 255));
-                entry.title = c.getString(1);
-                if (entry.title == null) {
-                    entry.title = "";
-                    entry.contentDescription = "";
-                } else {
-                    entry.contentDescription = mPackageManager.getUserBadgedLabel(
-                            entry.title, cacheKey.user);
-                }
-
-                if (!lowRes) {
-                    try {
-                        entry.bitmap = BitmapInfo.fromByteArray(
-                                c.getBlob(2), entry.bitmap.color, cacheKey.user, this, mContext);
-                    } catch (Exception e) {
-                        return false;
-                    }
-                }
-                return entry.bitmap != null;
+                return updateTitleAndIcon(cacheKey, entry, c, lowRes);
             }
         } catch (SQLiteException e) {
             Log.d(TAG, "Error reading icon cache", e);
@@ -494,8 +493,33 @@ public abstract class BaseIconCache {
             if (c != null) {
                 c.close();
             }
+            Trace.endSection();
         }
         return false;
+    }
+
+    private boolean updateTitleAndIcon(
+            ComponentKey cacheKey, CacheEntry entry, Cursor c, boolean lowRes) {
+        // Set the alpha to be 255, so that we never have a wrong color
+        entry.bitmap = BitmapInfo.of(LOW_RES_ICON, setColorAlphaBound(c.getInt(0), 255));
+        entry.title = c.getString(1);
+        if (entry.title == null) {
+            entry.title = "";
+            entry.contentDescription = "";
+        } else {
+            entry.contentDescription = mPackageManager.getUserBadgedLabel(
+                    entry.title, cacheKey.user);
+        }
+
+        if (!lowRes) {
+            try {
+                entry.bitmap = BitmapInfo.fromByteArray(
+                        c.getBlob(2), entry.bitmap.color, cacheKey.user, this, mContext);
+            } catch (Exception e) {
+                return false;
+            }
+        }
+        return entry.bitmap != null;
     }
 
     /**
@@ -525,9 +549,12 @@ public abstract class BaseIconCache {
         public static final String COLUMN_KEYWORDS = "keywords";
 
         public static final String[] COLUMNS_HIGH_RES = new String[] {
-                IconDB.COLUMN_ICON_COLOR, IconDB.COLUMN_LABEL, IconDB.COLUMN_ICON };
+                IconDB.COLUMN_ICON_COLOR,
+                IconDB.COLUMN_LABEL,
+                IconDB.COLUMN_ICON,
+                COLUMN_COMPONENT};
         public static final String[] COLUMNS_LOW_RES = new String[] {
-                IconDB.COLUMN_ICON_COLOR, IconDB.COLUMN_LABEL };
+                IconDB.COLUMN_ICON_COLOR, IconDB.COLUMN_LABEL, COLUMN_COMPONENT};
 
         public IconDB(Context context, String dbFileName, int iconPixelSize) {
             super(context, dbFileName, (RELEASE_VERSION << 16) + iconPixelSize, TABLE_NAME);
