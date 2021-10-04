@@ -375,6 +375,7 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
             canvas.scale(mInfo.scale, mInfo.scale,
                     bounds.exactCenterX() + mInfo.offset, bounds.exactCenterY() + mInfo.offset);
             canvas.clipPath(mFullDrawable.getIconMask());
+            mForeground.setBounds(bounds);
             mForeground.draw(canvas);
             canvas.restoreToCount(saveCount);
 
