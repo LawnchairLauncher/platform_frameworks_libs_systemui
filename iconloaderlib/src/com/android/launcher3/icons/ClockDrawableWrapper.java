@@ -44,13 +44,17 @@ import android.os.UserHandle;
 import android.util.Log;
 import android.util.TypedValue;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.util.Supplier;
 
 import com.android.launcher3.icons.ThemedIconDrawable.ThemeData;
 
 import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntFunction;
+
+import app.lawnchair.icons.ClockMetadata;
 
 /**
  * Wrapper over {@link AdaptiveIconDrawable} to intercept icon flattening logic for dynamic
@@ -147,30 +151,53 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
         if (metadata == null) {
             return null;
         }
+
         int drawableId = metadata.getInt(ROUND_ICON_METADATA_KEY, 0);
         if (drawableId == 0) {
             return null;
         }
 
-        Drawable drawable = drawableProvider.apply(drawableId).mutate();
+        int hourLayerIndex = metadata.getInt(HOUR_INDEX_METADATA_KEY, INVALID_VALUE);
+        int minuteLayerIndex = metadata.getInt(MINUTE_INDEX_METADATA_KEY, INVALID_VALUE);
+        int secondLayerIndex = metadata.getInt(SECOND_INDEX_METADATA_KEY, INVALID_VALUE);
+
+        int defaultHour = metadata.getInt(DEFAULT_HOUR_METADATA_KEY, 0);
+        int defaultMinute = metadata.getInt(DEFAULT_MINUTE_METADATA_KEY, 0);
+        int defaultSecond = metadata.getInt(DEFAULT_SECOND_METADATA_KEY, 0);
+
+        ClockMetadata clockMetadata = new ClockMetadata(
+                hourLayerIndex,
+                minuteLayerIndex,
+                secondLayerIndex,
+                defaultHour,
+                defaultMinute,
+                defaultSecond
+        );
+
+        return forMeta(appInfo.targetSdkVersion, clockMetadata, () -> drawableProvider.apply(drawableId));
+    }
+
+    public static ClockDrawableWrapper forMeta(int targetSdkVersion,
+            @NonNull ClockMetadata metadata, Supplier<Drawable> drawableProvider) {
+        Drawable drawable = drawableProvider.get().mutate();
         if (!(drawable instanceof AdaptiveIconDrawable)) {
             return null;
         }
 
         ClockDrawableWrapper wrapper =
                 new ClockDrawableWrapper((AdaptiveIconDrawable) drawable);
-        wrapper.mTargetSdkVersion = appInfo.targetSdkVersion;
+        wrapper.mTargetSdkVersion = targetSdkVersion;
         AnimationInfo info = wrapper.mAnimationInfo;
 
         info.baseDrawableState = drawable.getConstantState();
 
-        info.hourLayerIndex = metadata.getInt(HOUR_INDEX_METADATA_KEY, INVALID_VALUE);
-        info.minuteLayerIndex = metadata.getInt(MINUTE_INDEX_METADATA_KEY, INVALID_VALUE);
-        info.secondLayerIndex = metadata.getInt(SECOND_INDEX_METADATA_KEY, INVALID_VALUE);
+        info.hourLayerIndex = metadata.getHourLayerIndex();
+        info.minuteLayerIndex = metadata.getMinuteLayerIndex();
+        info.secondLayerIndex = metadata.getSecondLayerIndex();
 
-        info.defaultHour = metadata.getInt(DEFAULT_HOUR_METADATA_KEY, 0);
-        info.defaultMinute = metadata.getInt(DEFAULT_MINUTE_METADATA_KEY, 0);
-        info.defaultSecond = metadata.getInt(DEFAULT_SECOND_METADATA_KEY, 0);
+        info.defaultHour = metadata.getDefaultHour();
+        info.defaultMinute = metadata.getDefaultMinute();
+        info.defaultSecond = metadata.getDefaultSecond();
 
         LayerDrawable foreground = (LayerDrawable) wrapper.getForeground();
         int layerCount = foreground.getNumberOfLayers();

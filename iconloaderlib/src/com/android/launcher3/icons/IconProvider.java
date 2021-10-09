@@ -123,7 +123,7 @@ public class IconProvider {
      * Loads the icon for the provided LauncherActivityInfo
      */
     public Drawable getIcon(LauncherActivityInfo info, int iconDpi) {
-        return getIconWithOverrides(info.getApplicationInfo().packageName, info.getUser(), iconDpi,
+        return getIconWithOverrides(info.getApplicationInfo().packageName, info.getName(), info.getUser(), iconDpi,
                 () -> info.getIcon(iconDpi));
     }
 
@@ -138,12 +138,12 @@ public class IconProvider {
      * Loads the icon for the provided activity info
      */
     public Drawable getIcon(ActivityInfo info, int iconDpi) {
-        return getIconWithOverrides(info.applicationInfo.packageName,
+        return getIconWithOverrides(info.applicationInfo.packageName, info.name,
                 UserHandle.getUserHandleForUid(info.applicationInfo.uid),
                 iconDpi, () -> loadActivityInfoIcon(info, iconDpi));
     }
 
-    private Drawable getIconWithOverrides(String packageName, UserHandle user, int iconDpi,
+    protected Drawable getIconWithOverrides(String packageName, String component, UserHandle user, int iconDpi,
             Supplier<Drawable> fallback) {
         Drawable icon = null;
 
@@ -275,7 +275,7 @@ public class IconProvider {
     /**
      * @return Today's day of the month, zero-indexed.
      */
-    static int getDay() {
+    public static int getDay() {
         return Calendar.getInstance().get(Calendar.DAY_OF_MONTH) - 1;
     }
 
