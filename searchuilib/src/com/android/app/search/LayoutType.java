@@ -16,10 +16,33 @@
 
 package com.android.app.search;
 
+import androidx.annotation.StringDef;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
 /**
  * Constants to be used with {@link SearchTarget}.
  */
 public class LayoutType {
+
+    @StringDef(value = {
+            ICON_SINGLE_VERTICAL_TEXT,
+            ICON_HORIZONTAL_TEXT,
+            HORIZONTAL_MEDIUM_TEXT,
+            SMALL_ICON_HORIZONTAL_TEXT,
+            THUMBNAIL,
+            ICON_SLICE,
+            WIDGET_PREVIEW,
+            WIDGET_LIVE,
+            PEOPLE_TILE,
+            TEXT_HEADER,
+            DIVIDER,
+            EMPTY_DIVIDER,
+            CALCULATOR,
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface SearchLayoutType {}
 
     //     ------
     //    | icon |
