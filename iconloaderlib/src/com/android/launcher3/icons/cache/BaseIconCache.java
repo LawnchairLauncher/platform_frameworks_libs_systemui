@@ -59,6 +59,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
+import app.lawnchair.icons.CustomAdaptiveIconDrawable;
+
 public abstract class BaseIconCache {
 
     private static final String TAG = "BaseIconCache";
@@ -155,7 +157,8 @@ public abstract class BaseIconCache {
     private Drawable getFullResIcon(Resources resources, int iconId) {
         if (resources != null && iconId != 0) {
             try {
-                return resources.getDrawableForDensity(iconId, mIconDpi);
+                Drawable icon = resources.getDrawableForDensity(iconId, mIconDpi);
+                return CustomAdaptiveIconDrawable.wrap(icon);
             } catch (Resources.NotFoundException e) { }
         }
         return getFullResDefaultActivityIcon(mIconDpi);

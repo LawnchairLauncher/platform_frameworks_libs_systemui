@@ -29,6 +29,8 @@ import androidx.annotation.NonNull;
 
 import com.android.launcher3.icons.BitmapInfo.Extender;
 
+import app.lawnchair.icons.CustomAdaptiveIconDrawable;
+
 /**
  * This class will be moved to androidx library. There shouldn't be any dependency outside
  * this package.
@@ -141,7 +143,7 @@ public class BaseIconFactory implements AutoCloseable {
         mTextPaint.setColor(color);
         Canvas canvas = new Canvas(placeholderBitmap);
         canvas.drawText(placeholder, mIconBitmapSize / 2, mIconBitmapSize * 5 / 8, mTextPaint);
-        AdaptiveIconDrawable drawable = new AdaptiveIconDrawable(
+        AdaptiveIconDrawable drawable = new CustomAdaptiveIconDrawable(
                 new ColorDrawable(PLACEHOLDER_BACKGROUND_COLOR),
                 new BitmapDrawable(mContext.getResources(), placeholderBitmap));
         Bitmap icon = createIconBitmap(drawable, 1f);
@@ -164,7 +166,7 @@ public class BaseIconFactory implements AutoCloseable {
         if (ATLEAST_OREO) {
             float inset = AdaptiveIconDrawable.getExtraInsetFraction();
             inset = inset / (1 + 2 * inset);
-            d = new AdaptiveIconDrawable(new ColorDrawable(Color.BLACK),
+            d = new CustomAdaptiveIconDrawable(new ColorDrawable(Color.BLACK),
                     new InsetDrawable(d, inset, inset, inset, inset));
         }
         return createBadgedIconBitmap(d, user, true);
@@ -295,8 +297,9 @@ public class BaseIconFactory implements AutoCloseable {
 
         if (shrinkNonAdaptiveIcons && ATLEAST_OREO) {
             if (mWrapperIcon == null) {
-                mWrapperIcon = mContext.getDrawable(R.drawable.adaptive_icon_drawable_wrapper)
-                        .mutate();
+                Drawable background = new ColorDrawable(mContext.getColor(R.color.legacy_icon_background));
+                Drawable foreground = new FixedScaleDrawable();
+                mWrapperIcon = new CustomAdaptiveIconDrawable(background, foreground);
             }
             AdaptiveIconDrawable dr = (AdaptiveIconDrawable) mWrapperIcon;
             dr.setBounds(0, 0, 1, 1);
@@ -414,10 +417,11 @@ public class BaseIconFactory implements AutoCloseable {
     }
 
     public static Drawable getFullResDefaultActivityIcon(int iconDpi) {
-        return Resources.getSystem().getDrawableForDensity(
+        Drawable icon = Resources.getSystem().getDrawableForDensity(
                 Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
                         ? android.R.drawable.sym_def_app_icon : android.R.mipmap.sym_def_app_icon,
                 iconDpi);
+        return CustomAdaptiveIconDrawable.wrapNonNull(icon);
     }
 
     /**

@@ -53,6 +53,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import app.lawnchair.icons.CustomAdaptiveIconDrawable;
+
 /**
  * Class to handle icon loading from different packages
  */
@@ -288,8 +290,7 @@ public class IconProvider {
      * Returns a string representation of the current system icon state
      */
     public String getSystemIconState() {
-        return (CONFIG_ICON_MASK_RES_ID == ID_NULL
-                ? "" : mContext.getResources().getString(CONFIG_ICON_MASK_RES_ID))
+        return CustomAdaptiveIconDrawable.sMaskPath
                 + (mThemedIconMap == DISABLED_MAP ? ",no-theme" : ",with-theme");
     }
 

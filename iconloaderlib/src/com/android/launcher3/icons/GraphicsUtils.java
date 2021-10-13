@@ -32,6 +32,8 @@ import androidx.annotation.ColorInt;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import app.lawnchair.icons.CustomAdaptiveIconDrawable;
+
 public class GraphicsUtils {
 
     private static final String TAG = "GraphicsUtils";
@@ -99,7 +101,7 @@ public class GraphicsUtils {
      * Returns the default path to be used by an icon
      */
     public static Path getShapePath(int size) {
-        AdaptiveIconDrawable drawable = new AdaptiveIconDrawable(
+        AdaptiveIconDrawable drawable = new CustomAdaptiveIconDrawable(
                 new ColorDrawable(Color.BLACK), new ColorDrawable(Color.BLACK));
         drawable.setBounds(0, 0, size, size);
         return new Path(drawable.getIconMask());

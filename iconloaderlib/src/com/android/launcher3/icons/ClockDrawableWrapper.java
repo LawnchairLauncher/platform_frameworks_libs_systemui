@@ -55,13 +55,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.IntFunction;
 
 import app.lawnchair.icons.ClockMetadata;
+import app.lawnchair.icons.CustomAdaptiveIconDrawable;
 
 /**
  * Wrapper over {@link AdaptiveIconDrawable} to intercept icon flattening logic for dynamic
  * clock icons
  */
 @TargetApi(Build.VERSION_CODES.O)
-public class ClockDrawableWrapper extends AdaptiveIconDrawable implements BitmapInfo.Extender {
+public class ClockDrawableWrapper extends CustomAdaptiveIconDrawable implements BitmapInfo.Extender {
 
     private static final String TAG = "ClockDrawableWrapper";
 
@@ -135,7 +136,7 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
                         Drawable bg = new ColorDrawable(colors[0]);
                         Drawable fg = themeData.mResources.getDrawable(resId).mutate();
                         fg.setTint(colors[1]);
-                        return new AdaptiveIconDrawable(bg, fg);
+                        return new CustomAdaptiveIconDrawable(bg, fg);
                     });
             if (drawable != null) {
                 return drawable;
@@ -221,7 +222,7 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
     public ClockBitmapInfo getExtendedInfo(Bitmap bitmap, int color,
             BaseIconFactory iconFactory, float normalizationScale, UserHandle user) {
         iconFactory.disableColorExtraction();
-        AdaptiveIconDrawable background = new AdaptiveIconDrawable(
+        AdaptiveIconDrawable background = new CustomAdaptiveIconDrawable(
                 getBackground().getConstantState().newDrawable(), null);
         BitmapInfo bitmapInfo = iconFactory.createBadgedIconBitmap(background,
                 Process.myUserHandle(), mTargetSdkVersion, false);

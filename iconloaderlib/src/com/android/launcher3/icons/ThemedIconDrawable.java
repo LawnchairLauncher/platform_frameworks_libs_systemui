@@ -49,6 +49,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import app.lawnchair.icons.CustomAdaptiveIconDrawable;
+
 /**
  * Class to handle monochrome themed app icons
  */
@@ -72,7 +74,7 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
         colorFg = constantState.colorFg;
 
         mMonochromeIcon = bitmapInfo.mThemeData.loadMonochromeDrawable(colorFg);
-        mBgWrapper = new AdaptiveIconDrawable(new ColorDrawable(colorBg), null);
+        mBgWrapper = new CustomAdaptiveIconDrawable(new ColorDrawable(colorBg), null);
         mBadgeBounds = bitmapInfo.mUserBadge == null ? null :
                 new Rect(0, 0, bitmapInfo.mUserBadge.getWidth(), bitmapInfo.mUserBadge.getHeight());
 
@@ -246,7 +248,7 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
         }
     }
 
-    static class ThemedAdaptiveIcon extends AdaptiveIconDrawable implements Extender {
+    static class ThemedAdaptiveIcon extends CustomAdaptiveIconDrawable implements Extender {
 
         protected final ThemeData mThemeData;
 
@@ -274,7 +276,7 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
             Drawable bg = new ColorDrawable(colors[0]);
             float inset = getExtraInsetFraction() / (1 + 2 * getExtraInsetFraction());
             Drawable fg = new InsetDrawable(mThemeData.loadMonochromeDrawable(colors[1]), inset);
-            return new AdaptiveIconDrawable(bg, fg);
+            return new CustomAdaptiveIconDrawable(bg, fg);
         }
     }
 
