@@ -30,6 +30,7 @@ import androidx.annotation.NonNull;
 import com.android.launcher3.icons.BitmapInfo.Extender;
 
 import app.lawnchair.icons.CustomAdaptiveIconDrawable;
+import app.lawnchair.icons.IconPreferencesKt;
 
 /**
  * This class will be moved to androidx library. There shouldn't be any dependency outside
@@ -290,6 +291,10 @@ public class BaseIconFactory implements AutoCloseable {
 
     private Drawable normalizeAndWrapToAdaptiveIcon(@NonNull Drawable icon,
             boolean shrinkNonAdaptiveIcons, RectF outIconBounds, float[] outScale) {
+        if (shrinkNonAdaptiveIcons) {
+            shrinkNonAdaptiveIcons = IconPreferencesKt.shouldWrapAdaptive(mContext);
+        }
+
         if (icon == null) {
             return null;
         }
@@ -306,13 +311,15 @@ public class BaseIconFactory implements AutoCloseable {
             boolean[] outShape = new boolean[1];
             scale = getNormalizer().getScale(icon, outIconBounds, dr.getIconMask(), outShape);
             if (!(icon instanceof AdaptiveIconDrawable) && !outShape[0]) {
+                int wrapperBackgroundColor = IconPreferencesKt.getWrapperBackgroundColor(mContext, icon);
+
                 FixedScaleDrawable fsd = ((FixedScaleDrawable) dr.getForeground());
                 fsd.setDrawable(icon);
                 fsd.setScale(scale);
                 icon = dr;
                 scale = getNormalizer().getScale(icon, outIconBounds, null, null);
 
-                ((ColorDrawable) dr.getBackground()).setColor(mWrapperBackgroundColor);
+                ((ColorDrawable) dr.getBackground()).setColor(wrapperBackgroundColor);
             }
         } else {
             scale = getNormalizer().getScale(icon, outIconBounds, null, null);
