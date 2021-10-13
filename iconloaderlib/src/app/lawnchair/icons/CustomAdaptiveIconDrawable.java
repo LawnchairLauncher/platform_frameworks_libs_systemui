@@ -37,6 +37,7 @@ import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.util.DisplayMetrics;
+import android.util.Log;
 
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
@@ -93,6 +94,7 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
     private static final float DEFAULT_VIEW_PORT_SCALE = 1f / (1 + 2 * EXTRA_INSET_PERCENTAGE);
 
 
+    public static boolean sInitialized = false;
     public static String sMaskPath = "M50 0C77.6 0 100 22.4 100 50C100 77.6 77.6 100 50 100C22.4 100 0 77.6 0 50C0 22.4 22.4 0 50 0Z";
 
     /**
@@ -146,6 +148,9 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
      */
     CustomAdaptiveIconDrawable(@Nullable LayerState state, @Nullable Resources res) {
         super(null, null);
+        if (!sInitialized) {
+            Log.e("CustomAdaptiveIconDrawable", "shape not initialized", new Throwable());
+        }
         mLayerState = createConstantState(state, res);
 
         sMask = PathParser.createPathFromPathData(sMaskPath);
