@@ -290,7 +290,7 @@ public class IconProvider {
      * Returns a string representation of the current system icon state
      */
     public String getSystemIconState() {
-        return CustomAdaptiveIconDrawable.sMaskPath
+        return CustomAdaptiveIconDrawable.sMaskId
                 + (mThemedIconMap == DISABLED_MAP ? ",no-theme" : ",with-theme");
     }
 

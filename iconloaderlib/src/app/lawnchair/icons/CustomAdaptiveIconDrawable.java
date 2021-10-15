@@ -94,13 +94,15 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
     private static final float DEFAULT_VIEW_PORT_SCALE = 1f / (1 + 2 * EXTRA_INSET_PERCENTAGE);
 
 
+    private static final String sMaskPath = "M50 0C77.6 0 100 22.4 100 50C100 77.6 77.6 100 50 100C22.4 100 0 77.6 0 50C0 22.4 22.4 0 50 0Z";
+    
     public static boolean sInitialized = false;
-    public static String sMaskPath = "M50 0C77.6 0 100 22.4 100 50C100 77.6 77.6 100 50 100C22.4 100 0 77.6 0 50C0 22.4 22.4 0 50 0Z";
+    public static String sMaskId;
 
     /**
      * Clip path defined in R.string.config_icon_mask.
      */
-    private static Path sMask;
+    public static Path sMask;
 
     /**
      * Scaled mask based on the view bounds.
@@ -153,7 +155,9 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
         }
         mLayerState = createConstantState(state, res);
 
-        sMask = PathParser.createPathFromPathData(sMaskPath);
+        if (sMask == null) {
+            sMask = PathParser.createPathFromPathData(sMaskPath);
+        }
         mMask = new Path(sMask);
         mMaskScaleOnly = new Path(mMask);
         mMaskMatrix = new Matrix();
