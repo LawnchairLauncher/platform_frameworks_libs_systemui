@@ -39,6 +39,7 @@ import android.os.UserHandle;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
+import androidx.arch.core.util.Function;
 
 import com.android.launcher3.icons.BitmapInfo.Extender;
 import com.android.launcher3.icons.cache.BaseIconCache;
@@ -284,6 +285,9 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
      * Get an int array representing background and foreground colors for themed icons
      */
     public static int[] getColors(Context context) {
+        if (COLORS_LOADER != null) {
+            return COLORS_LOADER.apply(context);
+        }
         Resources res = context.getResources();
         int[] colors = new int[2];
         if ((res.getConfiguration().uiMode & UI_MODE_NIGHT_MASK) == UI_MODE_NIGHT_YES) {
@@ -295,4 +299,6 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
         }
         return colors;
     }
+
+    public static Function<Context, int[]> COLORS_LOADER;
 }
