@@ -81,12 +81,12 @@ public class IconProvider {
     private Map<String, ThemeData> mThemedIconMap;
 
     private final Context mContext;
-    private final ComponentName mCalendar;
-    private final ComponentName mClock;
+    protected final ComponentName mCalendar;
+    protected final ComponentName mClock;
 
-    static final int ICON_TYPE_DEFAULT = 0;
-    static final int ICON_TYPE_CALENDAR = 1;
-    static final int ICON_TYPE_CLOCK = 2;
+    protected static final int ICON_TYPE_DEFAULT = 0;
+    protected static final int ICON_TYPE_CALENDAR = 1;
+    protected static final int ICON_TYPE_CLOCK = 2;
 
     public IconProvider(Context context) {
         this(context, false);
@@ -186,7 +186,7 @@ public class IconProvider {
         return icon;
     }
 
-    private Map<String, ThemeData> getThemedIconMap() {
+    protected Map<String, ThemeData> getThemedIconMap() {
         if (mThemedIconMap != null) {
             return mThemedIconMap;
         }
