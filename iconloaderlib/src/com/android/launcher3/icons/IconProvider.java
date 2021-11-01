@@ -64,9 +64,9 @@ public class IconProvider {
     public static final int CONFIG_ICON_MASK_RES_ID = Resources.getSystem().getIdentifier(
             "config_icon_mask", "string", "android");
 
-    private static final String TAG_ICON = "icon";
-    private static final String ATTR_PACKAGE = "package";
-    private static final String ATTR_DRAWABLE = "drawable";
+    protected static final String TAG_ICON = "icon";
+    protected static final String ATTR_PACKAGE = "package";
+    protected static final String ATTR_DRAWABLE = "drawable";
 
     private static final String TAG = "IconProvider";
     private static final boolean DEBUG = false;
@@ -74,11 +74,11 @@ public class IconProvider {
     private static final String ICON_METADATA_KEY_PREFIX = ".dynamic_icons";
 
     private static final String SYSTEM_STATE_SEPARATOR = " ";
-    private static final String THEMED_ICON_MAP_FILE = "grayscale_icon_map";
+    protected static final String THEMED_ICON_MAP_FILE = "grayscale_icon_map";
 
     private static final Map<String, ThemeData> DISABLED_MAP = Collections.emptyMap();
 
-    private Map<String, ThemeData> mThemedIconMap;
+    protected Map<String, ThemeData> mThemedIconMap;
 
     private final Context mContext;
     protected final ComponentName mCalendar;
