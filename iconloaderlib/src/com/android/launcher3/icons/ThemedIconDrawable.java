@@ -31,6 +31,7 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.drawable.AdaptiveIconDrawable;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.InsetDrawable;
@@ -227,25 +228,35 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
         }
 
         public Drawable wrapDrawable(Drawable original, int iconType) {
-            if (!(original instanceof AdaptiveIconDrawable)) {
+            if (!(original instanceof AdaptiveIconDrawable) && !(original instanceof BitmapDrawable)) {
                 return original;
             }
-            AdaptiveIconDrawable aid = (AdaptiveIconDrawable) original;
             String resourceType = mResources.getResourceTypeName(mResID);
             if (iconType == ICON_TYPE_CALENDAR && "array".equals(resourceType)) {
                 TypedArray ta = mResources.obtainTypedArray(mResID);
                 int id = ta.getResourceId(IconProvider.getDay(), ID_NULL);
                 ta.recycle();
                 return id == ID_NULL ? original
-                        : new ThemedAdaptiveIcon(aid, new ThemeData(mResources, id));
+                        : wrapWithThemeData(original, new ThemeData(mResources, id));
             } else if (iconType == ICON_TYPE_CLOCK && "array".equals(resourceType)) {
-                ((ClockDrawableWrapper) original).mThemeData = this;
+                if (original instanceof ClockDrawableWrapper) {
+                    ((ClockDrawableWrapper) original).mThemeData = this;
+                }
                 return original;
             } else if ("drawable".equals(resourceType)) {
-                return new ThemedAdaptiveIcon(aid, this);
+                return wrapWithThemeData(original, this);
             } else {
                 return original;
             }
+        }
+
+        private Drawable wrapWithThemeData(Drawable original, ThemeData themeData) {
+            if (original instanceof AdaptiveIconDrawable) {
+                return new ThemedAdaptiveIcon((AdaptiveIconDrawable) original, themeData);
+            } else if (original instanceof BitmapDrawable) {
+                return new ThemedBitmapIcon(mResources, (BitmapDrawable) original, themeData);
+            }
+            throw new IllegalArgumentException("original must be AdaptiveIconDrawable or BitmapDrawable");
         }
     }
 
@@ -276,6 +287,39 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
             int[] colors = getColors(context);
             Drawable bg = new ColorDrawable(colors[0]);
             float inset = getExtraInsetFraction() / (1 + 2 * getExtraInsetFraction());
+            Drawable fg = new InsetDrawable(mThemeData.loadMonochromeDrawable(colors[1]), inset);
+            return new CustomAdaptiveIconDrawable(bg, fg);
+        }
+    }
+
+    static class ThemedBitmapIcon extends BitmapDrawable implements Extender {
+
+        protected final ThemeData mThemeData;
+
+        public ThemedBitmapIcon(Resources res, BitmapDrawable parent, ThemeData themeData) {
+            super(res, parent.getBitmap());
+            mThemeData = themeData;
+        }
+
+        @Override
+        public BitmapInfo getExtendedInfo(Bitmap bitmap, int color, BaseIconFactory iconFactory,
+                                          float normalizationScale, UserHandle user) {
+            Bitmap userBadge = Process.myUserHandle().equals(user)
+                    ? null : iconFactory.getUserBadgeBitmap(user);
+            return new ThemedBitmapInfo(bitmap, color, mThemeData, normalizationScale, userBadge);
+        }
+
+        @Override
+        public void drawForPersistence(Canvas canvas) {
+            draw(canvas);
+        }
+
+        @Override
+        public Drawable getThemedDrawable(Context context) {
+            int[] colors = getColors(context);
+            Drawable bg = new ColorDrawable(colors[0]);
+            float extraInsetFraction = CustomAdaptiveIconDrawable.getExtraInsetFraction();
+            float inset = extraInsetFraction / (1 + 2 * extraInsetFraction);
             Drawable fg = new InsetDrawable(mThemeData.loadMonochromeDrawable(colors[1]), inset);
             return new CustomAdaptiveIconDrawable(bg, fg);
         }
