@@ -52,6 +52,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import app.lawnchair.icons.CustomAdaptiveIconDrawable;
+import app.lawnchair.icons.ExtendedBitmapDrawable;
 
 /**
  * Class to handle monochrome themed app icons
@@ -292,12 +293,12 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
         }
     }
 
-    static class ThemedBitmapIcon extends BitmapDrawable implements Extender {
+    static class ThemedBitmapIcon extends ExtendedBitmapDrawable implements Extender {
 
         protected final ThemeData mThemeData;
 
         public ThemedBitmapIcon(Resources res, BitmapDrawable parent, ThemeData themeData) {
-            super(res, parent.getBitmap());
+            super(res, parent.getBitmap(), ExtendedBitmapDrawable.isFromIconPack(parent));
             mThemeData = themeData;
         }
 

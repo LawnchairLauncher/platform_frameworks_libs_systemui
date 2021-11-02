@@ -30,6 +30,7 @@ import androidx.annotation.NonNull;
 import com.android.launcher3.icons.BitmapInfo.Extender;
 
 import app.lawnchair.icons.CustomAdaptiveIconDrawable;
+import app.lawnchair.icons.ExtendedBitmapDrawable;
 import app.lawnchair.icons.IconPreferencesKt;
 
 /**
@@ -292,7 +293,8 @@ public class BaseIconFactory implements AutoCloseable {
     private Drawable normalizeAndWrapToAdaptiveIcon(@NonNull Drawable icon,
             boolean shrinkNonAdaptiveIcons, RectF outIconBounds, float[] outScale) {
         if (shrinkNonAdaptiveIcons) {
-            shrinkNonAdaptiveIcons = IconPreferencesKt.shouldWrapAdaptive(mContext);
+            boolean isFromIconPack = ExtendedBitmapDrawable.isFromIconPack(icon);
+            shrinkNonAdaptiveIcons = !isFromIconPack && IconPreferencesKt.shouldWrapAdaptive(mContext);
         }
 
         if (icon == null) {
