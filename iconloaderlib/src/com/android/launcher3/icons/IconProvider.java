@@ -43,6 +43,9 @@ import android.text.TextUtils;
 import android.util.ArrayMap;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+
 import com.android.launcher3.icons.ThemedIconDrawable.ThemeData;
 import com.android.launcher3.util.SafeCloseable;
 
@@ -66,6 +69,7 @@ public class IconProvider {
 
     protected static final String TAG_ICON = "icon";
     protected static final String ATTR_PACKAGE = "package";
+    protected static final String ATTR_COMPONENT = "component";
     protected static final String ATTR_DRAWABLE = "drawable";
 
     private static final String TAG = "IconProvider";
@@ -78,7 +82,7 @@ public class IconProvider {
 
     private static final Map<String, ThemeData> DISABLED_MAP = Collections.emptyMap();
 
-    protected Map<String, ThemeData> mThemedIconMap;
+    private Map<String, ThemeData> mThemedIconMap;
 
     private final Context mContext;
     protected final ComponentName mCalendar;
@@ -164,7 +168,7 @@ public class IconProvider {
             iconType = ICON_TYPE_DEFAULT;
         }
 
-        ThemeData td = getThemedIconMap().get(packageName);
+        ThemeData td = getThemeData(packageName, component);
         return td != null ? td.wrapDrawable(icon, iconType) : icon;
     }
 
@@ -186,7 +190,21 @@ public class IconProvider {
         return icon;
     }
 
-    protected Map<String, ThemeData> getThemedIconMap() {
+    protected boolean isThemeEnabled() {
+        return mThemedIconMap != DISABLED_MAP;
+    }
+
+    @Nullable
+    protected final ThemeData getThemeData(@NonNull String packageName, @NonNull String component) {
+        return getThemeData(new ComponentName(packageName, component));
+    }
+
+    @Nullable
+    protected ThemeData getThemeData(@NonNull ComponentName componentName) {
+        return getThemedIconMap().get(componentName.getPackageName());
+    }
+
+    private Map<String, ThemeData> getThemedIconMap() {
         if (mThemedIconMap != null) {
             return mThemedIconMap;
         }
@@ -291,7 +309,7 @@ public class IconProvider {
      */
     public String getSystemIconState() {
         return CustomAdaptiveIconDrawable.sMaskId
-                + (mThemedIconMap == DISABLED_MAP ? ",no-theme" : ",with-theme");
+                + (isThemeEnabled() ? ",with-theme" : ",no-theme");
     }
 
     /**
