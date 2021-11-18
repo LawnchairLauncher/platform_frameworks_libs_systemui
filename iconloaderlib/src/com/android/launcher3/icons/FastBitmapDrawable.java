@@ -253,22 +253,7 @@ public class FastBitmapDrawable extends Drawable {
 
     private ColorFilter getDisabledColorFilter() {
         if (sDisabledFColorFilter == null) {
-            ColorMatrix tempBrightnessMatrix = new ColorMatrix();
-            ColorMatrix tempFilterMatrix = new ColorMatrix();
-
-            tempFilterMatrix.setSaturation(1f - DISABLED_DESATURATION);
-            float scale = 1 - DISABLED_BRIGHTNESS;
-            int brightnessI =   (int) (255 * DISABLED_BRIGHTNESS);
-            float[] mat = tempBrightnessMatrix.getArray();
-            mat[0] = scale;
-            mat[6] = scale;
-            mat[12] = scale;
-            mat[4] = brightnessI;
-            mat[9] = brightnessI;
-            mat[14] = brightnessI;
-            mat[18] = mDisabledAlpha;
-            tempFilterMatrix.preConcat(tempBrightnessMatrix);
-            sDisabledFColorFilter = new ColorMatrixColorFilter(tempFilterMatrix);
+            sDisabledFColorFilter = getDisabledFColorFilter(mDisabledAlpha);
         }
         return sDisabledFColorFilter;
     }
@@ -284,6 +269,25 @@ public class FastBitmapDrawable extends Drawable {
     @Override
     public ConstantState getConstantState() {
         return new FastBitmapConstantState(mBitmap, mIconColor, mIsDisabled);
+    }
+
+    public static ColorFilter getDisabledFColorFilter(float disabledAlpha) {
+        ColorMatrix tempBrightnessMatrix = new ColorMatrix();
+        ColorMatrix tempFilterMatrix = new ColorMatrix();
+
+        tempFilterMatrix.setSaturation(1f - DISABLED_DESATURATION);
+        float scale = 1 - DISABLED_BRIGHTNESS;
+        int brightnessI =   (int) (255 * DISABLED_BRIGHTNESS);
+        float[] mat = tempBrightnessMatrix.getArray();
+        mat[0] = scale;
+        mat[6] = scale;
+        mat[12] = scale;
+        mat[4] = brightnessI;
+        mat[9] = brightnessI;
+        mat[14] = brightnessI;
+        mat[18] = disabledAlpha;
+        tempFilterMatrix.preConcat(tempBrightnessMatrix);
+        return new ColorMatrixColorFilter(tempBrightnessMatrix);
     }
 
     protected static class FastBitmapConstantState extends ConstantState {
