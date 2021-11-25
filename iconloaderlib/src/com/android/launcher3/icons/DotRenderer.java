@@ -50,8 +50,12 @@ public class DotRenderer {
     private final float[] mRightDotPosition;
     private final float[] mLeftDotPosition;
 
+    private static final int MIN_DOT_SIZE = 1;
     public DotRenderer(int iconSizePx, Path iconShapePath, int pathSize) {
         int size = Math.round(SIZE_PERCENTAGE * iconSizePx);
+        if (size <= 0) {
+            size = MIN_DOT_SIZE;
+        }
         ShadowGenerator.Builder builder = new ShadowGenerator.Builder(Color.TRANSPARENT);
         builder.ambientShadowAlpha = 88;
         mBackgroundWithShadow = builder.setupBlurForSize(size).createPill(size, size);
