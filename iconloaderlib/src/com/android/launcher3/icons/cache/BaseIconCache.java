@@ -265,7 +265,14 @@ public abstract class BaseIconCache {
         // (e.g. fallback icon, default icon). So we drop here since there's no point in caching
         // an empty entry.
         if (entry.bitmap.isNullOrLowRes()) return;
-        entry.title = cachingLogic.getLabel(object);
+
+        CharSequence entryTitle = cachingLogic.getLabel(object);
+        if (entryTitle == null) {
+            Log.d(TAG, "No label returned from caching logic instance: " + cachingLogic);
+            return;
+        }
+        entry.title = entryTitle;
+
         entry.contentDescription = mPackageManager.getUserBadgedLabel(entry.title, user);
         if (cachingLogic.addToMemCache()) mCache.put(key, entry);
 
