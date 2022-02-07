@@ -230,7 +230,7 @@ public class IconProvider {
                         String pkg = parser.getAttributeValue(null, ATTR_PACKAGE);
                         int iconId = parser.getAttributeResourceValue(null, ATTR_DRAWABLE, 0);
                         if (iconId != 0 && !TextUtils.isEmpty(pkg)) {
-                            map.put(pkg, new ThemeData(res, iconId));
+                            map.put(pkg, new ThemeData(res, mContext.getPackageName(), iconId));
                         }
                     }
                 }

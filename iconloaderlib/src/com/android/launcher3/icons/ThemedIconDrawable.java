@@ -24,6 +24,7 @@ import static com.android.launcher3.icons.IconProvider.ICON_TYPE_CALENDAR;
 import static com.android.launcher3.icons.IconProvider.ICON_TYPE_CLOCK;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
@@ -166,8 +167,9 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
                     getExpectedBitmapSize(icon) + 3 + resName.length());
             try {
                 DataOutputStream dos = new DataOutputStream(out);
-                dos.writeByte(TYPE_THEMED);
+                dos.writeByte(TYPE_THEMED_V2);
                 dos.writeFloat(mNormalizationScale);
+                dos.writeUTF(mThemeData.mPackageName);
                 dos.writeUTF(resName);
                 icon.compress(Bitmap.CompressFormat.PNG, 100, dos);
 
@@ -187,9 +189,16 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
                 dis.readByte(); // type
                 float normalizationScale = dis.readFloat();
 
+                String packageName = dis.readUTF();
+                Resources res;
+                if (packageName.equals(context.getPackageName())) {
+                    res = context.getResources();
+                } else {
+                    res = context.getPackageManager().getResourcesForApplication(packageName);
+                }
+
                 String resName = dis.readUTF();
-                int resId = context.getResources()
-                        .getIdentifier(resName, "drawable", context.getPackageName());
+                int resId = res.getIdentifier(resName, "drawable", packageName);
                 if (resId == ID_NULL) {
                     return null;
                 }
@@ -201,11 +210,11 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
                     }
                 }
 
-                ThemeData themeData = new ThemeData(context.getResources(), resId);
+                ThemeData themeData = new ThemeData(res, packageName, resId);
                 Bitmap icon = BitmapFactory.decodeStream(dis, null, decodeOptions);
                 return new ThemedBitmapInfo(icon, color, themeData, normalizationScale,
                         userBadgeBitmap);
-            } catch (IOException e) {
+            } catch (IOException | PackageManager.NameNotFoundException e) {
                 return null;
             }
         }
@@ -214,10 +223,12 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
     public static class ThemeData {
 
         final Resources mResources;
+        final String mPackageName;
         final int mResID;
 
-        public ThemeData(Resources resources, int resID) {
+        public ThemeData(Resources resources, String packageName, int resID) {
             mResources = resources;
+            mPackageName = packageName;
             mResID = resID;
         }
 
@@ -238,7 +249,7 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
                 int id = ta.getResourceId(IconProvider.getDay(), ID_NULL);
                 ta.recycle();
                 return id == ID_NULL ? original
-                        : wrapWithThemeData(original, new ThemeData(mResources, id));
+                        : wrapWithThemeData(original, new ThemeData(mResources, mPackageName, id));
             } else if (iconType == ICON_TYPE_CLOCK && "array".equals(resourceType)) {
                 if (original instanceof ClockDrawableWrapper) {
                     ((ClockDrawableWrapper) original).mThemeData = this;
