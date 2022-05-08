@@ -25,10 +25,8 @@ import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.ColorFilter;
 import android.graphics.Paint;
-import android.graphics.PorterDuff;
 import android.graphics.PorterDuff.Mode;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
@@ -401,10 +399,13 @@ public class ClockDrawableWrapper extends CustomAdaptiveIconDrawable implements 
             // prepare and draw the foreground
             mInfo.animInfo.applyTime(mTime, mForeground);
 
+            int saveCount = canvas.save();
             canvas.scale(mInfo.scale, mInfo.scale,
                     bounds.exactCenterX() + mInfo.offset, bounds.exactCenterY() + mInfo.offset);
             canvas.clipPath(mFullDrawable.getIconMask());
+            mForeground.setBounds(bounds);
             mForeground.draw(canvas);
+            canvas.restoreToCount(saveCount);
 
             reschedule();
         }
