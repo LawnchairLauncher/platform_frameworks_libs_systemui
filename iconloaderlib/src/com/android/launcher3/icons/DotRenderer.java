@@ -60,9 +60,11 @@ public class DotRenderer {
 
     private final Rect mTextRect = new Rect();
     private final boolean mDisplayCount;
+    private final int mColor;
 
-    public DotRenderer(int iconSizePx, Path iconShapePath, int pathSize, Boolean displayCount, Typeface typeface) {
+    public DotRenderer(int iconSizePx, Path iconShapePath, int pathSize, Boolean displayCount, Typeface typeface, int color) {
         mDisplayCount = displayCount;
+        mColor = color;
 
         int size = Math.round((displayCount ? SIZE_PERCENTAGE_WITH_COUNT : SIZE_PERCENTAGE) * iconSizePx);
 
@@ -137,14 +139,22 @@ public class DotRenderer {
         canvas.translate(dotCenterX + offsetX, dotCenterY + offsetY);
         canvas.scale(params.scale, params.scale);
 
+        // Color
+        int dotColor;
+        if (mColor != 0) {
+            dotColor = mColor;
+        } else {
+            dotColor = params.color;
+        }
+
         mCirclePaint.setColor(Color.BLACK);
         canvas.drawBitmap(mBackgroundWithShadow, mBitmapOffset, mBitmapOffset, mCirclePaint);
-        mCirclePaint.setColor(params.color);
+        mCirclePaint.setColor(dotColor);
         canvas.drawCircle(0, 0, mCircleRadius, mCirclePaint);
 
         if (mDisplayCount && numNotifications > 0) {
             // Draw the numNotifications text
-            mTextPaint.setColor(getCounterTextColor(params.color));
+            mTextPaint.setColor(getCounterTextColor(dotColor));
             String text = String.valueOf(Math.min(numNotifications, MAX_COUNT));
             mTextPaint.getTextBounds(text, 0, text.length(), mTextRect);
             float x = (-mTextRect.width() / 2f - mTextRect.left) * getAdjustment(numNotifications);
