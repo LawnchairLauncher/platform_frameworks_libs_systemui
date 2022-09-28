@@ -159,7 +159,7 @@ public class DotRenderer {
 
         if (mDisplayCount && numNotifications > 0) {
             // Draw the numNotifications text
-            int counterColor;
+            final int counterColor;
             if (mCounterColor != 0) {
                 counterColor = mCounterColor;
             } else {
