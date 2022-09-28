@@ -30,6 +30,7 @@ import android.graphics.Typeface;
 import android.util.Log;
 import android.view.ViewDebug;
 
+import androidx.annotation.ColorInt;
 import androidx.core.graphics.ColorUtils;
 import androidx.palette.graphics.Palette;
 
@@ -60,10 +61,12 @@ public class DotRenderer {
 
     private final Rect mTextRect = new Rect();
     private final boolean mDisplayCount;
+    @ColorInt
     private final int mColor;
+    @ColorInt
     private final int mCounterColor;
 
-    public DotRenderer(int iconSizePx, Path iconShapePath, int pathSize, Boolean displayCount, Typeface typeface, int color, int counterColor) {
+    public DotRenderer(int iconSizePx, Path iconShapePath, int pathSize, Boolean displayCount, Typeface typeface, @ColorInt int color, @ColorInt int counterColor) {
         mDisplayCount = displayCount;
         mColor = color;
         mCounterColor = counterColor;
