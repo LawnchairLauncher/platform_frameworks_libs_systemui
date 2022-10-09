@@ -42,6 +42,7 @@ import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.arch.core.util.Function;
+import androidx.core.graphics.ColorUtils;
 
 import com.android.launcher3.icons.BitmapInfo.Extender;
 import com.android.launcher3.icons.cache.BaseIconCache;
@@ -54,6 +55,7 @@ import java.io.IOException;
 
 import app.lawnchair.icons.CustomAdaptiveIconDrawable;
 import app.lawnchair.icons.ExtendedBitmapDrawable;
+import app.lawnchair.icons.IconPreferencesKt;
 
 /**
  * Class to handle monochrome themed app icons
@@ -150,7 +152,7 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
 
         @Override
         public FastBitmapDrawable newThemedIcon(Context context) {
-            int[] colors = getColors(context);
+            int[] colors = getColorsWithBackground(context);
             FastBitmapDrawable drawable = new ThemedConstantState(this, colors[0], colors[1], false)
                     .newDrawable();
             drawable.mDisabledAlpha = GraphicsUtils.getFloat(context, R.attr.disabledIconAlpha, 1f);
@@ -296,7 +298,7 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
 
         @Override
         public Drawable getThemedDrawable(Context context) {
-            int[] colors = getColors(context);
+            int[] colors = getColorsWithBackground(context);
             Drawable bg = new ColorDrawable(colors[0]);
             float inset = getExtraInsetFraction() / (1 + 2 * getExtraInsetFraction());
             Drawable fg = new InsetDrawable(mThemeData.loadMonochromeDrawable(colors[1]), inset);
@@ -328,13 +330,25 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
 
         @Override
         public Drawable getThemedDrawable(Context context) {
-            int[] colors = getColors(context);
+            int[] colors = getColorsWithBackground(context);
             Drawable bg = new ColorDrawable(colors[0]);
             float extraInsetFraction = CustomAdaptiveIconDrawable.getExtraInsetFraction();
             float inset = extraInsetFraction / (1 + 2 * extraInsetFraction);
             Drawable fg = new InsetDrawable(mThemeData.loadMonochromeDrawable(colors[1]), inset);
             return new CustomAdaptiveIconDrawable(bg, fg);
         }
+    }
+    public static int[] getColorsWithBackground(Context context) {
+        int[] result = getColors(context);
+        if(!IconPreferencesKt.shouldTransparentBGIcons(context)){
+            return result;
+        }
+        if ((context.getResources().getConfiguration().uiMode & UI_MODE_NIGHT_MASK) != UI_MODE_NIGHT_YES) {
+            //Get Composite color for light mode or non dark mode
+            result[1] = ColorUtils.compositeColors(context.getResources().getColor(android.R.color.black),result[1]);
+        }
+        result[0]=0;
+        return result;
     }
 
     /**
