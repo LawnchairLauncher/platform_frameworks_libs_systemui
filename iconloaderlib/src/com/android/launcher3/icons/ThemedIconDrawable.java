@@ -152,7 +152,7 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
 
         @Override
         public FastBitmapDrawable newThemedIcon(Context context) {
-            int[] colors = getColorsWithBackground(context);
+            int[] colors = getThemedColors(context);
             FastBitmapDrawable drawable = new ThemedConstantState(this, colors[0], colors[1], false)
                     .newDrawable();
             drawable.mDisabledAlpha = GraphicsUtils.getFloat(context, R.attr.disabledIconAlpha, 1f);
@@ -298,7 +298,7 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
 
         @Override
         public Drawable getThemedDrawable(Context context) {
-            int[] colors = getColorsWithBackground(context);
+            int[] colors = getThemedColors(context);
             Drawable bg = new ColorDrawable(colors[0]);
             float inset = getExtraInsetFraction() / (1 + 2 * getExtraInsetFraction());
             Drawable fg = new InsetDrawable(mThemeData.loadMonochromeDrawable(colors[1]), inset);
@@ -330,7 +330,7 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
 
         @Override
         public Drawable getThemedDrawable(Context context) {
-            int[] colors = getColorsWithBackground(context);
+            int[] colors = getThemedColors(context);
             Drawable bg = new ColorDrawable(colors[0]);
             float extraInsetFraction = CustomAdaptiveIconDrawable.getExtraInsetFraction();
             float inset = extraInsetFraction / (1 + 2 * extraInsetFraction);
@@ -338,7 +338,7 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
             return new CustomAdaptiveIconDrawable(bg, fg);
         }
     }
-    public static int[] getColorsWithBackground(Context context) {
+    public static int[] getThemedColors(Context context) {
         int[] result = getColors(context);
         if(!IconPreferencesKt.shouldTransparentBGIcons(context)){
             return result;
