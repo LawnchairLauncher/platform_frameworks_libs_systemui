@@ -25,6 +25,7 @@ import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.ColorFilter;
 import android.graphics.Paint;
 import android.graphics.PorterDuff.Mode;
@@ -54,6 +55,7 @@ import java.util.function.IntFunction;
 
 import app.lawnchair.icons.ClockMetadata;
 import app.lawnchair.icons.CustomAdaptiveIconDrawable;
+import app.lawnchair.icons.IconPreferencesKt;
 
 /**
  * Wrapper over {@link AdaptiveIconDrawable} to intercept icon flattening logic for dynamic
@@ -332,6 +334,9 @@ public class ClockDrawableWrapper extends CustomAdaptiveIconDrawable implements 
                 if (wrapper != null) {
                     int[] colors = getColors(context);
                     ColorFilter bgFilter = new PorterDuffColorFilter(colors[0], Mode.SRC_ATOP);
+                    if(!IconPreferencesKt.shouldTransparentBGIcons(context)){
+                        mFlattenedBackground.eraseColor(Color.TRANSPARENT);
+                    }
                     return new ClockBitmapInfo(icon, colors[1], scale,
                             wrapper.mAnimationInfo, mFlattenedBackground, themeData, bgFilter)
                             .newIcon(context);
