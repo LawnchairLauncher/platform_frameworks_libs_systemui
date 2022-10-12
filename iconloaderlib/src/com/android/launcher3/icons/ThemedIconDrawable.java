@@ -18,7 +18,6 @@ package com.android.launcher3.icons;
 import static android.content.res.Configuration.UI_MODE_NIGHT_MASK;
 import static android.content.res.Configuration.UI_MODE_NIGHT_YES;
 import static android.content.res.Resources.ID_NULL;
-
 import static com.android.launcher3.icons.GraphicsUtils.getExpectedBitmapSize;
 import static com.android.launcher3.icons.IconProvider.ICON_TYPE_CALENDAR;
 import static com.android.launcher3.icons.IconProvider.ICON_TYPE_CLOCK;
@@ -40,6 +39,7 @@ import android.os.Process;
 import android.os.UserHandle;
 import android.util.Log;
 
+import androidx.annotation.ColorInt;
 import androidx.annotation.Nullable;
 import androidx.arch.core.util.Function;
 import androidx.core.graphics.ColorUtils;
@@ -338,22 +338,25 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
             return new CustomAdaptiveIconDrawable(bg, fg);
         }
     }
+
+    @ColorInt
     public static int[] getThemedColors(Context context) {
-        int[] result = getColors(context);
-        if(!IconPreferencesKt.shouldTransparentBGIcons(context)){
+        final int[] result = getColors(context);
+        if (!IconPreferencesKt.shouldTransparentBGIcons(context)) {
             return result;
         }
         if ((context.getResources().getConfiguration().uiMode & UI_MODE_NIGHT_MASK) != UI_MODE_NIGHT_YES) {
             //Get Composite color for light mode or non dark mode
-            result[1] = ColorUtils.compositeColors(context.getResources().getColor(android.R.color.black),result[1]);
+            result[1] = ColorUtils.compositeColors(context.getResources().getColor(android.R.color.black), result[1]);
         }
-        result[0]=0;
+        result[0] = 0;
         return result;
     }
 
     /**
      * Get an int array representing background and foreground colors for themed icons
      */
+    @ColorInt
     public static int[] getColors(Context context) {
         if (COLORS_LOADER != null) {
             return COLORS_LOADER.apply(context);
