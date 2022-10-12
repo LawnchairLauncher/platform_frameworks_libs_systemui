@@ -12,8 +12,7 @@ import androidx.palette.graphics.Palette
 val Context.prefs get() = applicationContext.getSharedPreferences("com.android.launcher3.prefs", Context.MODE_PRIVATE)!!
 
 fun shouldWrapAdaptive(context: Context) = context.prefs.getBoolean("prefs_wrapAdaptive", false)
-fun shouldTransparentBGIcons(context: Context) = context.prefs.getBoolean("prefs_transparentIconBackground", false)
-
+fun Context.shouldTransparentBGIcons(): Boolean = prefs.getBoolean("prefs_transparentIconBackground", false)
 
 fun getWrapperBackgroundColor(context: Context, icon: Drawable): Int {
     val lightness = context.prefs.getFloat("pref_coloredBackgroundLightness", 0.9f)
