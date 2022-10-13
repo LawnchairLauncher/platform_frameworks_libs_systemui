@@ -334,7 +334,7 @@ public class ClockDrawableWrapper extends CustomAdaptiveIconDrawable implements 
                 if (wrapper != null) {
                     int[] colors = getColors(context);
                     ColorFilter bgFilter = new PorterDuffColorFilter(colors[0], Mode.SRC_ATOP);
-                    if(!IconPreferencesKt.shouldTransparentBGIcons(context)){
+                    if(IconPreferencesKt.shouldTransparentBGIcons(context)){
                         mFlattenedBackground.eraseColor(Color.TRANSPARENT);
                     }
                     return new ClockBitmapInfo(icon, colors[1], scale,
