@@ -399,7 +399,6 @@ public class IconProvider {
                             dynamicCalendars.forEach(dCal -> {
                                 mCallback.onAppIconChanged(dCal.getPackageName(), user);
                             });
-//                                mCallback.onAppIconChanged(context.getPackageName(), user);
                         }
                     }
                     break;
