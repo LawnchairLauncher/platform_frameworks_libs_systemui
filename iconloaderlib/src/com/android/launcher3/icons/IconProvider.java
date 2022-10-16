@@ -17,6 +17,7 @@
 package com.android.launcher3.icons;
 
 import static android.content.Intent.ACTION_DATE_CHANGED;
+import static android.content.Intent.ACTION_PACKAGE_ADDED;
 import static android.content.Intent.ACTION_TIMEZONE_CHANGED;
 import static android.content.Intent.ACTION_TIME_CHANGED;
 import static android.content.res.Resources.ID_NULL;
@@ -51,8 +52,10 @@ import com.android.launcher3.util.SafeCloseable;
 
 import org.xmlpull.v1.XmlPullParser;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -87,6 +90,7 @@ public class IconProvider {
     private final Context mContext;
     protected final ComponentName mCalendar;
     protected final ComponentName mClock;
+    protected final List<ComponentName> dynamicCalendars;
 
     protected static final int ICON_TYPE_DEFAULT = 0;
     protected static final int ICON_TYPE_CALENDAR = 1;
@@ -100,6 +104,7 @@ public class IconProvider {
         mContext = context;
         mCalendar = parseComponentOrNull(context, R.string.calendar_component_name);
         mClock = parseComponentOrNull(context, R.string.clock_component_name);
+        dynamicCalendars = parseComponentsOrNull(context, R.array.dynamic_calendar_components_name);
         if (!supportsIconTheme) {
             // Initialize an empty map if theming is not supported
             mThemedIconMap = DISABLED_MAP;
@@ -304,6 +309,35 @@ public class IconProvider {
         return TextUtils.isEmpty(cn) ? null : ComponentName.unflattenFromString(cn);
     }
 
+    private static List<ComponentName> parseComponentsOrNull(Context context, int resId) {
+        String[] cn = context.getResources().getStringArray(resId);
+        List<ComponentName> comps = new ArrayList<>();
+        for (String c : cn) {
+            comps.add(new ComponentName(c, ""));
+        }
+        return comps.size() == 0 ? null : comps;
+    }
+
+    protected void updateMapWithDynamicIcons(Context context, Map<ComponentName, ThemedIconDrawable.ThemeData> map) {
+        final int resId = getDynamicCalendarResource(context);
+        for (ComponentName dCal : dynamicCalendars) {
+            ComponentName pkg = new ComponentName(dCal.getPackageName(), "");
+            if( map.get(pkg)==null){
+                map.put(pkg, new ThemedIconDrawable.ThemeData(context.getResources(), dCal.getPackageName(), resId));
+            }
+        }
+    }
+    protected ThemedIconDrawable.ThemeData getDynamicIconsFromMap(Context context, Map<ComponentName, ThemedIconDrawable.ThemeData> themeMap,ComponentName componentName) {
+        if(dynamicCalendars.stream().anyMatch(s->s.getPackageName().equalsIgnoreCase(componentName.getPackageName()))){
+            final int resId = getDynamicCalendarResource(context);
+            return new ThemedIconDrawable.ThemeData(context.getResources(), componentName.getPackageName(), resId);
+        }
+        return null;
+    }
+
+    public int getDynamicCalendarResource(Context context) {
+        return context.getResources().getIdentifier("themed_icon_calendar_" + Calendar.getInstance().get(Calendar.DAY_OF_MONTH), "drawable", context.getPackageName());
+    }
     /**
      * Returns a string representation of the current system icon state
      */
@@ -334,9 +368,9 @@ public class IconProvider {
             packageFilter.addDataSchemeSpecificPart("android", PatternMatcher.PATTERN_LITERAL);
             mContext.registerReceiver(this, packageFilter, null, handler);
 
-            if (mCalendar != null || mClock != null) {
+            if (mCalendar != null || mClock != null || dynamicCalendars != null) {
                 final IntentFilter filter = new IntentFilter(ACTION_TIMEZONE_CHANGED);
-                if (mCalendar != null) {
+                if (mCalendar != null || dynamicCalendars != null) {
                     filter.addAction(Intent.ACTION_TIME_CHANGED);
                     filter.addAction(ACTION_DATE_CHANGED);
                 }
@@ -354,10 +388,15 @@ public class IconProvider {
                     // follow through
                 case ACTION_DATE_CHANGED:
                 case ACTION_TIME_CHANGED:
-                    if (mCalendar != null) {
-                        for (UserHandle user
-                                : context.getSystemService(UserManager.class).getUserProfiles()) {
-                            mCallback.onAppIconChanged(mCalendar.getPackageName(), user);
+                    for (UserHandle user
+                            : context.getSystemService(UserManager.class).getUserProfiles()) {
+                        if(mCalendar !=null)
+                        mCallback.onAppIconChanged(mCalendar.getPackageName(), user);
+                        if (dynamicCalendars != null) {
+                            for (ComponentName dCal : dynamicCalendars) {
+                                mCallback.onAppIconChanged(dCal.getPackageName(), user);
+                                mCallback.onAppIconChanged(context.getPackageName(), user);
+                            }
                         }
                     }
                     break;
