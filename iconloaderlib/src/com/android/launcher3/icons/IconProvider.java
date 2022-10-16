@@ -17,7 +17,6 @@
 package com.android.launcher3.icons;
 
 import static android.content.Intent.ACTION_DATE_CHANGED;
-import static android.content.Intent.ACTION_PACKAGE_ADDED;
 import static android.content.Intent.ACTION_TIMEZONE_CHANGED;
 import static android.content.Intent.ACTION_TIME_CHANGED;
 import static android.content.res.Resources.ID_NULL;
@@ -57,6 +56,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import app.lawnchair.icons.CustomAdaptiveIconDrawable;
@@ -310,25 +310,28 @@ public class IconProvider {
     }
 
     private static List<ComponentName> parseComponentsOrNull(Context context, int resId) {
-        String[] cn = context.getResources().getStringArray(resId);
-        List<ComponentName> comps = new ArrayList<>();
-        for (String c : cn) {
-            comps.add(new ComponentName(c, ""));
+        String[] componentResources = context.getResources().getStringArray(resId);
+        List<ComponentName> compList = new ArrayList<>();
+        for (String component : componentResources) {
+            compList.add(new ComponentName(component, ""));
         }
-        return comps.size() == 0 ? null : comps;
+        return compList.size() == 0 ? null : compList;
     }
 
     protected void updateMapWithDynamicIcons(Context context, Map<ComponentName, ThemedIconDrawable.ThemeData> map) {
         final int resId = getDynamicCalendarResource(context);
-        for (ComponentName dCal : dynamicCalendars) {
-            ComponentName pkg = new ComponentName(dCal.getPackageName(), "");
-            if( map.get(pkg)==null){
-                map.put(pkg, new ThemedIconDrawable.ThemeData(context.getResources(), dCal.getPackageName(), resId));
-            }
+        if (dynamicCalendars != null) {
+            dynamicCalendars.forEach(dCal -> {
+                ComponentName pkg = new ComponentName(dCal.getPackageName(), "");
+                if (map.get(pkg) == null) {
+                    map.put(pkg, new ThemedIconDrawable.ThemeData(context.getResources(), dCal.getPackageName(), resId));
+                }
+            });
         }
     }
-    protected ThemedIconDrawable.ThemeData getDynamicIconsFromMap(Context context, Map<ComponentName, ThemedIconDrawable.ThemeData> themeMap,ComponentName componentName) {
-        if(dynamicCalendars.stream().anyMatch(s->s.getPackageName().equalsIgnoreCase(componentName.getPackageName()))){
+
+    protected ThemedIconDrawable.ThemeData getDynamicIconsFromMap(Context context, Map<ComponentName, ThemedIconDrawable.ThemeData> themeMap, ComponentName componentName) {
+        if (dynamicCalendars.stream().anyMatch(s -> s.getPackageName().equalsIgnoreCase(componentName.getPackageName()))) {
             final int resId = getDynamicCalendarResource(context);
             return new ThemedIconDrawable.ThemeData(context.getResources(), componentName.getPackageName(), resId);
         }
@@ -389,14 +392,14 @@ public class IconProvider {
                 case ACTION_DATE_CHANGED:
                 case ACTION_TIME_CHANGED:
                     for (UserHandle user
-                            : context.getSystemService(UserManager.class).getUserProfiles()) {
-                        if(mCalendar !=null)
-                        mCallback.onAppIconChanged(mCalendar.getPackageName(), user);
+                        : context.getSystemService(UserManager.class).getUserProfiles()) {
+                        if (mCalendar != null)
+                            mCallback.onAppIconChanged(mCalendar.getPackageName(), user);
                         if (dynamicCalendars != null) {
-                            for (ComponentName dCal : dynamicCalendars) {
+                            dynamicCalendars.forEach(dCal -> {
                                 mCallback.onAppIconChanged(dCal.getPackageName(), user);
-                                mCallback.onAppIconChanged(context.getPackageName(), user);
-                            }
+                            });
+//                                mCallback.onAppIconChanged(context.getPackageName(), user);
                         }
                     }
                     break;
