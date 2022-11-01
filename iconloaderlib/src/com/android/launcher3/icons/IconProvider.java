@@ -21,6 +21,7 @@ import static android.content.Intent.ACTION_TIMEZONE_CHANGED;
 import static android.content.Intent.ACTION_TIME_CHANGED;
 import static android.content.res.Resources.ID_NULL;
 
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
@@ -44,6 +45,7 @@ import android.util.ArrayMap;
 import android.util.Log;
 
 import androidx.annotation.ArrayRes;
+import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
@@ -336,6 +338,8 @@ public class IconProvider {
         return null;
     }
 
+    @SuppressLint("DiscouragedApi")
+    @DrawableRes
     public int getDynamicCalendarResource(Context context) {
         return context.getResources().getIdentifier("themed_icon_calendar_" + Calendar.getInstance().get(Calendar.DAY_OF_MONTH), "drawable", context.getPackageName());
     }
@@ -389,8 +393,7 @@ public class IconProvider {
                     // follow through
                 case ACTION_DATE_CHANGED:
                 case ACTION_TIME_CHANGED:
-                    for (UserHandle user
-                        : context.getSystemService(UserManager.class).getUserProfiles()) {
+                    for (UserHandle user : context.getSystemService(UserManager.class).getUserProfiles()) {
                         if (mCalendar != null)
                             mCallback.onAppIconChanged(mCalendar.getPackageName(), user);
                         dynamicCalendars.forEach(dCal -> mCallback.onAppIconChanged(dCal.getPackageName(), user));
