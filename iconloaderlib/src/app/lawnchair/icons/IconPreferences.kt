@@ -13,6 +13,7 @@ val Context.prefs get() = applicationContext.getSharedPreferences("com.android.l
 
 fun shouldWrapAdaptive(context: Context) = context.prefs.getBoolean("prefs_wrapAdaptive", false)
 fun Context.shouldTransparentBGIcons(): Boolean = prefs.getBoolean("prefs_transparentIconBackground", false)
+fun Context.isThemedIconsEnabled(): Boolean = prefs.getBoolean("themed_icons", false) && prefs.getBoolean("drawer_themed_icons", false)
 
 fun getWrapperBackgroundColor(context: Context, icon: Drawable): Int {
     val lightness = context.prefs.getFloat("pref_coloredBackgroundLightness", 0.9f)

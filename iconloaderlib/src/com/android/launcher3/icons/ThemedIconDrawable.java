@@ -40,6 +40,7 @@ import android.os.UserHandle;
 import android.util.Log;
 
 import androidx.annotation.ColorInt;
+import androidx.annotation.DrawableRes;
 import androidx.annotation.Nullable;
 import androidx.arch.core.util.Function;
 import androidx.core.graphics.ColorUtils;
@@ -228,7 +229,7 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
         final String mPackageName;
         final int mResID;
 
-        public ThemeData(Resources resources, String packageName, int resID) {
+        public ThemeData(Resources resources, String packageName, @DrawableRes int resID) {
             mResources = resources;
             mPackageName = packageName;
             mResID = resID;
