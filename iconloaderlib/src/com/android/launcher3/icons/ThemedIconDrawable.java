@@ -346,10 +346,6 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
         if (!IconPreferencesKt.shouldTransparentBGIcons(context)) {
             return result;
         }
-        if ((context.getResources().getConfiguration().uiMode & UI_MODE_NIGHT_MASK) != UI_MODE_NIGHT_YES) {
-            //Get Composite color for light mode or non dark mode
-            result[1] = ColorUtils.compositeColors(context.getResources().getColor(android.R.color.black), result[1]);
-        }
         result[0] = 0;
         return result;
     }
