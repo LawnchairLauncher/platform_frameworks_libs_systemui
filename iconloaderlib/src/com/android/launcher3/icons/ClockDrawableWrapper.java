@@ -232,6 +232,17 @@ public class ClockDrawableWrapper extends CustomAdaptiveIconDrawable implements 
     }
 
     @Override
+    public BitmapInfo getExtendedInfo(Bitmap bitmap , int color , BaseIconFactory iconFactory , float normalizationScale) {
+        AdaptiveIconDrawable background = new CustomAdaptiveIconDrawable(
+            getBackground().getConstantState().newDrawable(), null);
+        BitmapInfo bitmapInfo = iconFactory.createBadgedIconBitmap(background,
+            Process.myUserHandle(), mTargetSdkVersion, false);
+
+        return new ClockBitmapInfo(bitmap, color, normalizationScale,
+            mAnimationInfo, bitmapInfo.icon, mThemeData);
+    }
+
+    @Override
     public void drawForPersistence(Canvas canvas) {
         LayerDrawable foreground = (LayerDrawable) getForeground();
         resetLevel(foreground, mAnimationInfo.hourLayerIndex);

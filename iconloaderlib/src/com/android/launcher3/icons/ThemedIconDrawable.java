@@ -293,6 +293,11 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
         }
 
         @Override
+        public BitmapInfo getExtendedInfo(Bitmap bitmap , int color , BaseIconFactory iconFactory , float normalizationScale) {
+            return new ThemedBitmapInfo(bitmap, color, mThemeData, normalizationScale, bitmap);
+        }
+
+        @Override
         public void drawForPersistence(Canvas canvas) {
             draw(canvas);
         }
@@ -322,6 +327,11 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
             Bitmap userBadge = Process.myUserHandle().equals(user)
                     ? null : iconFactory.getUserBadgeBitmap(user);
             return new ThemedBitmapInfo(bitmap, color, mThemeData, normalizationScale, userBadge);
+        }
+
+        @Override
+        public BitmapInfo getExtendedInfo(Bitmap bitmap , int color , BaseIconFactory iconFactory , float normalizationScale) {
+            return new ThemedBitmapInfo(bitmap, color, mThemeData, normalizationScale, bitmap);
         }
 
         @Override
