@@ -27,16 +27,26 @@ import android.os.Build;
 import android.os.UserHandle;
 import android.util.Log;
 
+import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import com.android.launcher3.icons.ThemedIconDrawable.ThemedBitmapInfo;
 import com.android.launcher3.icons.cache.BaseIconCache;
+import com.android.launcher3.util.FlagOp;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 public class BitmapInfo {
+
+    static final int FLAG_WORK = 1 << 0;
+    static final int FLAG_INSTANT = 1 << 1;
+    @IntDef(flag = true, value = {
+        FLAG_WORK,
+        FLAG_INSTANT,
+    })
+    @interface BitmapInfoFlags {}
 
     public static final Bitmap LOW_RES_ICON = Bitmap.createBitmap(1, 1, Config.ALPHA_8);
     public static final BitmapInfo LOW_RES_INFO = fromBitmap(LOW_RES_ICON);
@@ -49,6 +59,14 @@ public class BitmapInfo {
 
     public final Bitmap icon;
     public final int color;
+
+    @Nullable
+    protected Bitmap mMono;
+    protected Bitmap mWhiteShadowLayer;
+
+    public int flags;
+    private BitmapInfo badgeInfo;
+
 
     public BitmapInfo(Bitmap icon, int color) {
         this.icon = icon;
@@ -106,6 +124,36 @@ public class BitmapInfo {
     }
 
     /**
+     * Returns a bitmapInfo with the flagOP applied
+     */
+    public BitmapInfo withFlags(@NonNull FlagOp op) {
+        if (op == FlagOp.NO_OP) {
+            return this;
+        }
+        BitmapInfo result = clone();
+        result.flags = op.apply(result.flags);
+        return result;
+    }
+
+    protected BitmapInfo copyInternalsTo(BitmapInfo target) {
+        target.mMono = mMono;
+        target.mWhiteShadowLayer = mWhiteShadowLayer;
+        target.flags = flags;
+        target.badgeInfo = badgeInfo;
+        return target;
+    }
+
+    public void setMonoIcon(Bitmap mono, BaseIconFactory iconFactory) {
+        mMono = mono;
+        mWhiteShadowLayer = iconFactory.getWhiteShadowLayer();
+    }
+
+    @Override
+    public BitmapInfo clone() {
+        return copyInternalsTo(new BitmapInfo(icon, color));
+    }
+
+    /**
      * Returns a BitmapInfo previously serialized using {@link #toByteArray()};
      */
     @NonNull
@@ -150,6 +198,12 @@ public class BitmapInfo {
          */
         BitmapInfo getExtendedInfo(Bitmap bitmap, int color,
                 BaseIconFactory iconFactory, float normalizationScale, UserHandle user);
+
+        /**
+         * Called for creating a custom BitmapInfo
+         */
+        BitmapInfo getExtendedInfo(Bitmap bitmap, int color,
+                                   BaseIconFactory iconFactory, float normalizationScale);
 
         /**
          * Called to draw the UI independent of any runtime configurations like time or theme

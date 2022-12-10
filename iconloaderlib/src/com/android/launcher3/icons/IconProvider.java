@@ -48,6 +48,7 @@ import androidx.annotation.ArrayRes;
 import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.os.BuildCompat;
 
 import com.android.launcher3.icons.ThemedIconDrawable.ThemeData;
 import com.android.launcher3.util.SafeCloseable;
@@ -63,7 +64,7 @@ import java.util.function.Supplier;
 
 import app.lawnchair.icons.CustomAdaptiveIconDrawable;
 
-/**
+@BuildCompat.PrereleaseSdkCheck /**
  * Class to handle icon loading from different packages
  */
 public class IconProvider {
@@ -76,6 +77,8 @@ public class IconProvider {
     protected static final String ATTR_PACKAGE = "package";
     protected static final String ATTR_COMPONENT = "component";
     protected static final String ATTR_DRAWABLE = "drawable";
+
+    public static final boolean ATLEAST_T = BuildCompat.isAtLeastT();
 
     private static final String TAG = "IconProvider";
     private static final boolean DEBUG = false;
