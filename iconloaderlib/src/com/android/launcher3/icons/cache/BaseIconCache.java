@@ -127,6 +127,48 @@ public abstract class BaseIconCache {
     }
 
     /**
+     * Fallback method for loading an icon bitmap.
+     */
+    protected <T> void loadFallbackIcon(@Nullable final T object, @NonNull final CacheEntry entry,
+                                        @NonNull final CachingLogic<T> cachingLogic, final boolean usePackageIcon,
+                                        final boolean usePackageTitle, @NonNull final ComponentName componentName,
+                                        @NonNull final UserHandle user) {
+        if (object != null) {
+            entry.bitmap = cachingLogic.loadIcon(mContext, object);
+        } else {
+            if (usePackageIcon) {
+                CacheEntry packageEntry = getEntryForPackageLocked(
+                        componentName.getPackageName(), user, false);
+                if (DEBUG) Log.d(TAG, "using package default icon for " +
+                        componentName.toShortString());
+                entry.bitmap = packageEntry.bitmap;
+                entry.contentDescription = packageEntry.contentDescription;
+
+                if (usePackageTitle) {
+                    entry.title = packageEntry.title;
+                }
+            }
+            if (entry.bitmap == null) {
+                // TODO: entry.bitmap can never be null, so this should not happen at all.
+                Log.wtf(TAG, "using default icon for " + componentName.toShortString());
+                entry.bitmap = getDefaultIcon(user);
+            }
+        }
+    }
+
+    /**
+     * Fallback method for loading an app title.
+     */
+    protected <T> void loadFallbackTitle(
+            @NonNull final T object, @NonNull final CacheEntry entry,
+            @NonNull final CachingLogic<T> cachingLogic, @NonNull final UserHandle user) {
+        entry.title = cachingLogic.getLabel(object);
+        entry.contentDescription = mPackageManager.getUserBadgedLabel(
+                cachingLogic.getDescription(object, entry.title), user);
+    }
+
+
+    /**
      * Returns the persistable serial number for {@param user}. Subclass should implement proper
      * caching strategy to avoid making binder call every time.
      */

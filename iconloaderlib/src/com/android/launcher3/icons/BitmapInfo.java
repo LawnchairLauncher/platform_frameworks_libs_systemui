@@ -17,6 +17,7 @@ package com.android.launcher3.icons;
 
 import static com.android.launcher3.icons.GraphicsUtils.getExpectedBitmapSize;
 
+import android.annotation.IntDef;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
@@ -32,6 +33,7 @@ import androidx.annotation.Nullable;
 
 import com.android.launcher3.icons.ThemedIconDrawable.ThemedBitmapInfo;
 import com.android.launcher3.icons.cache.BaseIconCache;
+import com.android.launcher3.util.FlagOp;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -43,16 +45,78 @@ public class BitmapInfo {
 
     public static final String TAG = "BitmapInfo";
 
+    static final int FLAG_WORK = 1 << 0;
+    static final int FLAG_INSTANT = 1 << 1;
+    static final int FLAG_CLONE = 1 << 2;
+    @IntDef(flag = true, value = {
+            FLAG_WORK,
+            FLAG_INSTANT,
+            FLAG_CLONE
+    })
+    @interface BitmapInfoFlags {}
+
+    public static final int FLAG_THEMED = 1 << 0;
+    public static final int FLAG_NO_BADGE = 1 << 1;
+
+    @IntDef(flag = true, value = {
+            FLAG_THEMED,
+            FLAG_NO_BADGE,
+    })
+    public @interface DrawableCreationFlags {}
+
     protected static final byte TYPE_DEFAULT = 1;
     protected static final byte TYPE_THEMED = 2;
     protected static final byte TYPE_THEMED_V2 = 3;
 
     public final Bitmap icon;
     public final int color;
+    @Nullable
+    protected Bitmap mMono;
+    protected Bitmap mWhiteShadowLayer;
+
+    public @BitmapInfoFlags int flags;
+    private BitmapInfo badgeInfo;
 
     public BitmapInfo(Bitmap icon, int color) {
         this.icon = icon;
         this.color = color;
+    }
+
+
+    public BitmapInfo withBadgeInfo(BitmapInfo badgeInfo) {
+        BitmapInfo result = clone();
+        result.badgeInfo = badgeInfo;
+        return result;
+    }
+
+    protected BitmapInfo copyInternalsTo(BitmapInfo target) {
+        target.mMono = mMono;
+        target.mWhiteShadowLayer = mWhiteShadowLayer;
+        target.flags = flags;
+        target.badgeInfo = badgeInfo;
+        return target;
+    }
+
+    public void setMonoIcon(Bitmap mono, BaseIconFactory iconFactory) {
+        mMono = mono;
+        mWhiteShadowLayer = iconFactory.getWhiteShadowLayer();
+    }
+    @Override
+    public BitmapInfo clone() {
+        return copyInternalsTo(new BitmapInfo(icon, color));
+    }
+
+
+    /**
+     * Returns a bitmapInfo with the flagOP applied
+     */
+    public BitmapInfo withFlags(@NonNull FlagOp op) {
+        if (op == FlagOp.NO_OP) {
+            return this;
+        }
+        BitmapInfo result = clone();
+        result.flags = op.apply(result.flags);
+        return result;
     }
 
     /**
