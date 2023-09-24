@@ -6,6 +6,9 @@ import static android.graphics.Paint.FILTER_BITMAP_FLAG;
 import static com.android.launcher3.icons.IconProvider.ICON_TYPE_DEFAULT;
 import static com.android.launcher3.icons.ShadowGenerator.BLUR_FACTOR;
 
+import static java.lang.annotation.RetentionPolicy.SOURCE;
+
+import android.annotation.IntDef;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
@@ -30,6 +33,8 @@ import androidx.annotation.NonNull;
 
 import com.android.launcher3.icons.BitmapInfo.Extender;
 
+import java.lang.annotation.Retention;
+
 import app.lawnchair.icons.CustomAdaptiveIconDrawable;
 import app.lawnchair.icons.ExtendedBitmapDrawable;
 import app.lawnchair.icons.IconPreferencesKt;
@@ -44,6 +49,16 @@ public class BaseIconFactory implements AutoCloseable {
     private static final int DEFAULT_WRAPPER_BACKGROUND = Color.WHITE;
     static final boolean ATLEAST_OREO = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O;
     static final boolean ATLEAST_P = Build.VERSION.SDK_INT >= Build.VERSION_CODES.P;
+
+    public static final int MODE_DEFAULT = 0;
+    public static final int MODE_ALPHA = 1;
+    public static final int MODE_WITH_SHADOW = 2;
+    public static final int MODE_HARDWARE = 3;
+    public static final int MODE_HARDWARE_WITH_SHADOW = 4;
+
+    @Retention(SOURCE)
+    @IntDef({MODE_DEFAULT, MODE_ALPHA, MODE_WITH_SHADOW, MODE_HARDWARE_WITH_SHADOW, MODE_HARDWARE})
+    @interface BitmapGenerationMode {}
 
     private static final float ICON_BADGE_SCALE = 0.444f;
 
@@ -268,6 +283,27 @@ public class BaseIconFactory implements AutoCloseable {
         icon = normalizeAndWrapToAdaptiveIcon(icon, shrinkNonAdaptiveIcons, iconBounds, scale);
         return createIconBitmap(icon,
                 Math.min(scale[0], ShadowGenerator.getScaleForBounds(iconBounds)));
+    }
+
+    // Shadow bitmap used as background for theme icons
+    private Bitmap mWhiteShadowLayer;
+    @NonNull
+    public Bitmap getWhiteShadowLayer() {
+        if (mWhiteShadowLayer == null) {
+            mWhiteShadowLayer = createScaledBitmap(
+                    new AdaptiveIconDrawable(new ColorDrawable(Color.WHITE), null),
+                    MODE_HARDWARE_WITH_SHADOW);
+        }
+        return mWhiteShadowLayer;
+    }
+
+    @NonNull
+    public Bitmap createScaledBitmap(@NonNull Drawable icon, @BitmapGenerationMode int mode) {
+        RectF iconBounds = new RectF();
+        float[] scale = new float[1];
+        icon = normalizeAndWrapToAdaptiveIcon(icon, true, iconBounds, scale);
+        return createIconBitmap(icon,
+                Math.min(scale[0], ShadowGenerator.getScaleForBounds(iconBounds)), mode);
     }
 
     /**
