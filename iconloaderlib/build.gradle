@@ -11,8 +11,9 @@ android {
             res.srcDirs = ['res']
         }
     }
-    addFrameworkJar('framework-13.jar')
 }
+
+addFrameworkJar('framework-13.jar')
 
 dependencies {
     implementation "androidx.palette:palette-ktx:1.0.0"
