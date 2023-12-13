@@ -327,7 +327,7 @@ public class BaseIconFactory implements AutoCloseable {
         mDisableColorExtractor = true;
     }
 
-    private Drawable normalizeAndWrapToAdaptiveIcon(@NonNull Drawable icon,
+    public Drawable normalizeAndWrapToAdaptiveIcon(@NonNull Drawable icon,
             boolean shrinkNonAdaptiveIcons, RectF outIconBounds, float[] outScale) {
         if (shrinkNonAdaptiveIcons) {
             boolean isFromIconPack = ExtendedBitmapDrawable.isFromIconPack(icon);

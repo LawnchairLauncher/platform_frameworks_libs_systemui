@@ -1,0 +1,26 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+android {
+    namespace = "com.android.app.animation"
+
+    sourceSets {
+        main {
+            java.srcDirs = ['src']
+            res.srcDirs = ['res']
+            manifest.srcFile 'AndroidManifest.xml'
+        }
+        androidTest {
+            java.srcDirs = ["tests/src"]
+            manifest.srcFile 'tests/AndroidManifest.xml'
+        }
+    }
+}
+
+addFrameworkJar('framework-14.jar')
+
+dependencies {
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.21'
+    implementation 'androidx.core:core-animation:1.0.0-rc01'
+    implementation 'androidx.core:core-ktx:1.12.0'
+}
