@@ -75,6 +75,10 @@ public class DotRenderer {
 
         ShadowGenerator.Builder builder = new ShadowGenerator.Builder(Color.TRANSPARENT);
         builder.ambientShadowAlpha = 88;
+        // TODO
+        if (size <= 0) {
+            size = 100;
+        }
         mBackgroundWithShadow = builder.setupBlurForSize(size).createPill(size, size);
         mCircleRadius = builder.radius;
 
