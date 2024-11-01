@@ -16,5 +16,4 @@
 
 <resources>
     <dimen name="profile_badge_size">24dp</dimen>
-    <dimen name="importance_ring_stroke_width">2dp</dimen>
 </resources>

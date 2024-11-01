@@ -13,9 +13,9 @@ android {
     }
 }
 
-addFrameworkJar('framework-13.jar')
+addFrameworkJar('framework-15.jar')
 
 dependencies {
     implementation "androidx.palette:palette-ktx:1.0.0"
-    compileOnly fileTree(dir: FRAMEWORK_PREBUILTS_DIR, include: 'framework-12l.jar')
+    compileOnly fileTree(dir: FRAMEWORK_PREBUILTS_DIR, include: 'framework-15.jar')
 }

@@ -15,8 +15,6 @@
  */
 package com.android.launcher3.icons;
 
-import static app.lawnchair.icons.CustomAdaptiveIconDrawable.MASK_SIZE;
-
 import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
@@ -30,18 +28,18 @@ import android.graphics.RegionIterator;
 import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.util.Log;
-import android.util.PathParser;
 
 import androidx.annotation.ColorInt;
+import androidx.annotation.NonNull;
+import androidx.core.graphics.PathParser;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
-import app.lawnchair.icons.CustomAdaptiveIconDrawable;
-
 public class GraphicsUtils {
 
     private static final String TAG = "GraphicsUtils";
+    private static final float MASK_SIZE = 100f;
 
     public static Runnable sOnNewBitmapRunnable = () -> { };
 
@@ -105,7 +103,7 @@ public class GraphicsUtils {
     /**
      * Returns the default path to be used by an icon
      */
-    public static Path getShapePath(Context context, int size) {
+    public static Path getShapePath(@NonNull Context context, int size) {
         if (IconProvider.CONFIG_ICON_MASK_RES_ID != Resources.ID_NULL) {
             Path path = PathParser.createPathFromPathData(
                     context.getString(IconProvider.CONFIG_ICON_MASK_RES_ID));
@@ -119,7 +117,7 @@ public class GraphicsUtils {
                 return path;
             }
         }
-        AdaptiveIconDrawable drawable = new CustomAdaptiveIconDrawable(
+        AdaptiveIconDrawable drawable = new AdaptiveIconDrawable(
                 new ColorDrawable(Color.BLACK), new ColorDrawable(Color.BLACK));
         drawable.setBounds(0, 0, size, size);
         return new Path(drawable.getIconMask());

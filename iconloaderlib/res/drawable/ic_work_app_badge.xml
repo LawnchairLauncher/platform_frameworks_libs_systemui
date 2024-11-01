@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (C) 2017 The Android Open Source Project
+<!-- Copyright (C) 2021 The Android Open Source Project
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -16,12 +16,13 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="@dimen/profile_badge_size"
     android:height="@dimen/profile_badge_size"
-    android:viewportWidth="18"
-    android:viewportHeight="18"
-    android:tint="@color/badge_tint_instant">
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="@color/badge_tint_work">
 
-    <path
-        android:fillColor="#FFFFFFFF"
-        android:strokeWidth="1"
-        android:pathData="M 6 10.4123279 L 8.63934949 10.4123279 L 8.63934949 15.6 L 12.5577168 7.84517705 L 9.94547194 7.84517705 L 9.94547194 2 Z" />
+    <group android:scaleX=".6" android:scaleY=".6" android:pivotX="12" android:pivotY="12">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M20,6h-4L16,4c0,-1.11 -0.89,-2 -2,-2h-4c-1.11,0 -2,0.89 -2,2v2L4,6c-1.11,0 -1.99,0.89 -1.99,2L2,19c0,1.11 0.89,2 2,2h16c1.11,0 2,-0.89 2,-2L22,8c0,-1.11 -0.89,-2 -2,-2zM14,6h-4L10,4h4v2z" />
+    </group>
 </vector>
