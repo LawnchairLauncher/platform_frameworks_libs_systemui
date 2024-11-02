@@ -66,6 +66,8 @@ public class BitmapInfo {
     public @BitmapInfoFlags int flags;
     private BitmapInfo badgeInfo;
 
+    protected static final byte TYPE_THEMED_V2 = 3;
+
     public BitmapInfo(Bitmap icon, int color) {
         this.icon = icon;
         this.color = color;

@@ -60,6 +60,8 @@ public class BaseIconFactory implements AutoCloseable {
     public static final int MODE_HARDWARE = 3;
     public static final int MODE_HARDWARE_WITH_SHADOW = 4;
 
+    private Bitmap mUserBadgeBitmap;
+
     @Retention(SOURCE)
     @IntDef({MODE_DEFAULT, MODE_ALPHA, MODE_WITH_SHADOW, MODE_HARDWARE_WITH_SHADOW, MODE_HARDWARE})
     @interface BitmapGenerationMode {
@@ -143,6 +145,23 @@ public class BaseIconFactory implements AutoCloseable {
             mNormalizer = new IconNormalizer(mContext, mIconBitmapSize, mShapeDetection);
         }
         return mNormalizer;
+    }
+
+    public Bitmap getUserBadgeBitmap(UserHandle user) {
+        if (mUserBadgeBitmap == null) {
+            Bitmap bitmap = Bitmap.createBitmap(
+                    mIconBitmapSize, mIconBitmapSize, Bitmap.Config.ARGB_8888);
+            Drawable badgedDrawable = mPm.getUserBadgedIcon(
+                    new FixedSizeBitmapDrawable(bitmap), user);
+            if (badgedDrawable instanceof BitmapDrawable) {
+                mUserBadgeBitmap = ((BitmapDrawable) badgedDrawable).getBitmap();
+            } else {
+                badgedDrawable.setBounds(0, 0, mIconBitmapSize, mIconBitmapSize);
+                mUserBadgeBitmap = BitmapRenderer.createSoftwareBitmap(
+                        mIconBitmapSize, mIconBitmapSize, badgedDrawable::draw);
+            }
+        }
+        return mUserBadgeBitmap;
     }
 
     @SuppressWarnings("deprecation")
@@ -342,6 +361,33 @@ public class BaseIconFactory implements AutoCloseable {
         return new InsetDrawable(main, scaleX, scaleY, scaleX, scaleY);
     }
 
+    public BitmapInfo badgeBitmap(Bitmap source, BitmapInfo badgeInfo) {
+        Bitmap icon = BitmapRenderer.createHardwareBitmap(mIconBitmapSize, mIconBitmapSize, (c) -> {
+            getShadowGenerator().recreateIcon(source, c);
+            badgeWithDrawable(c, new FixedSizeBitmapDrawable(badgeInfo.icon));
+        });
+        return BitmapInfo.of(icon, badgeInfo.color);
+    }
+
+    /**
+     * Adds the {@param badge} on top of {@param target} using the badge dimensions.
+     */
+    public void badgeWithDrawable(Bitmap target, Drawable badge) {
+        mCanvas.setBitmap(target);
+        badgeWithDrawable(mCanvas, badge);
+        mCanvas.setBitmap(null);
+    }
+
+    /**
+     * Adds the {@param badge} on top of {@param target} using the badge dimensions.
+     */
+    public void badgeWithDrawable(Canvas target, Drawable badge) {
+        int badgeSize = getBadgeSizeForIconSize(mIconBitmapSize);
+        badge.setBounds(mIconBitmapSize - badgeSize, mIconBitmapSize - badgeSize,
+                mIconBitmapSize, mIconBitmapSize);
+        badge.draw(target);
+    }
+
     /**
      * Wraps the provided icon in an adaptive icon drawable
      */
@@ -366,12 +412,12 @@ public class BaseIconFactory implements AutoCloseable {
     }
 
     @NonNull
-    protected Bitmap createIconBitmap(@Nullable final Drawable icon, final float scale) {
+    public Bitmap createIconBitmap(@Nullable final Drawable icon, final float scale) {
         return createIconBitmap(icon, scale, MODE_DEFAULT);
     }
 
     @NonNull
-    protected Bitmap createIconBitmap(@Nullable final Drawable icon, final float scale,
+    public Bitmap createIconBitmap(@Nullable final Drawable icon, final float scale,
             @BitmapGenerationMode int bitmapGenerationMode) {
         final int size = mIconBitmapSize;
         final Bitmap bitmap;
