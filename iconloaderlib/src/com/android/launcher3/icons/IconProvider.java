@@ -174,6 +174,16 @@ public class IconProvider {
         return null;
     }
 
+    protected void updateMapWithDynamicIcons(Context context, Map<ComponentName, ThemedIconDrawable.ThemeData> map) {
+        final int resId = getDynamicCalendarResource(context);
+        dynamicCalendars.forEach(dCal -> {
+            ComponentName pkg = new ComponentName(dCal.getPackageName(), "");
+            if (map.get(pkg) == null) {
+                map.put(pkg, new ThemedIconDrawable.ThemeData(context.getResources(), dCal.getPackageName(), resId));
+            }
+        });
+    }
+
     @SuppressLint("DiscouragedApi")
     @DrawableRes
     public int getDynamicCalendarResource(Context context) {

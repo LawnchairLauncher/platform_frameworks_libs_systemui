@@ -28,5 +28,5 @@
     </string-array>
     <string name="calendar_component_name" translatable="false"></string>
     <string name="clock_component_name" translatable="false"></string>
-
+    <string name="icon_packs_intent_name" translatable="false">app.lawnchair.icons.THEMED_ICON</string>
 </resources>

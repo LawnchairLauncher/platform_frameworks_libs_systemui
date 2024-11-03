@@ -224,5 +224,7 @@ public class BitmapInfo {
          * Called to draw the UI independent of any runtime configurations like time or theme
          */
         void drawForPersistence(Canvas canvas);
+
+        Drawable getThemedDrawable(Context context);
     }
 }

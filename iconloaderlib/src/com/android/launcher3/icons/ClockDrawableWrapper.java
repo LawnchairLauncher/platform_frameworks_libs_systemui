@@ -211,6 +211,35 @@ public class ClockDrawableWrapper extends CustomAdaptiveIconDrawable implements 
         return null;
     }
 
+    private static ClockDrawableWrapper fromThemeData(Context context, ThemedIconDrawable.ThemeData themeData) {
+        try {
+            TypedArray ta = themeData.mResources.obtainTypedArray(themeData.mResID);
+            int count = ta.length();
+            Bundle extras = new Bundle();
+            for (int i = 0; i < count; i += 2) {
+                TypedValue v = ta.peekValue(i + 1);
+                extras.putInt(ta.getString(i), v.type >= TypedValue.TYPE_FIRST_INT
+                        && v.type <= TypedValue.TYPE_LAST_INT
+                        ? v.data : v.resourceId);
+            }
+            ta.recycle();
+            ClockDrawableWrapper drawable = ClockDrawableWrapper.forExtras(
+                    context.getApplicationInfo(), extras, resId -> {
+                        int[] colors = getColors(context);
+                        Drawable bg = new ColorDrawable(colors[0]);
+                        Drawable fg = themeData.mResources.getDrawable(resId).mutate();
+                        fg.setTint(colors[1]);
+                        return new CustomAdaptiveIconDrawable(bg, fg);
+                    });
+            if (drawable != null) {
+                return drawable;
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Error loading themed clock", e);
+        }
+        return null;
+    }
+
     private static ClockDrawableWrapper forExtras(ApplicationInfo appInfo, Bundle metadata,
                                                   IntFunction<Drawable> drawableProvider) {
         if (metadata == null) {
@@ -357,6 +386,15 @@ public class ClockDrawableWrapper extends CustomAdaptiveIconDrawable implements 
         resetLevel(foreground, mAnimationInfo.secondLayerIndex);
         draw(canvas);
         mAnimationInfo.applyTime(Calendar.getInstance(), (LayerDrawable) getForeground());
+    }
+
+    @Override
+    public Drawable getThemedDrawable(Context context) {
+        if (mThemeData != null) {
+            ClockDrawableWrapper drawable = fromThemeData(context, mThemeData);
+            return drawable == null ? this : drawable;
+        }
+        return this;
     }
 
     private void resetLevel(LayerDrawable drawable, int index) {
