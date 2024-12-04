@@ -617,7 +617,7 @@ public abstract class BaseIconCache {
                     addIconToDB(values, cacheKey.componentName, info, getSerialNumberForUser(user),
                             info.lastUpdateTime);
 
-                } catch (NameNotFoundException e) {
+                } catch (NameNotFoundException | NoSuchMethodError e) {
                     if (DEBUG) Log.d(TAG, "Application not installed " + packageName);
                     entryUpdated = false;
                 }
