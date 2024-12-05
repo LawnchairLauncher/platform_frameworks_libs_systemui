@@ -26,11 +26,9 @@ import static com.android.launcher3.icons.IconProvider.ICON_TYPE_CLOCK;
 import android.annotation.ColorInt;
 import android.annotation.DrawableRes;
 import android.content.Context;
-import android.content.pm.PackageManager;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.BlendMode;
 import android.graphics.BlendModeColorFilter;
 import android.graphics.Canvas;
@@ -42,17 +40,12 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.InsetDrawable;
-import android.os.UserHandle;
 import android.util.Log;
 
 import androidx.annotation.Nullable;
 import androidx.arch.core.util.Function;
 
-import com.android.launcher3.icons.cache.BaseIconCache;
-
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import android.os.Process;
@@ -195,42 +188,6 @@ public class ThemedIconDrawable extends FastBitmapDrawable {
             }
         }
 
-        static ThemedBitmapInfo decode(byte[] data, int color,
-                                       BitmapFactory.Options decodeOptions, UserHandle user, BaseIconCache iconCache,
-                                       Context context) {
-            try (DataInputStream dis = new DataInputStream(new ByteArrayInputStream (data))) {
-                dis.readByte(); // type
-                float normalizationScale = dis.readFloat();
-
-                String packageName = dis.readUTF();
-                Resources res;
-                if (packageName.equals(context.getPackageName())) {
-                    res = context.getResources();
-                } else {
-                    res = context.getPackageManager().getResourcesForApplication(packageName);
-                }
-
-                String resName = dis.readUTF();
-                int resId = res.getIdentifier(resName, "drawable", packageName);
-                if (resId == ID_NULL) {
-                    return null;
-                }
-
-                Bitmap userBadgeBitmap = null;
-                if (!Process.myUserHandle().equals(user)) {
-                    try (BaseIconFactory iconFactory = iconCache.getIconFactory()) {
-                        userBadgeBitmap = iconFactory.getUserBadgeBitmap(user);
-                    }
-                }
-
-                ThemeData themeData = new ThemeData(res, packageName, resId);
-                Bitmap icon = BitmapFactory.decodeStream(dis, null, decodeOptions);
-                return new ThemedBitmapInfo(icon, color, themeData, normalizationScale,
-                        userBadgeBitmap);
-            } catch (IOException | PackageManager.NameNotFoundException e) {
-                return null;
-            }
-        }
     }
 
     public static class ThemeData {

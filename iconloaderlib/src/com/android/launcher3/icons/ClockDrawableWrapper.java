@@ -104,7 +104,7 @@ public class ClockDrawableWrapper extends CustomAdaptiveIconDrawable implements 
     }
 
     private void applyThemeData(ThemeData themeData) {
-        if (!IconProvider.ATLEAST_T || mThemeInfo != null) {
+        if (!ATLEAST_T || mThemeInfo != null) {
             return;
         }
         try {
@@ -487,20 +487,21 @@ public class ClockDrawableWrapper extends CustomAdaptiveIconDrawable implements 
             AnimationInfo info;
             Bitmap bg;
             int themedFgColor;
-            ColorFilter bgFilter;
-            if (ATLEAST_T && (creationFlags & FLAG_THEMED) != 0 && themeData != null) {
+            ColorFilter bgFilter = null;
+            if ((creationFlags & FLAG_THEMED) != 0 && themeData != null) {
                 int[] colors = getColors(context);
                 Drawable tintedDrawable = themeData.baseDrawableState.newDrawable().mutate();
                 themedFgColor = colors[1];
                 tintedDrawable.setTint(colors[1]);
                 info = themeData.copyForIcon(tintedDrawable);
                 bg = themeBackground;
-                bgFilter = new BlendModeColorFilter(colors[0], BlendMode.SRC_IN);
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    bgFilter = new BlendModeColorFilter(colors[0], BlendMode.SRC_IN);
+                }
             } else {
                 info = animInfo;
                 themedFgColor = NO_COLOR;
                 bg = mFlattenedBackground;
-                bgFilter = null;
             }
             if (info == null) {
                 return super.newIcon(context, creationFlags);
