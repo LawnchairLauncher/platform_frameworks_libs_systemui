@@ -482,14 +482,13 @@ public class ClockDrawableWrapper extends CustomAdaptiveIconDrawable implements 
         }
 
         @Override
-        @TargetApi(Build.VERSION_CODES.TIRAMISU)
         public FastBitmapDrawable newIcon(Context context,
                 @DrawableCreationFlags  int creationFlags) {
             AnimationInfo info;
             Bitmap bg;
             int themedFgColor;
             ColorFilter bgFilter;
-            if ((creationFlags & FLAG_THEMED) != 0 && themeData != null) {
+            if (ATLEAST_T && (creationFlags & FLAG_THEMED) != 0 && themeData != null) {
                 int[] colors = getColors(context);
                 Drawable tintedDrawable = themeData.baseDrawableState.newDrawable().mutate();
                 themedFgColor = colors[1];

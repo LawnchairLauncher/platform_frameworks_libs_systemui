@@ -132,6 +132,13 @@ public class BitmapInfo {
     }
 
     /**
+     * Returns a new icon based on the theme of the context
+     */
+    public FastBitmapDrawable newThemedIcon(Context context) {
+        return newIcon(context);
+    }
+
+    /**
      * Creates a drawable for the provided BitmapInfo
      */
     public FastBitmapDrawable newIcon(Context context) {
