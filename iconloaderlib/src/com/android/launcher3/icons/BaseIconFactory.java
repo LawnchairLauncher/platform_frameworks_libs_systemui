@@ -6,6 +6,7 @@ import static android.graphics.Paint.FILTER_BITMAP_FLAG;
 import static android.graphics.drawable.AdaptiveIconDrawable.getExtraInsetFraction;
 
 import static com.android.launcher3.icons.BitmapInfo.FLAG_INSTANT;
+import static com.android.launcher3.icons.IconProvider.ATLEAST_T;
 import static com.android.launcher3.icons.IconProvider.ICON_TYPE_DEFAULT;
 import static com.android.launcher3.icons.ShadowGenerator.BLUR_FACTOR;
 
@@ -254,6 +255,11 @@ public class BaseIconFactory implements AutoCloseable {
 
         if (adaptiveIcon instanceof BitmapInfo.Extender extender) {
             info = extender.getExtendedInfo(bitmap, color, this, scale[0]);
+        } else if (ATLEAST_T && mMonoIconEnabled && icon instanceof AdaptiveIconDrawable) {
+            Drawable mono = getMonochromeDrawable(((AdaptiveIconDrawable) icon));
+            if (mono != null) {
+                info.setMonoIcon(createIconBitmap(icon, scale[0], MODE_ALPHA), this);
+            }
         }
         info = info.withFlags(getBitmapFlagOp(options));
         return info;
