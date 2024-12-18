@@ -18,13 +18,17 @@ package com.android.launcher3.icons;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
+import android.os.UserHandle;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import com.android.launcher3.icons.cache.BaseIconCache;
 import com.android.launcher3.util.FlagOp;
 
 public class BitmapInfo {
@@ -199,6 +203,31 @@ public class BitmapInfo {
                     R.color.badge_tint_private, isThemed);
         }
         return null;
+    }
+
+    /**
+     * Returns a BitmapInfo previously serialized using {@link #toByteArray()};
+     */
+    @NonNull
+    public static BitmapInfo fromByteArray(byte[] data, int color, UserHandle user,
+                                           BaseIconCache iconCache, Context context) {
+        if (data == null) {
+            return null;
+        }
+        BitmapFactory.Options decodeOptions;
+        if (BitmapRenderer.USE_HARDWARE_BITMAP && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            decodeOptions = new BitmapFactory.Options();
+            decodeOptions.inPreferredConfig = Bitmap.Config.HARDWARE;
+        } else {
+            decodeOptions = null;
+        }
+        if (data[0] == FLAG_NO_BADGE) {
+            return BitmapInfo.of(
+                    BitmapFactory.decodeByteArray(data, 1, data.length - 1, decodeOptions),
+                    color);
+        } else {
+            return null;
+        }
     }
 
     public static BitmapInfo fromBitmap(@NonNull Bitmap bitmap) {

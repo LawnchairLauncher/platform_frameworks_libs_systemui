@@ -78,6 +78,8 @@ public abstract class BaseIconCache {
     private static final String TAG = "BaseIconCache";
     private static final boolean DEBUG = false;
 
+    public static final boolean ATLEAST_T = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU;
+
     private static final int INITIAL_ICON_CACHE_CAPACITY = 50;
     // A format string which returns the original string as is.
     private static final String IDENTITY_FORMAT_STRING = "%1$s";
@@ -576,11 +578,12 @@ public abstract class BaseIconCache {
             // Check the DB first.
             if (!getEntryFromDBLocked(cacheKey, entry, useLowResIcon)) {
                 try {
-                    long flags = Process.myUserHandle().equals(user) ? 0 :
+                    int flags = Process.myUserHandle().equals(user) ? 0 :
                             PackageManager.GET_UNINSTALLED_PACKAGES;
-                    flags |= PackageManager.MATCH_ARCHIVED_PACKAGES;
-                    PackageInfo info = mPackageManager.getPackageInfo(packageName,
-                            PackageManager.PackageInfoFlags.of(flags));
+                    if (ATLEAST_T) {
+                        flags |= PackageManager.MATCH_ARCHIVED_PACKAGES;
+                    }
+                    PackageInfo info = mPackageManager.getPackageInfo(packageName, flags);
                     ApplicationInfo appInfo = info.applicationInfo;
                     if (appInfo == null) {
                         NameNotFoundException e = new NameNotFoundException(
@@ -595,7 +598,7 @@ public abstract class BaseIconCache {
                     // Load the full res icon for the application, but if useLowResIcon is set, then
                     // only keep the low resolution icon instead of the larger full-sized icon
                     Drawable appIcon = appInfo.loadIcon(mPackageManager);
-                    if (mPackageManager.isDefaultApplicationIcon(appIcon)) {
+                    if (ATLEAST_T && mPackageManager.isDefaultApplicationIcon(appIcon)) {
                         logdPersistently(TAG,
                                 String.format("Default icon returned for %s", packageName),
                                 null);
@@ -606,9 +609,8 @@ public abstract class BaseIconCache {
 
                     entry.title = appInfo.loadLabel(mPackageManager);
                     entry.contentDescription = getUserBadgedLabel(entry.title, user);
-                    entry.bitmap = useLowResIcon
-                            ? BitmapInfo.of(LOW_RES_ICON, iconInfo.color)
-                            : iconInfo;
+                    entry.bitmap = BitmapInfo.of(
+                            useLowResIcon ? LOW_RES_ICON : iconInfo.icon, iconInfo.color);
 
                     // Add the icon in the DB here, since these do not get written during
                     // package updates.
@@ -660,8 +662,8 @@ public abstract class BaseIconCache {
             @NonNull final ComponentKey cacheKey, @NonNull final CacheEntry entry,
             @NonNull final Cursor c, final boolean lowRes) {
         // Set the alpha to be 255, so that we never have a wrong color
-        entry.bitmap = BitmapInfo.of(LOW_RES_ICON,
-                setColorAlphaBound(c.getInt(IconDB.INDEX_COLOR), 255));
+        entry.bitmap = ATLEAST_T ? BitmapInfo.of(LOW_RES_ICON,
+                setColorAlphaBound(c.getInt(IconDB.INDEX_COLOR), 255)) : BitmapInfo.of(LOW_RES_ICON, setColorAlphaBound(c.getInt(0), 255));
         entry.title = c.getString(IconDB.INDEX_TITLE);
         if (entry.title == null) {
             entry.title = "";
@@ -676,29 +678,36 @@ public abstract class BaseIconCache {
                 return false;
             }
             try {
-                BitmapFactory.Options decodeOptions = new BitmapFactory.Options();
-                decodeOptions.inPreferredConfig = Config.HARDWARE;
-                entry.bitmap = BitmapInfo.of(
-                        requireNonNull(decodeByteArray(data, 0, data.length, decodeOptions)),
-                        entry.bitmap.color);
+                if (ATLEAST_T) {
+                    BitmapFactory.Options decodeOptions = new BitmapFactory.Options();
+                    decodeOptions.inPreferredConfig = Config.HARDWARE;
+                    entry.bitmap = BitmapInfo.of(
+                            requireNonNull(decodeByteArray(data, 0, data.length, decodeOptions)),
+                            entry.bitmap.color);
+                } else {
+                    entry.bitmap = BitmapInfo.fromByteArray(
+                            c.getBlob(2), entry.bitmap.color, cacheKey.user, this, mContext);
+                }
             } catch (Exception e) {
                 return false;
             }
 
-            // Decode mono bitmap
-            data = c.getBlob(IconDB.INDEX_MONO_ICON);
-            Bitmap icon = entry.bitmap.icon;
-            if (data != null && data.length == icon.getHeight() * icon.getWidth()) {
-                Bitmap monoBitmap = Bitmap.createBitmap(
-                        icon.getWidth(), icon.getHeight(), Config.ALPHA_8);
-                monoBitmap.copyPixelsFromBuffer(ByteBuffer.wrap(data));
-                Bitmap hwMonoBitmap = monoBitmap.copy(Config.HARDWARE, false /*isMutable*/);
-                if (hwMonoBitmap != null) {
-                    monoBitmap.recycle();
-                    monoBitmap = hwMonoBitmap;
-                }
-                try (BaseIconFactory factory = getIconFactory()) {
-                    entry.bitmap.setMonoIcon(monoBitmap, factory);
+            if (ATLEAST_T) {
+                // Decode mono bitmap
+                data = c.getBlob(IconDB.INDEX_MONO_ICON);
+                Bitmap icon = entry.bitmap.icon;
+                if (data != null && data.length == icon.getHeight() * icon.getWidth()) {
+                    Bitmap monoBitmap = Bitmap.createBitmap(
+                            icon.getWidth(), icon.getHeight(), Config.ALPHA_8);
+                    monoBitmap.copyPixelsFromBuffer(ByteBuffer.wrap(data));
+                    Bitmap hwMonoBitmap = monoBitmap.copy(Config.HARDWARE, false /*isMutable*/);
+                    if (hwMonoBitmap != null) {
+                        monoBitmap.recycle();
+                        monoBitmap = hwMonoBitmap;
+                    }
+                    try (BaseIconFactory factory = getIconFactory()) {
+                        entry.bitmap.setMonoIcon(monoBitmap, factory);
+                    }
                 }
             }
         }
