@@ -196,7 +196,7 @@ public class BaseIconFactory implements AutoCloseable {
     public BitmapInfo createIconBitmap(String placeholder, int color) {
         if (!ATLEAST_OREO) return null;
 
-        AdaptiveIconDrawable drawable = new CustomAdaptiveIconDrawable(
+        AdaptiveIconDrawable drawable = new AdaptiveIconDrawable(
                 new ColorDrawable(PLACEHOLDER_BACKGROUND_COLOR),
                 new CenterTextDrawable(placeholder, color));
         Bitmap icon = createIconBitmap(drawable, IconNormalizer.ICON_VISIBLE_AREA_FACTOR);
@@ -220,7 +220,7 @@ public class BaseIconFactory implements AutoCloseable {
         if (ATLEAST_OREO) {
             float inset = AdaptiveIconDrawable.getExtraInsetFraction();
             inset = inset / (1 + 2 * inset);
-            d = new CustomAdaptiveIconDrawable(new ColorDrawable(Color.BLACK),
+            d = new AdaptiveIconDrawable(new ColorDrawable(Color.BLACK),
                     new InsetDrawable(d, inset, inset, inset, inset));
         }
         return createBadgedIconBitmap(d, options);
@@ -244,7 +244,8 @@ public class BaseIconFactory implements AutoCloseable {
         float[] scale = new float[1];
         var adaptiveIcon = normalizeAndWrapToAdaptiveIcon(icon, null, scale);
 
-        Bitmap bitmap = createIconBitmap(icon, scale[0]);
+        Bitmap bitmap = createIconBitmap(adaptiveIcon, scale[0],
+            options == null ? MODE_WITH_SHADOW : options.mGenerationMode);
 
         if (ATLEAST_OREO && icon instanceof AdaptiveIconDrawable) {
             mCanvas.setBitmap(bitmap);
@@ -350,12 +351,16 @@ public class BaseIconFactory implements AutoCloseable {
               @Nullable final RectF outIconBounds,
               @NonNull final float[] outScale) {
 
+        boolean shrinkNonAdaptiveIcons = ATLEAST_OREO;
+        
         if (icon == null) {
             return null;
         }
 
-        boolean isFromIconPack = ExtendedBitmapDrawable.isFromIconPack(icon);
-        boolean shrinkNonAdaptiveIcons = !isFromIconPack && IconPreferencesKt.shouldWrapAdaptive(mContext);
+        if (shrinkNonAdaptiveIcons) {
+            boolean isFromIconPack = ExtendedBitmapDrawable.isFromIconPack(icon);
+            shrinkNonAdaptiveIcons = !isFromIconPack && IconPreferencesKt.shouldWrapAdaptive(mContext);
+        }
 
         float scale;
 
