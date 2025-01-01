@@ -678,16 +678,8 @@ public abstract class BaseIconCache {
                 return false;
             }
             try {
-                if (ATLEAST_T) {
-                    BitmapFactory.Options decodeOptions = new BitmapFactory.Options();
-                    decodeOptions.inPreferredConfig = Config.HARDWARE;
-                    entry.bitmap = BitmapInfo.of(
-                            requireNonNull(decodeByteArray(data, 0, data.length, decodeOptions)),
-                            entry.bitmap.color);
-                } else {
-                    entry.bitmap = BitmapInfo.fromByteArray(
-                            c.getBlob(2), entry.bitmap.color, cacheKey.user, this, mContext);
-                }
+                entry.bitmap = BitmapInfo.fromByteArray(
+                    c.getBlob(2), entry.bitmap.color, cacheKey.user, this, mContext);
             } catch (Exception e) {
                 return false;
             }
@@ -793,7 +785,7 @@ public abstract class BaseIconCache {
             @Nullable final String keywords) {
         ContentValues values = new ContentValues();
         if (bitmapInfo.canPersist()) {
-            values.put(IconDB.COLUMN_ICON, flattenBitmap(bitmapInfo.icon));
+            values.put(IconDB.COLUMN_ICON, bitmapInfo.toByteArray());
 
             // Persist mono bitmap as alpha channel
             Bitmap mono = bitmapInfo.getMono();

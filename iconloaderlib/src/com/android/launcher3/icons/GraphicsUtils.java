@@ -15,6 +15,8 @@
  */
 package com.android.launcher3.icons;
 
+import static com.android.launcher3.icons.BitmapInfo.TYPE_DEFAULT;
+
 import android.content.Context;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
@@ -64,6 +66,7 @@ public class GraphicsUtils {
     public static byte[] flattenBitmap(Bitmap bitmap) {
         ByteArrayOutputStream out = new ByteArrayOutputStream(getExpectedBitmapSize(bitmap));
         try {
+            out.write(TYPE_DEFAULT);
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
             out.flush();
             out.close();

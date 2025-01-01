@@ -333,7 +333,7 @@ public class FastBitmapDrawable extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    public final ConstantState getConstantState() {
+    public ConstantState getConstantState() {
         FastBitmapConstantState cs = newConstantState();
         cs.mIsDisabled = mIsDisabled;
         if (mBadge != null) {
@@ -435,7 +435,7 @@ public class FastBitmapDrawable extends Drawable implements Drawable.Callback {
         }
 
         @Override
-        public final FastBitmapDrawable newDrawable() {
+        public FastBitmapDrawable newDrawable() {
             FastBitmapDrawable drawable = createDrawable();
             drawable.setIsDisabled(mIsDisabled);
             if (mBadgeConstantState != null) {

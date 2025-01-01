@@ -15,6 +15,8 @@
  */
 package com.android.launcher3.icons;
 
+import static com.android.launcher3.icons.GraphicsUtils.getExpectedBitmapSize;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
@@ -23,6 +25,7 @@ import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.UserHandle;
+import android.util.Log;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.NonNull;
@@ -30,6 +33,9 @@ import androidx.annotation.Nullable;
 
 import com.android.launcher3.icons.cache.BaseIconCache;
 import com.android.launcher3.util.FlagOp;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 public class BitmapInfo {
 
@@ -70,6 +76,8 @@ public class BitmapInfo {
     public @BitmapInfoFlags int flags;
     private BitmapInfo badgeInfo;
 
+    protected static final byte TYPE_DEFAULT = 1;
+    protected static final byte TYPE_THEMED = 2;
     protected static final byte TYPE_THEMED_V2 = 3;
 
     public BitmapInfo(Bitmap icon, int color) {
@@ -136,6 +144,13 @@ public class BitmapInfo {
     }
 
     /**
+     * Returns a new icon based on the theme of the context
+     */
+    public FastBitmapDrawable newThemedIcon(Context context) {
+        return newIcon(context);
+    }
+
+    /**
      * Creates a drawable for the provided BitmapInfo
      */
     public FastBitmapDrawable newIcon(Context context) {
@@ -149,8 +164,6 @@ public class BitmapInfo {
         FastBitmapDrawable drawable;
         if (isLowRes()) {
             drawable = new PlaceHolderIconDrawable(this, context);
-        } else  if ((creationFlags & FLAG_THEMED) != 0 && mMono != null) {
-            drawable = ThemedIconDrawable.newDrawable(this, context);
         } else {
             drawable = new FastBitmapDrawable(this);
         }
@@ -206,6 +219,27 @@ public class BitmapInfo {
     }
 
     /**
+     * Returns a serialized version of BitmapInfo
+     */
+    @Nullable
+    public byte[] toByteArray() {
+        if (isNullOrLowRes()) {
+            return null;
+        }
+        ByteArrayOutputStream out = new ByteArrayOutputStream(getExpectedBitmapSize(icon) + 1);
+        try {
+            out.write(TYPE_DEFAULT);
+            icon.compress(Bitmap.CompressFormat.PNG, 100, out);
+            out.flush();
+            out.close();
+            return out.toByteArray();
+        } catch (IOException e) {
+            Log.w(TAG, "Could not write bitmap");
+            return null;
+        }
+    }
+
+    /**
      * Returns a BitmapInfo previously serialized using {@link #toByteArray()};
      */
     @NonNull
@@ -221,10 +255,12 @@ public class BitmapInfo {
         } else {
             decodeOptions = null;
         }
-        if (data[0] == FLAG_NO_BADGE) {
+        if (data[0] == TYPE_DEFAULT) {
             return BitmapInfo.of(
-                    BitmapFactory.decodeByteArray(data, 1, data.length - 1, decodeOptions),
-                    color);
+                BitmapFactory.decodeByteArray(data, 1, data.length - 1, decodeOptions),
+                color);
+        } else if (data[0] == TYPE_THEMED_V2) {
+            return ThemedIconDrawable.ThemedBitmapInfo.decode(data, color, decodeOptions, user, iconCache, context);
         } else {
             return null;
         }

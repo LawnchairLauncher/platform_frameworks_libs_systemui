@@ -257,16 +257,15 @@ public class BaseIconFactory implements AutoCloseable {
                 ? options.mExtractedColor : mColorExtractor.findDominantColorByHue(bitmap);
         BitmapInfo info = BitmapInfo.of(bitmap, color);
 
-        if (adaptiveIcon instanceof BitmapInfo.Extender extender) {
-            info = extender.getExtendedInfo(bitmap, color, this, scale[0]);
-        } else if (ATLEAST_T && mMonoIconEnabled && icon instanceof AdaptiveIconDrawable) {
+        if (ATLEAST_T && mMonoIconEnabled && icon instanceof AdaptiveIconDrawable) {
             Drawable mono = getMonochromeDrawable(((AdaptiveIconDrawable) icon));
             if (mono != null) {
                 info.setMonoIcon(createIconBitmap(icon, scale[0], MODE_ALPHA), this);
             }
         }
         info = info.withFlags(getBitmapFlagOp(options));
-        return info;
+        return icon instanceof BitmapInfo.Extender
+            ? ((BitmapInfo.Extender) icon).getExtendedInfo(bitmap, color, this, scale[0]) : info;
     }
 
     /**
