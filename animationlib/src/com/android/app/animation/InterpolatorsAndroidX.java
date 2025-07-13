@@ -65,14 +65,14 @@ public class InterpolatorsAndroidX {
      * is disappearing e.g. when moving off screen.
      */
     public static final Interpolator EMPHASIZED_ACCELERATE = new PathInterpolator(
-            0.3f, 0f, 0.8f, 0.15f);
+        0.3f, 0f, 0.8f, 0.15f);
 
     /**
      * The decelerating emphasized interpolator. Used for hero / emphasized movement of content that
      * is appearing e.g. when coming from off screen
      */
     public static final Interpolator EMPHASIZED_DECELERATE = new PathInterpolator(
-            0.05f, 0.7f, 0.1f, 1f);
+        0.05f, 0.7f, 0.1f, 1f);
 
     public static final Interpolator EXAGGERATED_EASE;
     static {
@@ -104,21 +104,21 @@ public class InterpolatorsAndroidX {
      * The standard interpolator that should be used on every normal animation
      */
     public static final Interpolator STANDARD = new PathInterpolator(
-            0.2f, 0f, 0f, 1f);
+        0.2f, 0f, 0f, 1f);
 
     /**
      * The standard accelerating interpolator that should be used on every regular movement of
      * content that is disappearing e.g. when moving off screen.
      */
     public static final Interpolator STANDARD_ACCELERATE = new PathInterpolator(
-            0.3f, 0f, 1f, 1f);
+        0.3f, 0f, 1f, 1f);
 
     /**
      * The standard decelerating interpolator that should be used on every regular movement of
      * content that is appearing e.g. when coming from off screen.
      */
     public static final Interpolator STANDARD_DECELERATE = new PathInterpolator(
-            0f, 0f, 0f, 1f);
+        0f, 0f, 0f, 1f);
 
     /*
      * ============================================================================================
@@ -164,7 +164,7 @@ public class InterpolatorsAndroidX {
      * goes from 1 to 0 instead of 0 to 1).
      */
     public static final Interpolator FAST_OUT_SLOW_IN_REVERSE =
-            new PathInterpolator(0.8f, 0f, 0.6f, 1f);
+        new PathInterpolator(0.8f, 0f, 0.6f, 1f);
     public static final Interpolator SLOW_OUT_LINEAR_IN = new PathInterpolator(0.8f, 0f, 1f, 1f);
     public static final Interpolator AGGRESSIVE_EASE = new PathInterpolator(0.2f, 0f, 0f, 1f);
     public static final Interpolator AGGRESSIVE_EASE_IN_OUT = new PathInterpolator(0.6f,0, 0.4f, 1);
@@ -188,31 +188,31 @@ public class InterpolatorsAndroidX {
     public static final Interpolator CUSTOM_40_40 = new PathInterpolator(0.4f, 0f, 0.6f, 1f);
     public static final Interpolator ICON_OVERSHOT = new PathInterpolator(0.4f, 0f, 0.2f, 1.4f);
     public static final Interpolator ICON_OVERSHOT_LESS = new PathInterpolator(0.4f, 0f, 0.2f,
-            1.1f);
+        1.1f);
     public static final Interpolator PANEL_CLOSE_ACCELERATED = new PathInterpolator(0.3f, 0, 0.5f,
-            1);
+        1);
     public static final Interpolator BOUNCE = new BounceInterpolator();
     /**
      * For state transitions on the control panel that lives in GlobalActions.
      */
     public static final Interpolator CONTROL_STATE = new PathInterpolator(0.4f, 0f, 0.2f,
-            1.0f);
+        1.0f);
 
     /**
      * Interpolator to be used when animating a move based on a click. Pair with enough duration.
      */
     public static final Interpolator TOUCH_RESPONSE =
-            new PathInterpolator(0.3f, 0f, 0.1f, 1f);
+        new PathInterpolator(0.3f, 0f, 0.1f, 1f);
 
     /**
      * Like {@link #TOUCH_RESPONSE}, but used in case the animation is played in reverse (i.e. t
      * goes from 1 to 0 instead of 0 to 1).
      */
     public static final Interpolator TOUCH_RESPONSE_REVERSE =
-            new PathInterpolator(0.9f, 0f, 0.7f, 1f);
+        new PathInterpolator(0.9f, 0f, 0.7f, 1f);
 
     public static final Interpolator TOUCH_RESPONSE_ACCEL_DEACCEL =
-            v -> ACCELERATE_DECELERATE.getInterpolation(TOUCH_RESPONSE.getInterpolation(v));
+        v -> ACCELERATE_DECELERATE.getInterpolation(TOUCH_RESPONSE.getInterpolation(v));
 
 
     /**
@@ -242,7 +242,7 @@ public class InterpolatorsAndroidX {
          */
         private float zInterpolate(float input) {
             return (1.0f - FOCAL_LENGTH / (FOCAL_LENGTH + input)) /
-                    (1.0f - FOCAL_LENGTH / (FOCAL_LENGTH + 1.0f));
+                (1.0f - FOCAL_LENGTH / (FOCAL_LENGTH + 1.0f));
         }
     };
 
@@ -303,13 +303,13 @@ public class InterpolatorsAndroidX {
      * @return the interpolated overshoot
      */
     public static float getOvershootInterpolation(float progress, float overshootAmount,
-            float overshootStart) {
+        float overshootStart) {
         if (overshootAmount == 0.0f || overshootStart == 0.0f) {
             throw new IllegalArgumentException("Invalid values for overshoot");
         }
         float b = MathUtils.log((overshootAmount + 1) / (overshootAmount)) / overshootStart;
         return MathUtils.max(0.0f,
-                (float) (1.0f - Math.exp(-b * progress)) * (overshootAmount + 1.0f));
+            (float) (1.0f - Math.exp(-b * progress)) * (overshootAmount + 1.0f));
     }
 
     /**
@@ -350,11 +350,11 @@ public class InterpolatorsAndroidX {
      * 1 by upperBound.
      */
     public static Interpolator clampToProgress(Interpolator interpolator, float lowerBound,
-            float upperBound) {
+        float upperBound) {
         if (upperBound < lowerBound) {
             throw new IllegalArgumentException(
-                    String.format("upperBound (%f) must be greater than lowerBound (%f)",
-                            upperBound, lowerBound));
+                String.format("upperBound (%f) must be greater than lowerBound (%f)",
+                    upperBound, lowerBound));
         }
         return t -> clampToProgress(interpolator, t, lowerBound, upperBound);
     }
@@ -367,11 +367,11 @@ public class InterpolatorsAndroidX {
      * interpolator.
      */
     public static float clampToProgress(
-            Interpolator interpolator, float progress, float lowerBound, float upperBound) {
+        Interpolator interpolator, float progress, float lowerBound, float upperBound) {
         if (upperBound < lowerBound) {
             throw new IllegalArgumentException(
-                    String.format("upperBound (%f) must be greater than lowerBound (%f)",
-                            upperBound, lowerBound));
+                String.format("upperBound (%f) must be greater than lowerBound (%f)",
+                    upperBound, lowerBound));
         }
 
         if (progress == lowerBound && progress == upperBound) {
@@ -404,7 +404,7 @@ public class InterpolatorsAndroidX {
      * such as to take over a user-controlled animation when they let go.
      */
     public static Interpolator mapToProgress(Interpolator interpolator, float lowerBound,
-            float upperBound) {
+        float upperBound) {
         return t -> mapRange(interpolator.getInterpolation(t), lowerBound, upperBound);
     }
 

@@ -3,6 +3,7 @@ plugins {
     id 'org.jetbrains.kotlin.android'
 }
 
+// Lawnchair-TODO-Postmerge: AOSP now uses kts build scripts for this
 android {
     namespace "com.android.launcher3.icons"
     sourceSets {
@@ -13,9 +14,9 @@ android {
     }
 }
 
-addFrameworkJar('framework-15.jar')
+addFrameworkJar('framework-16.jar')
 
 dependencies {
     implementation "androidx.palette:palette-ktx:1.0.0"
-    compileOnly fileTree(dir: FRAMEWORK_PREBUILTS_DIR, include: 'framework-15.jar')
+    compileOnly projects.flags
 }

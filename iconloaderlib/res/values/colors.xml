@@ -29,6 +29,4 @@
 
     <!-- Yellow 600, used for highlighting "important" conversations in settings & notifications -->
     <color name="important_conversation">#f9ab00</color>
-
-    <color name="legacy_icon_background">#FFFFFF</color>
 </resources>

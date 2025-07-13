@@ -3,6 +3,10 @@ apply plugin: 'kotlin-android'
 
 android {
     namespace = "com.android.app.animation"
+    testNamespace = "com.android.app.animation.tests"
+    defaultConfig {
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
 
     sourceSets {
         main {
@@ -15,12 +19,19 @@ android {
             manifest.srcFile 'tests/AndroidManifest.xml'
         }
     }
+    lintOptions {
+        abortOnError false
+    }
+    tasks.lint.enabled = false
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+    }
 }
 
-addFrameworkJar('framework-14.jar')
+addFrameworkJar('framework-16.jar')
 
 dependencies {
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.23'
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:2.1.0'
     implementation 'androidx.core:core-animation:1.0.0'
-    implementation 'androidx.core:core-ktx:1.15.0'
+    implementation 'androidx.core:core-ktx:1.16.0'
 }

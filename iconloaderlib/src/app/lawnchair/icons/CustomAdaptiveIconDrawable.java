@@ -241,6 +241,13 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
     }
 
     /**
+     * @hide
+     */
+    public static float getExtraInsetPercentage() {
+        return EXTRA_INSET_PERCENTAGE;
+    }
+
+    /**
      * When called before the bound is set, the returned path is identical to
      * R.string.config_icon_mask. After the bound is set, the
      * returned path's computed bound is same as the #getBounds().

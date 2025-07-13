@@ -36,7 +36,11 @@ public class ResultType {
     public static final int PEOPLE = 1 << 2;
     public static final int ACTION = 1 << 3;
     public static final int SETTING = 1 << 4;
-    public static final int SCREENSHOT = 1 << 5;
+    public static final int IMAGE = 1 << 5;
+    
+    @Deprecated(since = "Use IMAGE")
+    public static final int SCREENSHOT = IMAGE;
+    
     public static final int PLAY = 1 << 8;
     public static final int SUGGEST = 1 << 9;
     public static final int ASSISTANT = 1 << 10;
@@ -46,4 +50,47 @@ public class ResultType {
     public static final int PEOPLE_TILE = 1 << 14;
     public static final int LEGACY_SHORTCUT = 1 << 15;
     public static final int MEMORY = 1 << 16;
+    public static final int WEB_SUGGEST = 1 << 17;
+    public static final int NO_FULFILLMENT = 1 << 18;
+    public static final int EDUCARD = 1 << 19;
+    public static final int SYSTEM_POINTER = 1 << 20;
+    public static final int VIDEO = 1 << 21;
+
+    public static final int PUBLIC_DATA_TYPE = APPLICATION | SETTING | PLAY | WEB_SUGGEST;
+    public static final int PRIMITIVE_TYPE = APPLICATION | SLICE | SHORTCUT | WIDGETS | ACTION |
+        LEGACY_SHORTCUT;
+    public static final int CORPUS_TYPE =
+        PEOPLE | SETTING | IMAGE | PLAY | SUGGEST | ASSISTANT | CHROMETAB | NAVVYSITE | TIPS
+            | PEOPLE_TILE | MEMORY | WEB_SUGGEST | VIDEO;
+    public static final int RANK_TYPE = SYSTEM_POINTER;
+    public static final int UI_TYPE = EDUCARD | NO_FULFILLMENT;
+
+    public static boolean isSlice(int resultType) {
+        return (resultType & SLICE) != 0;
+    }
+
+    public static boolean isSystemPointer(int resultType) {
+        return (resultType & SYSTEM_POINTER) != 0;
+    }
+
+    /**
+     * Returns result type integer where only {@code #CORPUS_TYPE} bit will turned on.
+     */
+    public static int getCorpusType(int resultType) {
+        return (resultType & CORPUS_TYPE);
+    }
+
+    /**
+     * Returns result type integer where only {@code #PRIMITIVE_TYPE} bit will be turned on.
+     */
+    public static int getPrimitiveType(int resultType) {
+        return (resultType & PRIMITIVE_TYPE);
+    }
+
+    /**
+     * Returns whether the given result type is privacy safe or not.
+     */
+    public static boolean isPrivacySafe(int resultType) {
+        return (resultType & PUBLIC_DATA_TYPE) != 0;
+    }
 }

@@ -23,10 +23,11 @@
     <dimen name="default_icon_bitmap_size">56dp</dimen>
     <bool name="simple_cache_enable_im_memory">false</bool>
     <string name="cache_db_name" translatable="false">app_icons.db</string>
-    <string-array name="dynamic_calendar_components_name">
-        <item>default</item>
-    </string-array>
+
     <string name="calendar_component_name" translatable="false"></string>
     <string name="clock_component_name" translatable="false"></string>
-    <string name="icon_packs_intent_name" translatable="false">app.lawnchair.icons.THEMED_ICON</string>
+
+    <!-- Configures whether to enable forced theme icon, disabled by default -->
+    <bool name="enable_forced_themed_icon">false</bool>
+
 </resources>
