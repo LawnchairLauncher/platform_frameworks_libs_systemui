@@ -40,6 +40,10 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+import androidx.core.util.Supplier;
+import app.lawnchair.icons.ClockMetadata;
+import app.lawnchair.icons.CustomAdaptiveIconDrawable;
 import com.android.launcher3.icons.mono.ThemedIconDrawable;
 
 import java.util.Calendar;
@@ -50,7 +54,7 @@ import java.util.function.IntFunction;
  * Wrapper over {@link AdaptiveIconDrawable} to intercept icon flattening logic for dynamic
  * clock icons
  */
-public class ClockDrawableWrapper extends AdaptiveIconDrawable implements BitmapInfo.Extender {
+public class ClockDrawableWrapper extends CustomAdaptiveIconDrawable implements BitmapInfo.Extender {
 
     public static boolean sRunningInTest = false;
 
@@ -131,7 +135,30 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
             return null;
         }
 
-        Drawable drawable = drawableProvider.apply(drawableId).mutate();
+        int hourLayerIndex = metadata.getInt(HOUR_INDEX_METADATA_KEY, INVALID_VALUE);
+        int minuteLayerIndex = metadata.getInt(MINUTE_INDEX_METADATA_KEY, INVALID_VALUE);
+        int secondLayerIndex = metadata.getInt(SECOND_INDEX_METADATA_KEY, INVALID_VALUE);
+
+        int defaultHour = metadata.getInt(DEFAULT_HOUR_METADATA_KEY, 0);
+        int defaultMinute = metadata.getInt(DEFAULT_MINUTE_METADATA_KEY, 0);
+        int defaultSecond = metadata.getInt(DEFAULT_SECOND_METADATA_KEY, 0);
+
+        ClockMetadata clockMetadata = new ClockMetadata(
+            hourLayerIndex,
+            minuteLayerIndex,
+            secondLayerIndex,
+            defaultHour,
+            defaultMinute,
+            defaultSecond
+        );
+        
+        return forMeta(0, clockMetadata, () -> drawableProvider.apply(drawableId));
+    }
+    
+    public static ClockDrawableWrapper forMeta(
+        @Deprecated(since = "Not used, kept for compatibility reason.") int targetSdkVersion,
+        @NonNull ClockMetadata metadata, Supplier<Drawable> drawableProvider) {
+        Drawable drawable = drawableProvider.get().mutate();
         if (!(drawable instanceof AdaptiveIconDrawable)) {
             return null;
         }
@@ -141,13 +168,13 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
         AnimationInfo info = wrapper.mAnimationInfo;
 
         info.baseDrawableState = drawable.getConstantState();
-        info.hourLayerIndex = metadata.getInt(HOUR_INDEX_METADATA_KEY, INVALID_VALUE);
-        info.minuteLayerIndex = metadata.getInt(MINUTE_INDEX_METADATA_KEY, INVALID_VALUE);
-        info.secondLayerIndex = metadata.getInt(SECOND_INDEX_METADATA_KEY, INVALID_VALUE);
+        info.hourLayerIndex = metadata.getHourLayerIndex();
+        info.minuteLayerIndex = metadata.getMinuteLayerIndex();
+        info.secondLayerIndex = metadata.getSecondLayerIndex();
 
-        info.defaultHour = metadata.getInt(DEFAULT_HOUR_METADATA_KEY, 0);
-        info.defaultMinute = metadata.getInt(DEFAULT_MINUTE_METADATA_KEY, 0);
-        info.defaultSecond = metadata.getInt(DEFAULT_SECOND_METADATA_KEY, 0);
+        info.defaultHour = metadata.getDefaultHour();
+        info.defaultMinute = metadata.getDefaultMinute();
+        info.defaultSecond = metadata.getDefaultSecond();
 
         LayerDrawable foreground = (LayerDrawable) wrapper.getForeground();
         int layerCount = foreground.getNumberOfLayers();
@@ -165,7 +192,7 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
         }
 
         if (ATLEAST_T && aid.getMonochrome() instanceof LayerDrawable) {
-            wrapper.mThemeInfo = info.copyForIcon(new AdaptiveIconDrawable(
+            wrapper.mThemeInfo = info.copyForIcon(new CustomAdaptiveIconDrawable(
                     new ColorDrawable(Color.WHITE), aid.getMonochrome().mutate()));
         }
         info.applyTime(Calendar.getInstance(), foreground);
@@ -175,7 +202,7 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
     @Override
     public ClockBitmapInfo getExtendedInfo(Bitmap bitmap, int color,
             BaseIconFactory iconFactory, float normalizationScale) {
-        AdaptiveIconDrawable background = new AdaptiveIconDrawable(
+        AdaptiveIconDrawable background = new CustomAdaptiveIconDrawable(
                 getBackground().getConstantState().newDrawable(), null);
         Bitmap flattenBG = iconFactory.createScaledBitmap(background,
                 BaseIconFactory.MODE_HARDWARE_WITH_SHADOW);

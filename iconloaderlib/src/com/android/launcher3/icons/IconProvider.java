@@ -70,8 +70,8 @@ public class IconProvider {
     private static final String SYSTEM_STATE_SEPARATOR = " ";
 
     protected final Context mContext;
-    private final ComponentName mCalendar;
-    private final ComponentName mClock;
+    public final ComponentName mCalendar;
+    public final ComponentName mClock;
 
     @NonNull
     protected String mSystemState = "";
@@ -138,7 +138,7 @@ public class IconProvider {
         return getIcon(info, info, iconDpi);
     }
 
-    private Drawable getIcon(PackageItemInfo info, ApplicationInfo appInfo, int iconDpi) {
+    public Drawable getIcon(PackageItemInfo info, ApplicationInfo appInfo, int iconDpi) {
         String packageName = info.packageName;
         ThemeData td = getThemeDataForPackage(packageName);
 
@@ -282,7 +282,7 @@ public class IconProvider {
     /**
      * @return Today's day of the month, zero-indexed.
      */
-    private static int getDay() {
+    public static int getDay() {
         return Calendar.getInstance().get(Calendar.DAY_OF_MONTH) - 1;
     }
 
