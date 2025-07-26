@@ -95,4 +95,10 @@ public class LayoutType {
 
     // layout representing quick calculations
     public static final String CALCULATOR = "calculator";
+
+    // layout representing the empty, no query state
+    public static final String EMPTY_STATE = "empty_state";
+
+    // layout representing search settings
+    public static final String SEARCH_SETTINGS = "launcher_settings";
 }
