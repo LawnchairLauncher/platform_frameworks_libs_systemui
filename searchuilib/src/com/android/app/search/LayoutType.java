@@ -40,6 +40,8 @@ public class LayoutType {
             DIVIDER,
             EMPTY_DIVIDER,
             CALCULATOR,
+            EMPTY_STATE,
+            SEARCH_SETTINGS,
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface SearchLayoutType {}
