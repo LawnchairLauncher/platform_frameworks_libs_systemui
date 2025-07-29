@@ -16,10 +16,46 @@
 
 package com.android.app.search;
 
+import androidx.annotation.StringDef;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
 /**
  * Constants to be used with {@link SearchTarget}.
  */
 public class LayoutType {
+
+    @StringDef(value = {
+            ICON_SINGLE_VERTICAL_TEXT,
+            ICON_HORIZONTAL_TEXT,
+            HORIZONTAL_MEDIUM_TEXT,
+            EXTRA_TALL_ICON_ROW,
+            SMALL_ICON_HORIZONTAL_TEXT,
+            SMALL_ICON_HORIZONTAL_TEXT_THUMBNAIL,
+            ICON_CONTAINER,
+            THUMBNAIL_CONTAINER,
+            BIG_ICON_MEDIUM_HEIGHT_ROW,
+            THUMBNAIL,
+            ICON_SLICE,
+            WIDGET_PREVIEW,
+            WIDGET_LIVE,
+            PEOPLE_TILE,
+            TEXT_HEADER,
+            DIVIDER,
+            EMPTY_DIVIDER,
+            CALCULATOR,
+            SECTION_HEADER,
+            TALL_CARD_WITH_IMAGE_NO_ICON,
+            TEXT_HEADER_ROW,
+            QS_TILE,
+            PLACEHOLDER,
+            RICHANSWER_PLACEHOLDER,
+            EMPTY_STATE,
+            SEARCH_SETTINGS,
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface SearchLayoutType {}
 
     //     ------
     //    | icon |
@@ -110,4 +146,10 @@ public class LayoutType {
     // Only available on or above version code 3.
     public static final String RICHANSWER_PLACEHOLDER = "richanswer_placeholder";
 
+
+    // layout representing the empty, no query state
+    public static final String EMPTY_STATE = "empty_state";
+
+    // layout representing search settings
+    public static final String SEARCH_SETTINGS = "launcher_settings";
 }
