@@ -29,6 +29,7 @@ import android.graphics.PorterDuffColorFilter
 import android.graphics.Rect
 import android.os.Build
 import androidx.core.graphics.ColorUtils
+import app.lawnchair.icons.shouldTransparentBGIcons
 import com.android.launcher3.icons.BitmapInfo
 import com.android.launcher3.icons.FastBitmapDrawable
 import com.android.launcher3.icons.R
@@ -114,7 +115,7 @@ class ThemedIconDrawable(constantState: ThemedConstantState) :
         @ColorInt
         fun getThemedColors(context: Context): IntArray {
             val result = getColors(context)
-            if (!IconPreferencesKt.shouldTransparentBGIcons(context)) {
+            if (!context.shouldTransparentBGIcons()) {
                 return result
             }
             if ((context.getResources()
