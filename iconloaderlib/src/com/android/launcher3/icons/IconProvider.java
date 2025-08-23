@@ -36,6 +36,7 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.drawable.AdaptiveIconDrawable;
+import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.InsetDrawable;
 import android.os.Build;
@@ -51,10 +52,14 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.os.BuildCompat;
 
+import com.android.launcher3.icons.mono.ThemedIconDrawable;
 import com.android.launcher3.util.SafeCloseable;
 
 import java.util.Calendar;
 import java.util.Objects;
+
+import app.lawnchair.icons.CustomAdaptiveIconDrawable;
+import app.lawnchair.icons.IconPreferencesKt;
 
 /**
  * Class to handle icon loading from different packages
@@ -141,21 +146,38 @@ public class IconProvider {
     public Drawable getIcon(PackageItemInfo info, ApplicationInfo appInfo, int iconDpi) {
         String packageName = info.packageName;
         ThemeData td = getThemeDataForPackage(packageName);
-
         Drawable icon = null;
         if (mCalendar != null && mCalendar.getPackageName().equals(packageName)) {
             icon = loadCalendarDrawable(iconDpi, td);
         } else if (mClock != null && mClock.getPackageName().equals(packageName)) {
             icon = ClockDrawableWrapper.forPackage(mContext, mClock.getPackageName(), iconDpi);
         }
+
         if (icon == null) {
             icon = loadPackageIcon(info, appInfo, iconDpi);
-            if (ATLEAST_T && icon instanceof AdaptiveIconDrawable && td != null) {
+            
+            final int[] themedColors = ThemedIconDrawable.getColors(mContext);
+            final int backgroundColor = themedColors[0];
+            final int foregroundColor = themedColors[1];
+
+            if (ATLEAST_T && icon instanceof AdaptiveIconDrawable) {
                 AdaptiveIconDrawable aid = (AdaptiveIconDrawable) icon;
-                if  (aid.getMonochrome() == null) {
-                    icon = new AdaptiveIconDrawable(aid.getBackground(),
-                            aid.getForeground(), td.loadPaddedDrawable());
+
+                if (IconPreferencesKt.shouldTransparentBGIcons(mContext) && aid.getMonochrome() != null) {
+                    Drawable mono = aid.getMonochrome();
+                    mono.setTint(foregroundColor);
+                    return aid;
+                } else {
+                    Drawable bg = new ColorDrawable(backgroundColor);
+                    Drawable fg = aid.getForeground();
+                    fg.setTint(foregroundColor);
+                    icon = new CustomAdaptiveIconDrawable(bg, fg);
                 }
+            } else if (icon != null) {
+                Drawable bg = new ColorDrawable(backgroundColor);
+                Drawable fg = new InsetDrawable(icon, 0.3f);
+                fg.setTint(foregroundColor);
+                icon = new CustomAdaptiveIconDrawable(bg, fg);
             }
         }
         return icon;
@@ -308,7 +330,7 @@ public class IconProvider {
             mResID = resID;
         }
 
-        Drawable loadPaddedDrawable() {
+        public Drawable loadPaddedDrawable() {
             if (!"drawable".equals(mResources.getResourceTypeName(mResID))) {
                 return null;
             }

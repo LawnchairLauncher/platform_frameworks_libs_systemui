@@ -47,6 +47,8 @@ import com.android.launcher3.util.UserIconInfo;
 
 import java.lang.annotation.Retention;
 
+import app.lawnchair.icons.IconPreferencesKt;
+
 /**
  * This class will be moved to androidx library. There shouldn't be any dependency outside
  * this package.
@@ -358,9 +360,12 @@ public class BaseIconFactory implements AutoCloseable {
         if (icon instanceof AdaptiveIconDrawable aid) {
             return aid;
         } else {
+            // Lawnchair
+            int wrapperBackgroundColor = IconPreferencesKt.getWrapperBackgroundColor(mContext, icon);
+            
             EmptyWrapper foreground = new EmptyWrapper();
             AdaptiveIconDrawable dr = new AdaptiveIconDrawable(
-                    new ColorDrawable(mWrapperBackgroundColor), foreground);
+                    new ColorDrawable(wrapperBackgroundColor), foreground);
             dr.setBounds(0, 0, 1, 1);
             float scale = new IconNormalizer(mIconBitmapSize).getScale(icon);
             foreground.setDrawable(createScaledDrawable(icon, scale * LEGACY_ICON_SCALE));
