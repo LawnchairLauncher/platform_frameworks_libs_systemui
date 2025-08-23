@@ -389,8 +389,12 @@ public class BaseIconFactory implements AutoCloseable {
                 break;
             case MODE_HARDWARE:
             case MODE_HARDWARE_WITH_SHADOW: {
-                return BitmapRenderer.createHardwareBitmap(size, size, canvas ->
-                        drawIconBitmap(canvas, icon, scale, bitmapGenerationMode, null));
+                return BitmapRenderer.createHardwareBitmap(size, size, new BitmapRenderer() {
+                    @Override
+                    public void draw(Canvas canvas) {
+                        drawIconBitmap(canvas, icon, scale, bitmapGenerationMode, null);
+                    }
+                });
             }
             case MODE_WITH_SHADOW:
             default:
