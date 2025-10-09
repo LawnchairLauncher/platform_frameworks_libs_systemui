@@ -40,6 +40,8 @@ import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.InsetDrawable;
 import android.os.Build;
+import android.os.Build.VERSION;
+import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Process;
@@ -264,7 +266,9 @@ public class IconProvider {
     @NonNull
     public Drawable getFullResDefaultActivityIcon(final int iconDpi) {
         return Objects.requireNonNull(Resources.getSystem().getDrawableForDensity(
-                android.R.drawable.sym_def_app_icon, iconDpi));
+            VERSION.SDK_INT >= VERSION_CODES.O
+                ? android.R.drawable.sym_def_app_icon : android.R.mipmap.sym_def_app_icon,
+            iconDpi));
     }
 
     /**
