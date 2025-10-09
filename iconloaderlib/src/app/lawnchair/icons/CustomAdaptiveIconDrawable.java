@@ -16,6 +16,8 @@
 
 package app.lawnchair.icons;
 
+import android.annotation.TestApi;
+import android.content.pm.ActivityInfo.Config;
 import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -67,6 +69,10 @@ import androidx.core.graphics.PathParser;
  *      getBounds().right + getBounds().getWidth() * #getExtraInsetFraction(),
  *      getBounds().bottom + getBounds().getHeight() * #getExtraInsetFraction())
  * </pre>
+ *
+ * <p>An alternate drawable can be specified using <code>&lt;monochrome></code> tag which can be
+ * drawn in place of the two (background and foreground) layers. This drawable is tinted
+ * according to the device or surface theme.
  */
 public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements Drawable.Callback {
 
@@ -74,6 +80,7 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
      * Mask path is defined inside device configuration in following dimension: [100 x 100]
      * @hide
      */
+    @TestApi
     public static final float MASK_SIZE = 100f;
 
     /**
@@ -86,7 +93,7 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
      * extra content to reveal within the clip path when performing affine transformations on the
      * layers.
      *
-     * Each layers will reserve 25% of it's width and height.
+     * Each layers will reserve 25% of its width and height.
      *
      * As a result, the view port of the layers is smaller than their intrinsic width and height.
      */
@@ -118,6 +125,7 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
      */
     private static final int BACKGROUND_ID = 0;
     private static final int FOREGROUND_ID = 1;
+    private static final int MONOCHROME_ID = 2;
 
     /**
      * State variable that maintains the {@link ChildDrawable} array.
@@ -135,7 +143,7 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
     private boolean mChildRequestedInvalidation;
     private final Canvas mCanvas;
     private Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG |
-            Paint.FILTER_BITMAP_FLAG);
+        Paint.FILTER_BITMAP_FLAG);
 
     /**
      * Constructor used for xml inflation.
@@ -149,7 +157,7 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
      * constructors to set the state and initialize local properties.
      */
     CustomAdaptiveIconDrawable(@Nullable LayerState state, @Nullable Resources res) {
-        super(null, null);
+        super(null, null, null);
         if (!sInitialized) {
             Log.e("CustomAdaptiveIconDrawable", "shape not initialized", new Throwable());
         }
@@ -184,7 +192,7 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
         layer.mDrawable = drawable;
         layer.mDrawable.setCallback(this);
         mLayerState.mChildrenChangingConfigurations |=
-                layer.mDrawable.getChangingConfigurations();
+            layer.mDrawable.getChangingConfigurations();
         return layer;
     }
 
@@ -199,7 +207,19 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
      * @param foregroundDrawable drawable that should be rendered in the foreground
      */
     public CustomAdaptiveIconDrawable(Drawable backgroundDrawable,
-                                Drawable foregroundDrawable) {
+            Drawable foregroundDrawable) {
+        this(backgroundDrawable, foregroundDrawable, null);
+    }
+
+    /**
+     * Constructor used to dynamically create this drawable.
+     *
+     * @param backgroundDrawable drawable that should be rendered in the background
+     * @param foregroundDrawable drawable that should be rendered in the foreground
+     * @param monochromeDrawable an alternate drawable which can be tinted per system theme color
+     */
+    public CustomAdaptiveIconDrawable(@Nullable Drawable backgroundDrawable,
+            @Nullable Drawable foregroundDrawable, @Nullable Drawable monochromeDrawable) {
         this((LayerState)null, null);
         if (backgroundDrawable != null) {
             addLayer(BACKGROUND_ID, createChildDrawable(backgroundDrawable));
@@ -207,10 +227,13 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
         if (foregroundDrawable != null) {
             addLayer(FOREGROUND_ID, createChildDrawable(foregroundDrawable));
         }
+        if (monochromeDrawable != null) {
+            addLayer(MONOCHROME_ID, createChildDrawable(monochromeDrawable));
+        }
     }
 
     private CustomAdaptiveIconDrawable(AdaptiveIconDrawable drawable) {
-        this(drawable.getBackground(), drawable.getForeground());
+        this(drawable.getBackground(), drawable.getForeground(), drawable.getMonochrome());
     }
 
     /**
@@ -280,6 +303,18 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
         return mLayerState.mChildren[BACKGROUND_ID].mDrawable;
     }
 
+
+    /**
+     * Returns the monochrome version of this drawable. Callers can use a tinted version of
+     * this drawable instead of the original drawable on surfaces stressing user theming.
+     *
+     *  @return the monochrome drawable
+     */
+    @Nullable
+    public Drawable getMonochrome() {
+        return mLayerState.mChildren[MONOCHROME_ID].mDrawable;
+    }
+
     @Override
     protected void onBoundsChange(Rect bounds) {
         if (bounds.isEmpty()) {
@@ -310,9 +345,6 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
 
         for (int i = 0, count = mLayerState.N_CHILDREN; i < count; i++) {
             final ChildDrawable r = mLayerState.mChildren[i];
-            if (r == null) {
-                continue;
-            }
             final Drawable d = r.mDrawable;
             if (d == null) {
                 continue;
@@ -353,14 +385,11 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
         if (mLayersShader == null) {
             mCanvas.setBitmap(mLayersBitmap);
             mCanvas.drawColor(Color.BLACK);
-            for (int i = 0; i < mLayerState.N_CHILDREN; i++) {
-                if (mLayerState.mChildren[i] == null) {
-                    continue;
-                }
-                final Drawable dr = mLayerState.mChildren[i].mDrawable;
-                if (dr != null) {
-                    dr.draw(mCanvas);
-                }
+            if (mLayerState.mChildren[BACKGROUND_ID].mDrawable != null) {
+                mLayerState.mChildren[BACKGROUND_ID].mDrawable.draw(mCanvas);
+            }
+            if (mLayerState.mChildren[FOREGROUND_ID].mDrawable != null) {
+                mLayerState.mChildren[FOREGROUND_ID].mDrawable.draw(mCanvas);
             }
             mLayersShader = new BitmapShader(mLayersBitmap, TileMode.CLAMP, TileMode.CLAMP);
             mPaint.setShader(mLayersShader);
@@ -473,7 +502,7 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
     }
 
     @Override
-    public int getChangingConfigurations() {
+    public @Config int getChangingConfigurations() {
         return super.getChangingConfigurations() | mLayerState.getChangingConfigurations();
     }
 
@@ -762,7 +791,7 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
         }
 
         ChildDrawable(@NonNull ChildDrawable orig, @NonNull AdaptiveIconDrawable owner,
-                      @Nullable Resources res) {
+                @Nullable Resources res) {
 
             final Drawable dr = orig.mDrawable;
             final Drawable clone;
@@ -803,7 +832,7 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
     static class LayerState extends ConstantState {
         private int[] mThemeAttrs;
 
-        final static int N_CHILDREN = 2;
+        static final int N_CHILDREN = 3;
         ChildDrawable[] mChildren;
 
         // The density at which to render the drawable and its children.
@@ -815,8 +844,8 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
 
         int mOpacityOverride = PixelFormat.UNKNOWN;
 
-        int mChangingConfigurations;
-        int mChildrenChangingConfigurations;
+        @Config int mChangingConfigurations;
+        @Config int mChildrenChangingConfigurations;
 
         @DrawableRes int mSourceDrawableId = Resources.ID_NULL;
 
@@ -828,7 +857,7 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
         private boolean mAutoMirrored = false;
 
         LayerState(@Nullable LayerState orig, @NonNull AdaptiveIconDrawable owner,
-                   @Nullable Resources res) {
+                @Nullable Resources res) {
             mDensity = resolveDensity(res, orig != null ? orig.mDensity : 0);
             mChildren = new ChildDrawable[N_CHILDREN];
             if (orig != null) {
@@ -891,7 +920,7 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
         }
 
         @Override
-        public int getChangingConfigurations() {
+        public @Config int getChangingConfigurations() {
             return mChangingConfigurations
                     | mChildrenChangingConfigurations;
         }
