@@ -360,12 +360,12 @@ public class BaseIconFactory implements AutoCloseable {
         if (icon instanceof AdaptiveIconDrawable aid) {
             return aid;
         } else {
-            // Lawnchair
-            int wrapperBackgroundColor = IconPreferencesKt.getWrapperBackgroundColor(mContext, icon);
+            // Lawnchair-TODO: NO-OP WrapperBackground and auto adaptive
+            // int wrapperBackgroundColor = IconPreferencesKt.getWrapperBackgroundColor(mContext, icon);
             
             EmptyWrapper foreground = new EmptyWrapper();
             AdaptiveIconDrawable dr = new AdaptiveIconDrawable(
-                    new ColorDrawable(wrapperBackgroundColor), foreground);
+                    new ColorDrawable(mWrapperBackgroundColor), foreground);
             dr.setBounds(0, 0, 1, 1);
             float scale = new IconNormalizer(mIconBitmapSize).getScale(icon);
             foreground.setDrawable(createScaledDrawable(icon, scale * LEGACY_ICON_SCALE));
@@ -389,12 +389,8 @@ public class BaseIconFactory implements AutoCloseable {
                 break;
             case MODE_HARDWARE:
             case MODE_HARDWARE_WITH_SHADOW: {
-                return BitmapRenderer.createHardwareBitmap(size, size, new BitmapRenderer() {
-                    @Override
-                    public void draw(Canvas canvas) {
-                        drawIconBitmap(canvas, icon, scale, bitmapGenerationMode, null);
-                    }
-                });
+                return BitmapRenderer.createHardwareBitmap(size, size, canvas ->
+                    drawIconBitmap(canvas, icon, scale, bitmapGenerationMode, null));
             }
             case MODE_WITH_SHADOW:
             default:

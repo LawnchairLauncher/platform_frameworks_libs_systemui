@@ -137,21 +137,10 @@ class ThemedIconDrawable(constantState: ThemedConstantState) :
                 return COLORS_LOADER(context);
             }
             val res = context.resources
-//                intArrayOf(
-//                    res.getColor(R.color.themed_icon_background_color),
-//                    res.getColor(R.color.themed_icon_color),
-//                )
-            if ((res.configuration.uiMode and UI_MODE_NIGHT_MASK) === UI_MODE_NIGHT_YES) {
-                return intArrayOf(
-                    res.getColor(android.R.color.system_accent2_800),
-                    res.getColor(android.R.color.system_accent1_200),
-                )
-            } else {
-                return intArrayOf(
-                    res.getColor(android.R.color.system_accent1_100),
-                    res.getColor(android.R.color.system_accent1_700),
-                )
-            }
+            return intArrayOf(
+                res.getColor(R.color.themed_icon_background_color),
+                res.getColor(R.color.themed_icon_color),
+            )
         }
 
         @JvmStatic

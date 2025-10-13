@@ -19,7 +19,6 @@ package com.android.launcher3.icons;
 import static android.graphics.Paint.ANTI_ALIAS_FLAG;
 import static android.graphics.Paint.FILTER_BITMAP_FLAG;
 
-import android.annotation.ColorInt;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -31,6 +30,7 @@ import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.util.Log;
 import android.view.ViewDebug;
+import androidx.annotation.ColorInt;
 import androidx.core.graphics.ColorUtils;
 import androidx.palette.graphics.Palette;
 
@@ -50,6 +50,8 @@ public class DotRenderer {
 
     private final float mCircleRadius;
     private final Paint mCirclePaint = new Paint(ANTI_ALIAS_FLAG | FILTER_BITMAP_FLAG);
+
+    // Lawnchair
     private final Paint mTextPaint = new Paint(ANTI_ALIAS_FLAG | FILTER_BITMAP_FLAG);
 
     private final Bitmap mBackgroundWithShadow;
@@ -156,9 +158,9 @@ public class DotRenderer {
     }
 
     /**
-     * Draw a circle on top of the canvas according to the given params.
+     * LC: Draw a circle on top of the canvas according to the given params.
      * 
-     * Include feature for notification dots with count.
+     * Include: notification number counter
      */
     public void draw(Canvas canvas, DrawParams params, int numNotifications) {
         if (params == null) {
@@ -175,24 +177,17 @@ public class DotRenderer {
         // Ensure dot fits entirely in canvas clip bounds.
         Rect canvasBounds = canvas.getClipBounds();
         float offsetX = params.leftAlign
-                ? Math.max(0, canvasBounds.left - (dotCenterX + mBitmapOffset))
-                : Math.min(0, canvasBounds.right - (dotCenterX - mBitmapOffset));
+            ? Math.max(0, canvasBounds.left - (dotCenterX + mBitmapOffset))
+            : Math.min(0, canvasBounds.right - (dotCenterX - mBitmapOffset));
         float offsetY = Math.max(0, canvasBounds.top - (dotCenterY + mBitmapOffset));
 
         // We draw the dot relative to its center.
         canvas.translate(dotCenterX + offsetX, dotCenterY + offsetY);
         canvas.scale(params.scale, params.scale);
 
-        int dotColor;
-        if (mColor != 0) {
-            dotColor = mColor;
-        } else {
-            dotColor = params.dotColor;
-        }
-
         mCirclePaint.setColor(Color.BLACK);
         canvas.drawBitmap(mBackgroundWithShadow, mBitmapOffset, mBitmapOffset, mCirclePaint);
-        mCirclePaint.setColor(dotColor);
+        mCirclePaint.setColor(params.dotColor);
         canvas.drawCircle(0, 0, mCircleRadius, mCirclePaint);
 
         if (mDisplayCount && numNotifications > 0) {
@@ -201,7 +196,7 @@ public class DotRenderer {
             if (mCounterColor != 0) {
                 counterColor = mCounterColor;
             } else {
-                counterColor = getCounterTextColor(dotColor);
+                counterColor = getCounterTextColor(params.dotColor);
             }
             mTextPaint.setColor(counterColor);
             String text = String.valueOf(Math.min(numNotifications, MAX_COUNT));
@@ -210,7 +205,7 @@ public class DotRenderer {
             float y = mTextRect.height() / 2f - mTextRect.bottom;
             canvas.drawText(text, x, y, mTextPaint);
         }
-        
+
         canvas.restore();
     }
 
@@ -234,40 +229,30 @@ public class DotRenderer {
         // Ensure dot fits entirely in canvas clip bounds.
         Rect canvasBounds = canvas.getClipBounds();
         float offsetX = params.leftAlign
-            ? Math.max(0, canvasBounds.left - (dotCenterX + mBitmapOffset))
-            : Math.min(0, canvasBounds.right - (dotCenterX - mBitmapOffset));
+                ? Math.max(0, canvasBounds.left - (dotCenterX + mBitmapOffset))
+                : Math.min(0, canvasBounds.right - (dotCenterX - mBitmapOffset));
         float offsetY = Math.max(0, canvasBounds.top - (dotCenterY + mBitmapOffset));
 
         // We draw the dot relative to its center.
         canvas.translate(dotCenterX + offsetX, dotCenterY + offsetY);
         canvas.scale(params.scale, params.scale);
 
-        int dotColor;
-        if (mColor != 0) {
-            dotColor = mColor;
-        } else {
-            dotColor = params.dotColor;
-        }
-
         mCirclePaint.setColor(Color.BLACK);
         canvas.drawBitmap(mBackgroundWithShadow, mBitmapOffset, mBitmapOffset, mCirclePaint);
-        mCirclePaint.setColor(dotColor);
+        mCirclePaint.setColor(params.dotColor);
         canvas.drawCircle(0, 0, mCircleRadius, mCirclePaint);
-
         canvas.restore();
     }
 
     /**
-     * An attempt to adjust digits to their perceived center, they were tuned with Roboto but should
+     * LC: An attempt to adjust digits to their perceived center, they were tuned with Roboto but should
      * (hopefully) work with other OEM fonts as well.
      */
     private float getAdjustment(int number) {
         return switch (number) {
             case 1 -> 1.01f;
             case 2 -> 0.99f;
-            case 3 -> 0.98f;
-            case 4 -> 0.98f;
-            case 6 -> 0.98f;
+            case 3, 4, 6 -> 0.98f;
             case 7 -> 1.02f;
             case 9 -> 0.9f;
             default -> 1f;
@@ -275,7 +260,7 @@ public class DotRenderer {
     }
 
     /**
-     * Returns the color to use for the counter text based on the dot's background color.
+     * LC: Returns the color to use for the counter text based on the dot's background color.
      *
      * @param dotBackgroundColor The color of the dot background.
      * @return The color to use on the counter text.

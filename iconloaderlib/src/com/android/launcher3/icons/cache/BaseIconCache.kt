@@ -624,7 +624,7 @@ constructor(
                     "$COLUMN_FLAGS INTEGER NOT NULL DEFAULT 0, " +
                     "$COLUMN_LABEL TEXT, " +
                     "PRIMARY KEY ($COLUMN_COMPONENT, $COLUMN_USER) " +
-                    ");"),
+                    ");")
             )
         }
     }

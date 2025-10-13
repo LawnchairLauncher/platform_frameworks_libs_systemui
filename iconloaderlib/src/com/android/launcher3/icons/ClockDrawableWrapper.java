@@ -43,7 +43,6 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.core.util.Supplier;
 import app.lawnchair.icons.ClockMetadata;
-import app.lawnchair.icons.CustomAdaptiveIconDrawable;
 import com.android.launcher3.icons.mono.ThemedIconDrawable;
 
 import java.util.Calendar;
@@ -54,7 +53,7 @@ import java.util.function.IntFunction;
  * Wrapper over {@link AdaptiveIconDrawable} to intercept icon flattening logic for dynamic
  * clock icons
  */
-public class ClockDrawableWrapper extends CustomAdaptiveIconDrawable implements BitmapInfo.Extender {
+public class ClockDrawableWrapper extends AdaptiveIconDrawable implements BitmapInfo.Extender {
 
     public static boolean sRunningInTest = false;
 
@@ -125,7 +124,7 @@ public class ClockDrawableWrapper extends CustomAdaptiveIconDrawable implements 
         return null;
     }
 
-    private static ClockDrawableWrapper forExtras(
+    public static ClockDrawableWrapper forExtras(
             Bundle metadata, IntFunction<Drawable> drawableProvider) {
         if (metadata == null) {
             return null;
@@ -192,7 +191,7 @@ public class ClockDrawableWrapper extends CustomAdaptiveIconDrawable implements 
         }
 
         if (ATLEAST_T && aid.getMonochrome() instanceof LayerDrawable) {
-            wrapper.mThemeInfo = info.copyForIcon(new CustomAdaptiveIconDrawable(
+            wrapper.mThemeInfo = info.copyForIcon(new AdaptiveIconDrawable(
                     new ColorDrawable(Color.WHITE), aid.getMonochrome().mutate()));
         }
         info.applyTime(Calendar.getInstance(), foreground);
@@ -202,7 +201,7 @@ public class ClockDrawableWrapper extends CustomAdaptiveIconDrawable implements 
     @Override
     public ClockBitmapInfo getExtendedInfo(Bitmap bitmap, int color,
             BaseIconFactory iconFactory, float normalizationScale) {
-        AdaptiveIconDrawable background = new CustomAdaptiveIconDrawable(
+        AdaptiveIconDrawable background = new AdaptiveIconDrawable(
                 getBackground().getConstantState().newDrawable(), null);
         Bitmap flattenBG = iconFactory.createScaledBitmap(background,
                 BaseIconFactory.MODE_HARDWARE_WITH_SHADOW);
