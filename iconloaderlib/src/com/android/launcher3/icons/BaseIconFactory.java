@@ -33,6 +33,7 @@ import android.graphics.drawable.DrawableWrapper;
 import android.graphics.drawable.InsetDrawable;
 import android.os.Build;
 import android.os.UserHandle;
+import android.util.Log;
 import android.util.SparseArray;
 
 import androidx.annotation.ColorInt;
@@ -42,11 +43,15 @@ import androidx.annotation.Nullable;
 
 import com.android.launcher3.Flags;
 import com.android.launcher3.icons.BitmapInfo.Extender;
+import com.android.launcher3.icons.mono.ThemedIconDrawable;
 import com.android.launcher3.util.FlagOp;
 import com.android.launcher3.util.UserIconInfo;
 
 import java.lang.annotation.Retention;
 
+import app.lawnchair.icons.CustomAdaptiveIconDrawable;
+import app.lawnchair.icons.ExtendedBitmapDrawable;
+import app.lawnchair.icons.FixedScaleDrawable;
 import app.lawnchair.icons.IconPreferencesKt;
 
 /**
@@ -328,11 +333,38 @@ public class BaseIconFactory implements AutoCloseable {
     protected AdaptiveIconDrawable normalizeAndWrapToAdaptiveIcon(
             @Nullable Drawable icon, @NonNull final float[] outScale) {
         if (icon == null) {
+            Log.d("LC-BIF", "Hey! There's icon being return on (null)!");
             return null;
         }
-
-        outScale[0] = IconNormalizer.ICON_VISIBLE_AREA_FACTOR;
-        return wrapToAdaptiveIcon(icon);
+        boolean isFromIconPack = ExtendedBitmapDrawable.isFromIconPack(icon);
+        boolean shrinkNonAdaptiveIcons = !isFromIconPack && IconPreferencesKt.shouldWrapAdaptive(mContext);
+        float scale;
+        
+        if (shrinkNonAdaptiveIcons && !(icon instanceof AdaptiveIconDrawable)) {
+            scale = new IconNormalizer(mIconBitmapSize).getScale(icon);
+            
+            int wrapperBackgroundColor = IconPreferencesKt.getWrapperBackgroundColor(mContext, icon);
+            
+            FixedScaleDrawable foreground = new FixedScaleDrawable();
+            foreground.setDrawable(icon);
+            foreground.setScale(scale);
+            
+            CustomAdaptiveIconDrawable wrapper = new CustomAdaptiveIconDrawable(
+                new ColorDrawable(wrapperBackgroundColor),
+                foreground
+            );
+            
+            scale = new IconNormalizer(mIconBitmapSize).getScale(wrapper);
+            outScale[0] = scale;
+            Log.d("LC-BIF", "Hey! There's icon being return on (wrapper)!");
+            return wrapper;
+        } else {
+            scale = new IconNormalizer(mIconBitmapSize).getScale(icon);
+            outScale[0] = scale;
+            
+            // Icon is either legacy or isn't an proper icon, and/or doesn't support monochrome
+            return wrapToAdaptiveIcon(icon);
+        }
     }
 
     /**
@@ -360,15 +392,16 @@ public class BaseIconFactory implements AutoCloseable {
         if (icon instanceof AdaptiveIconDrawable aid) {
             return aid;
         } else {
-            // Lawnchair-TODO: NO-OP WrapperBackground and auto adaptive
-            // int wrapperBackgroundColor = IconPreferencesKt.getWrapperBackgroundColor(mContext, icon);
-            
-            EmptyWrapper foreground = new EmptyWrapper();
-            AdaptiveIconDrawable dr = new AdaptiveIconDrawable(
-                    new ColorDrawable(mWrapperBackgroundColor), foreground);
+            int wrapperBackgroundColor = IconPreferencesKt.getWrapperBackgroundColor(mContext, icon);
+
+            FixedScaleDrawable foreground = new FixedScaleDrawable();
+            CustomAdaptiveIconDrawable dr = new CustomAdaptiveIconDrawable(
+                    new ColorDrawable(wrapperBackgroundColor), foreground);
             dr.setBounds(0, 0, 1, 1);
             float scale = new IconNormalizer(mIconBitmapSize).getScale(icon);
-            foreground.setDrawable(createScaledDrawable(icon, scale * LEGACY_ICON_SCALE));
+            foreground.setDrawable(icon);
+            foreground.setScale(scale);
+            
             return dr;
         }
     }

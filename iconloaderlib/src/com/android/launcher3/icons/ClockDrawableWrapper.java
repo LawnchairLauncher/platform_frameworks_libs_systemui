@@ -43,9 +43,11 @@ import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.core.util.Supplier;
 import app.lawnchair.icons.ClockMetadata;
+import app.lawnchair.icons.CustomAdaptiveIconDrawable;
 import com.android.launcher3.icons.mono.ThemedIconDrawable;
 
 import java.util.Calendar;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntFunction;
 
@@ -53,13 +55,13 @@ import java.util.function.IntFunction;
  * Wrapper over {@link AdaptiveIconDrawable} to intercept icon flattening logic for dynamic
  * clock icons
  */
-public class ClockDrawableWrapper extends AdaptiveIconDrawable implements BitmapInfo.Extender {
+public class ClockDrawableWrapper extends CustomAdaptiveIconDrawable implements BitmapInfo.Extender {
 
     public static boolean sRunningInTest = false;
 
     private static final String TAG = "ClockDrawableWrapper";
 
-    private static final boolean DISABLE_SECONDS = true;
+    private static final boolean DISABLE_SECONDS = false; // pE-TODO: Enable/Disable second hand of clock drawable via prefs
     private static final int NO_COLOR = -1;
 
     // Time after which the clock icon should check for an update. The actual invalidate
@@ -117,7 +119,8 @@ public class ClockDrawableWrapper extends AdaptiveIconDrawable implements Bitmap
             ApplicationInfo appInfo =  pm.getApplicationInfo(pkg,
                     PackageManager.MATCH_UNINSTALLED_PACKAGES | PackageManager.GET_META_DATA);
             Resources res = pm.getResourcesForApplication(appInfo);
-            return forExtras(appInfo.metaData, resId -> res.getDrawableForDensity(resId, iconDpi));
+            return forExtras(appInfo.metaData, resId -> CustomAdaptiveIconDrawable.wrapNonNull(
+                Objects.requireNonNull(res.getDrawableForDensity(resId, iconDpi))));
         } catch (Exception e) {
             Log.d(TAG, "Unable to load clock drawable info", e);
         }

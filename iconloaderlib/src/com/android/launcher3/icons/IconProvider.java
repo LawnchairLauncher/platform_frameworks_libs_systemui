@@ -247,10 +247,10 @@ public class IconProvider {
      */
     @NonNull
     public Drawable getFullResDefaultActivityIcon(final int iconDpi) {
-        return Objects.requireNonNull(Resources.getSystem().getDrawableForDensity(
-            VERSION.SDK_INT >= VERSION_CODES.O
-                ? android.R.drawable.sym_def_app_icon : android.R.mipmap.sym_def_app_icon,
-            iconDpi));
+        Drawable icon = Objects.requireNonNull(Resources.getSystem().getDrawableForDensity(
+            android.R.drawable.sym_def_app_icon, iconDpi));
+        
+        return CustomAdaptiveIconDrawable.wrapNonNull(icon);
     }
 
     /**
