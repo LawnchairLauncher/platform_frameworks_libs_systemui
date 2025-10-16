@@ -8,6 +8,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import androidx.core.graphics.ColorUtils
 import androidx.palette.graphics.Palette
+import com.android.launcher3.icons.BaseIconFactory.DEFAULT_WRAPPER_BACKGROUND
 
 val Context.prefs get() = applicationContext.getSharedPreferences("com.android.launcher3.prefs", Context.MODE_PRIVATE)!!
 
@@ -21,12 +22,12 @@ fun Context.shouldTintIconPackBackgrounds(): Boolean = prefs.getBoolean("tint_ic
 fun getWrapperBackgroundColor(context: Context, icon: Drawable): Int {
     val lightness = context.prefs.getFloat("pref_coloredBackgroundLightness", 0.9f)
     val palette = Palette.Builder(drawableToBitmap(icon)).generate()
-    val dominantColor = palette.getDominantColor(Color.WHITE)
+    val dominantColor = palette.getDominantColor(DEFAULT_WRAPPER_BACKGROUND)
     return setLightness(dominantColor, lightness)
 }
 
 private fun setLightness(color: Int, lightness: Float): Int {
-    if (color == Color.WHITE) {
+    if (color == DEFAULT_WRAPPER_BACKGROUND) {
         return color
     }
     val outHsl = floatArrayOf(0f, 0f, 0f)
