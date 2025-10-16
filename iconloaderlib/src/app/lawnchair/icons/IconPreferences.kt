@@ -1,16 +1,22 @@
 package app.lawnchair.icons
 
+import android.app.ActivityThread
 import android.content.Context
+import android.content.SharedPreferences
+import android.content.pm.LauncherActivityInfo
 import android.graphics.Bitmap
 import android.graphics.Canvas
-import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import androidx.core.graphics.ColorUtils
 import androidx.palette.graphics.Palette
 import com.android.launcher3.icons.BaseIconFactory.DEFAULT_WRAPPER_BACKGROUND
+import com.android.launcher3.util.ComponentKey
+import org.json.JSONObject
 
-val Context.prefs get() = applicationContext.getSharedPreferences("com.android.launcher3.prefs", Context.MODE_PRIVATE)!!
+private const val SHARED_PREFERENCES_KEY: String = "com.android.launcher3.prefs"
+
+val Context.prefs: SharedPreferences get() = applicationContext.getSharedPreferences(SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
 
 fun shouldWrapAdaptive(context: Context) = context.prefs.getBoolean("prefs_wrapAdaptive", false)
 fun Context.shouldTransparentBGIcons(): Boolean = prefs.getBoolean("prefs_transparentIconBackground", false)
@@ -18,6 +24,36 @@ fun Context.shouldShadowBGIcons(): Boolean = prefs.getBoolean("pref_shadowBGIcon
 
 fun Context.isThemedIconsEnabled(): Boolean = prefs.getBoolean("themed_icons", false)
 fun Context.shouldTintIconPackBackgrounds(): Boolean = prefs.getBoolean("tint_icon_pack_backgrounds", false)
+
+val prefsNoContext: SharedPreferences get() = ActivityThread.currentApplication()
+    .getSharedPreferences(SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
+
+private fun getCustomAppNameMap(): Map<ComponentKey, String> {
+    val prefs = prefsNoContext
+
+    val customLabel = prefs.getString("pref_appNameMap", "{}")
+    if (customLabel.isNullOrEmpty()) return emptyMap()
+
+    val map = mutableMapOf<ComponentKey, String>()
+    val obj = JSONObject(customLabel)
+    obj.keys().forEach {
+        val componentKey = ComponentKey.fromString(it)
+        if (componentKey != null) {
+            map[componentKey] = obj.getString(it)
+        }
+    }
+    return map
+}
+
+fun getCustomAppNameForComponent(info: LauncherActivityInfo): CharSequence? {
+    val key = ComponentKey(info.componentName, info.user)
+    val customLabel = getCustomAppNameMap()[key]
+    if (!customLabel.isNullOrEmpty()) {
+        return customLabel
+    }
+    return info.label
+}
+
 
 fun getWrapperBackgroundColor(context: Context, icon: Drawable): Int {
     val lightness = context.prefs.getFloat("pref_coloredBackgroundLightness", 0.9f)

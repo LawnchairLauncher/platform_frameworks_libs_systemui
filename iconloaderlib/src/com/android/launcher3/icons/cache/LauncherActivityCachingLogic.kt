@@ -22,6 +22,7 @@ import android.content.pm.LauncherActivityInfo
 import android.os.Build.VERSION
 import android.os.UserHandle
 import android.util.Log
+import app.lawnchair.icons.getCustomAppNameForComponent
 import com.android.launcher3.Flags.useNewIconForArchivedApps
 import com.android.launcher3.icons.BaseIconFactory.IconOptions
 import com.android.launcher3.icons.BitmapInfo
@@ -34,7 +35,7 @@ object LauncherActivityCachingLogic : CachingLogic<LauncherActivityInfo> {
 
     override fun getUser(info: LauncherActivityInfo): UserHandle = info.user
 
-    override fun getLabel(info: LauncherActivityInfo): CharSequence? = info.label
+    override fun getLabel(info: LauncherActivityInfo): CharSequence? = getCustomAppNameForComponent(info)
 
     override fun getApplicationInfo(info: LauncherActivityInfo) = info.applicationInfo
 

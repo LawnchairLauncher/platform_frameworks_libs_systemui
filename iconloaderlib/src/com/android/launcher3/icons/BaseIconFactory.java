@@ -333,7 +333,6 @@ public class BaseIconFactory implements AutoCloseable {
     protected AdaptiveIconDrawable normalizeAndWrapToAdaptiveIcon(
             @Nullable Drawable icon, @NonNull final float[] outScale) {
         if (icon == null) {
-            Log.d("LC-BIF", "Hey! There's icon being return on (null)!");
             return null;
         }
         boolean isFromIconPack = ExtendedBitmapDrawable.isFromIconPack(icon);
@@ -356,7 +355,8 @@ public class BaseIconFactory implements AutoCloseable {
             
             scale = new IconNormalizer(mIconBitmapSize).getScale(wrapper);
             outScale[0] = scale;
-            Log.d("LC-BIF", "Hey! There's icon being return on (wrapper)!");
+            
+            // pE-TODO: If this is wrapper, shouldn't we be using DEFAULT_WRAPPER_BACKGROUND for background? To be fair the background doesn't seem to be rendering
             return wrapper;
         } else {
             scale = new IconNormalizer(mIconBitmapSize).getScale(icon);
