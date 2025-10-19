@@ -38,6 +38,7 @@ import android.graphics.Shader.TileMode;
 import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.os.Build.VERSION_CODES;
 import android.util.DisplayMetrics;
 import android.util.Log;
 
@@ -157,7 +158,7 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
      * constructors to set the state and initialize local properties.
      */
     CustomAdaptiveIconDrawable(@Nullable LayerState state, @Nullable Resources res) {
-        super(null, null, null);
+        super(null, null);
         if (!sInitialized) {
             Log.e("CustomAdaptiveIconDrawable", "shape not initialized", new Throwable());
         }
