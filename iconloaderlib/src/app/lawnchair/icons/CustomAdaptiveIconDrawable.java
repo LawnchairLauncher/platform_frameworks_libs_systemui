@@ -38,6 +38,7 @@ import android.graphics.Shader.TileMode;
 import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
+import android.os.Build.VERSION;
 import android.os.Build.VERSION_CODES;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -183,7 +184,7 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
 
     public static @NonNull Drawable wrapNonNull(@NonNull Drawable icon) {
         if (icon.getClass() == AdaptiveIconDrawable.class) {
-            return new CustomAdaptiveIconDrawable((AdaptiveIconDrawable) icon);
+            return SafeCustomAdaptiveIconDrawable((AdaptiveIconDrawable) icon);
         }
         return icon;
     }
@@ -233,8 +234,17 @@ public class CustomAdaptiveIconDrawable extends AdaptiveIconDrawable implements 
         }
     }
 
+    @RequiresApi(api = VERSION_CODES.TIRAMISU)
     private CustomAdaptiveIconDrawable(AdaptiveIconDrawable drawable) {
         this(drawable.getBackground(), drawable.getForeground(), drawable.getMonochrome());
+    }
+
+    private static Drawable SafeCustomAdaptiveIconDrawable(AdaptiveIconDrawable drawable) {
+        if (VERSION.SDK_INT >= VERSION_CODES.TIRAMISU) {
+            return new CustomAdaptiveIconDrawable(drawable);
+        } else {
+            return new CustomAdaptiveIconDrawable(drawable.getBackground(), drawable.getForeground(), null);
+        }
     }
 
     /**
