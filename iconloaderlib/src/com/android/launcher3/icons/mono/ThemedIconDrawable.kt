@@ -29,14 +29,15 @@ import android.graphics.PorterDuffColorFilter
 import android.graphics.Rect
 import android.os.Build
 import androidx.core.graphics.ColorUtils
-import app.lawnchair.icons.shouldTransparentBGIcons
 import com.android.launcher3.icons.BitmapInfo
 import com.android.launcher3.icons.FastBitmapDrawable
 import com.android.launcher3.icons.R
 
+import app.lawnchair.icons.shouldTransparentBGIcons
+
 /** Class to handle monochrome themed app icons */
 class ThemedIconDrawable(constantState: ThemedConstantState) :
-    FastBitmapDrawable(constantState.getBitmapInfo()) {
+    FastBitmapDrawable(constantState.bitmapInfo) {
     private val colorFg = constantState.colorFg
     private val colorBg = constantState.colorBg
 
@@ -66,10 +67,10 @@ class ThemedIconDrawable(constantState: ThemedConstantState) :
 
     override fun updateFilter() {
         super.updateFilter()
-        val alpha = if (mIsDisabled) (mDisabledAlpha * FULLY_OPAQUE).toInt() else FULLY_OPAQUE
+        val alpha = if (isDisabled) (disabledAlpha * FULLY_OPAQUE).toInt() else FULLY_OPAQUE
         mBgPaint.alpha = alpha
         mBgPaint.setColorFilter(
-            if (mIsDisabled) if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (isDisabled) if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 BlendModeColorFilter(getDisabledColor(colorBg), SRC_IN)
             } else {
                 PorterDuffColorFilter(getDisabledColor(colorBg), PorterDuff.Mode.SRC_IN)
@@ -78,7 +79,7 @@ class ThemedIconDrawable(constantState: ThemedConstantState) :
 
         monoPaint.alpha = alpha
         monoPaint.setColorFilter(
-            if (mIsDisabled) if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            if (isDisabled) if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 BlendModeColorFilter(
                     getDisabledColor(colorFg),
                     SRC_IN,
@@ -92,7 +93,7 @@ class ThemedIconDrawable(constantState: ThemedConstantState) :
     override fun isThemed() = true
 
     override fun newConstantState() =
-        ThemedConstantState(mBitmapInfo, monoIcon, bgBitmap, colorBg, colorFg)
+        ThemedConstantState(bitmapInfo, monoIcon, bgBitmap, colorBg, colorFg)
 
     override fun getIconColor() = colorFg
 
@@ -105,8 +106,6 @@ class ThemedIconDrawable(constantState: ThemedConstantState) :
     ) : FastBitmapConstantState(bitmapInfo) {
 
         public override fun createDrawable() = ThemedIconDrawable(this)
-
-        fun getBitmapInfo(): BitmapInfo = mBitmapInfo
     }
 
     companion object {

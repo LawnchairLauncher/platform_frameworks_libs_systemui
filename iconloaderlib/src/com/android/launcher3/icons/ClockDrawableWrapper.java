@@ -16,6 +16,7 @@
 package com.android.launcher3.icons;
 
 import static com.android.launcher3.icons.IconProvider.ATLEAST_T;
+import static com.android.launcher3.icons.cache.CacheLookupFlag.DEFAULT_LOOKUP_FLAG;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -40,16 +41,16 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
 
-import androidx.annotation.NonNull;
-import androidx.core.util.Supplier;
-import app.lawnchair.icons.ClockMetadata;
-import app.lawnchair.icons.CustomAdaptiveIconDrawable;
+import com.android.launcher3.icons.cache.CacheLookupFlag;
 import com.android.launcher3.icons.mono.ThemedIconDrawable;
 
 import java.util.Calendar;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.IntFunction;
+
+import app.lawnchair.icons.ClockMetadata;
+import app.lawnchair.icons.CustomAdaptiveIconDrawable;
 
 /**
  * Wrapper over {@link AdaptiveIconDrawable} to intercept icon flattening logic for dynamic
@@ -302,7 +303,7 @@ public class ClockDrawableWrapper extends CustomAdaptiveIconDrawable implements 
         ClockBitmapInfo(Bitmap icon, int color, float scale,
                 AnimationInfo animInfo, Bitmap background,
                 AnimationInfo themeInfo, Bitmap themeBackground) {
-            super(icon, color);
+            super(icon, color, /* flags */ 0, /* themedBitmap */ null);
             this.boundsOffset = Math.max(ShadowGenerator.BLUR_FACTOR, (1 - scale) / 2);
             this.animInfo = animInfo;
             this.mFlattenedBackground = background;
@@ -313,7 +314,7 @@ public class ClockDrawableWrapper extends CustomAdaptiveIconDrawable implements 
         @Override
         @TargetApi(Build.VERSION_CODES.TIRAMISU)
         public FastBitmapDrawable newIcon(Context context,
-                @DrawableCreationFlags  int creationFlags, Path badgeShape) {
+                @DrawableCreationFlags int creationFlags, Path badgeShape) {
             AnimationInfo info;
             Bitmap bg;
             int themedFgColor;
@@ -349,8 +350,14 @@ public class ClockDrawableWrapper extends CustomAdaptiveIconDrawable implements 
 
         @Override
         public BitmapInfo clone() {
-            return copyInternalsTo(new ClockBitmapInfo(icon, color, 1 - 2 * boundsOffset, animInfo,
-                    mFlattenedBackground, themeData, themeBackground));
+            return copyInternalsTo(new ClockBitmapInfo(icon, color,
+                    1 - 2 * boundsOffset, animInfo, mFlattenedBackground,
+                    themeData, themeBackground));
+        }
+
+        @Override
+        public CacheLookupFlag getMatchingLookupFlag() {
+            return DEFAULT_LOOKUP_FLAG.withThemeIcon(themeData != null);
         }
     }
 
@@ -371,7 +378,7 @@ public class ClockDrawableWrapper extends CustomAdaptiveIconDrawable implements 
         private final float mCanvasScale;
 
         ClockIconDrawable(ClockConstantState cs) {
-            super(cs.mBitmapInfo);
+            super(cs.getBitmapInfo());
             mBoundsOffset = cs.mBoundsOffset;
             mAnimInfo = cs.mAnimInfo;
 
@@ -434,10 +441,11 @@ public class ClockDrawableWrapper extends CustomAdaptiveIconDrawable implements 
         @Override
         protected void updateFilter() {
             super.updateFilter();
-            int alpha = mIsDisabled ? (int) (mDisabledAlpha * FULLY_OPAQUE) : FULLY_OPAQUE;
+            boolean isDisabled = isDisabled();
+            int alpha = isDisabled ? (int) (disabledAlpha * FULLY_OPAQUE) : FULLY_OPAQUE;
             setAlpha(alpha);
-            mBgPaint.setColorFilter(mIsDisabled ? getDisabledColorFilter() : mBgFilter);
-            mFG.setColorFilter(mIsDisabled ? getDisabledColorFilter() : null);
+            mBgPaint.setColorFilter(isDisabled ? getDisabledColorFilter() : mBgFilter);
+            mFG.setColorFilter(isDisabled ? getDisabledColorFilter() : null);
         }
 
         @Override
@@ -477,7 +485,7 @@ public class ClockDrawableWrapper extends CustomAdaptiveIconDrawable implements 
 
         @Override
         public FastBitmapConstantState newConstantState() {
-            return new ClockConstantState(mBitmapInfo, mThemedFgColor, mBoundsOffset,
+            return new ClockConstantState(bitmapInfo, mThemedFgColor, mBoundsOffset,
                     mAnimInfo, mBG, mBgPaint.getColorFilter());
         }
 

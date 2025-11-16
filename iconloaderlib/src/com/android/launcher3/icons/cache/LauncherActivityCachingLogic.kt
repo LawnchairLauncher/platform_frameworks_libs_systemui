@@ -22,11 +22,12 @@ import android.content.pm.LauncherActivityInfo
 import android.os.Build.VERSION
 import android.os.UserHandle
 import android.util.Log
-import app.lawnchair.icons.getCustomAppNameForComponent
 import com.android.launcher3.Flags.useNewIconForArchivedApps
 import com.android.launcher3.icons.BaseIconFactory.IconOptions
 import com.android.launcher3.icons.BitmapInfo
 import com.android.launcher3.icons.IconProvider
+
+import app.lawnchair.icons.getCustomAppNameForComponent
 
 object LauncherActivityCachingLogic : CachingLogic<LauncherActivityInfo> {
     const val TAG = "LauncherActivityCachingLogic"

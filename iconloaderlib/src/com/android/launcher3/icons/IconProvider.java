@@ -53,6 +53,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.os.BuildCompat;
 
+import com.android.launcher3.icons.cache.CachingLogic;
+import com.android.launcher3.util.ComponentKey;
 import com.android.launcher3.util.SafeCloseable;
 
 import java.util.Calendar;
@@ -155,7 +157,7 @@ public class IconProvider {
             icon = ClockDrawableWrapper.forPackage(mContext, mClock.getPackageName(), iconDpi);
         }
         if (icon == null) {
-            icon = loadPackageIcon(info, appInfo, iconDpi);
+            icon = loadPackageIconWithFallback(info, appInfo, iconDpi);
             if (ATLEAST_T && icon instanceof AdaptiveIconDrawable && td != null) {
                 AdaptiveIconDrawable aid = (AdaptiveIconDrawable) icon;
                 if  (aid.getMonochrome() == null) {
@@ -171,36 +173,39 @@ public class IconProvider {
         return null;
     }
 
-    private Drawable loadPackageIcon(PackageItemInfo info, ApplicationInfo appInfo, int density) {
+    private Drawable loadPackageIconWithFallback(
+            PackageItemInfo info, ApplicationInfo appInfo, int density) {
         Drawable icon = null;
         if (BuildCompat.isAtLeastV() && info.isArchived) {
             // Icons for archived apps com from system service, let the default impl handle that
             icon = info.loadIcon(mContext.getPackageManager());
         }
         if (icon == null && density != 0 && (info.icon != 0 || appInfo.icon != 0)) {
-            try {
-                final Resources resources = mContext.getPackageManager()
-                        .getResourcesForApplication(appInfo);
-                // Try to load the package item icon first
-                if (info != appInfo && info.icon != 0) {
-                    try {
-                        icon = resources.getDrawableForDensity(info.icon, density);
-                    } catch (Resources.NotFoundException exc) { }
-                }
-                if (icon == null && appInfo.icon != 0) {
-                    // Load the fallback app icon
-                    icon = loadAppInfoIcon(appInfo, resources, density);
-                }
-            } catch (NameNotFoundException | Resources.NotFoundException exc) { }
+            icon = loadPackageIcon(info, appInfo, density);
         }
         return icon != null ? icon : getFullResDefaultActivityIcon(density);
     }
 
     @Nullable
-    protected Drawable loadAppInfoIcon(ApplicationInfo info, Resources resources, int density) {
+    protected Drawable loadPackageIcon(
+            @NonNull PackageItemInfo info, @NonNull ApplicationInfo appInfo, int density) {
         try {
-            return resources.getDrawableForDensity(info.icon, density);
-        } catch (Resources.NotFoundException exc) { }
+            final Resources resources = mContext.getPackageManager()
+                    .getResourcesForApplication(appInfo);
+            // Try to load the package item icon first
+            if (info != appInfo && info.icon != 0) {
+                try {
+                    Drawable icon = resources.getDrawableForDensity(info.icon, density);
+                    if (icon != null) return icon;
+                } catch (Resources.NotFoundException exc) { }
+            }
+            if (appInfo.icon != 0) {
+                // Load the fallback app icon
+                try {
+                    return resources.getDrawableForDensity(appInfo.icon, density);
+                } catch (Resources.NotFoundException exc) { }
+            }
+        } catch (NameNotFoundException | Resources.NotFoundException exc) { }
         return null;
     }
 
@@ -305,6 +310,12 @@ public class IconProvider {
     public SafeCloseable registerIconChangeListener(IconChangeListener listener, Handler handler) {
         return new IconChangeReceiver(listener, handler);
     }
+
+    /**
+     * Notifies the provider when an icon is loaded from cache
+     */
+    public void notifyIconLoaded(
+            @NonNull BitmapInfo icon, @NonNull ComponentKey key, @NonNull CachingLogic<?> logic) { }
 
     public static class ThemeData {
 
