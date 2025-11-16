@@ -15,10 +15,11 @@ android {
             manifest.srcFile 'AndroidManifest.xml'
         }
         androidTest {
-            java.srcDirs = ["tests/src"]
+            java.srcDirs = ["tests/src", "tests/robolectric/src"]
             manifest.srcFile 'tests/AndroidManifest.xml'
         }
     }
+
     lintOptions {
         abortOnError false
     }
@@ -34,4 +35,7 @@ dependencies {
     implementation libs.kotlin.stdlib.jdk7
     implementation libs.androidx.core.animation
     implementation libs.androidx.core.ktx
+//    androidTestImplementation libs.robolectric
+//    androidTestImplementation "androidx.test.ext:junit:1.1.3"
+//    androidTestImplementation "androidx.test:rules:1.4.0"
 }
