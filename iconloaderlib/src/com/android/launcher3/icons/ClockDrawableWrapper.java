@@ -41,6 +41,8 @@ import android.os.Bundle;
 import android.os.SystemClock;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+import androidx.core.util.Supplier;
 import com.android.launcher3.icons.cache.CacheLookupFlag;
 import com.android.launcher3.icons.mono.ThemedIconDrawable;
 

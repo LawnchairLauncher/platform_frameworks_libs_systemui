@@ -61,7 +61,7 @@ import app.lawnchair.icons.IconPreferencesKt;
 public class BaseIconFactory implements AutoCloseable {
 
     public static final int DEFAULT_WRAPPER_BACKGROUND = Color.WHITE;
-    private static final float LEGACY_ICON_SCALE = .7f * (1f / (1 + 2 * getExtraInsetFraction()));
+    public static final float LEGACY_ICON_SCALE = .7f * (1f / (1 + 2 * getExtraInsetFraction()));
 
     public static final int MODE_DEFAULT = 0;
     public static final int MODE_ALPHA = 1;
