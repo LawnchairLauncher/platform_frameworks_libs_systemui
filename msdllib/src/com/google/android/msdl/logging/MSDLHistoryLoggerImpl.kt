@@ -18,22 +18,26 @@ package com.google.android.msdl.logging
 
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.VisibleForTesting.Companion.PACKAGE_PRIVATE
-import java.util.ArrayDeque
-import java.util.Deque
 
 @VisibleForTesting(otherwise = PACKAGE_PRIVATE)
 class MSDLHistoryLoggerImpl(private val maxHistorySize: Int) : MSDLHistoryLogger {
 
-    // Use an [ArrayDequeue] with a fixed size as the history structure
-    private val history: Deque<MSDLEvent> = ArrayDeque(maxHistorySize)
+    // Use an Array with a fixed size as the history structure. This will work as a ring buffer
+    private val history: Array<MSDLEvent?> = arrayOfNulls(size = maxHistorySize)
+    // The head will point to the next available position in the structure to add a new event
+    private var head = 0
 
     override fun addEvent(event: MSDLEvent) {
-        // Keep the history as a FIFO structure
-        if (history.size == maxHistorySize) {
-            history.removeFirst()
-        }
-        history.addLast(event)
+        history[head] = event
+        // Move the head pointer, wrapping if necessary
+        head = (head + 1) % maxHistorySize
     }
 
-    override fun getHistory(): List<MSDLEvent> = history.toList()
+    override fun getHistory(): List<MSDLEvent> {
+        val result = mutableListOf<MSDLEvent>()
+        repeat(times = maxHistorySize) { i ->
+            history[(i + head) % maxHistorySize]?.let { result.add(it) }
+        }
+        return result
+    }
 }

@@ -34,7 +34,7 @@ interface MSDLHistoryLogger {
 
     companion object {
 
-        const val HISTORY_SIZE = 20
+        const val HISTORY_SIZE = 50
         val DATE_FORMAT = SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US)
     }
 }
