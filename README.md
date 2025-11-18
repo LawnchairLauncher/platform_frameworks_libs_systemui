@@ -7,4 +7,6 @@ A brief explanation of what each library does:
 * `contextualeducationlib`: Store "education" type
 * `displaylib`: Handling presumably desktop displays
 * `iconloaderlib`: Handling all of Launcher3 and Lawnchair icons
+* `mechanics`: Complement the `animationlib`
 * `msdllib`: Multi-Sensory-Design-Language, handling all new vibrations in Launcher3 Android 16
+* `viewcapturelib`: Capture views... yep that's really that it
