@@ -49,10 +49,11 @@ public class LayoutType {
             TALL_CARD_WITH_IMAGE_NO_ICON,
             TEXT_HEADER_ROW,
             QS_TILE,
+            QS_TILE_CONTAINER,
             PLACEHOLDER,
             RICHANSWER_PLACEHOLDER,
-            EMPTY_STATE,
-            SEARCH_SETTINGS,
+            PLAY_PLACEHOLDER,
+            EDUCARD,
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface SearchLayoutType {}
@@ -119,7 +120,7 @@ public class LayoutType {
     // horizontal bar to be inserted between fallback search results and low confidence section
     public static final String EMPTY_DIVIDER = "empty_divider";
 
-    @Deprecated(since = "Use EMPTY_DIVIDER instead")
+    @Deprecated(since = "LC: Use EMPTY_DIVIDER instead")
     public static final String DIVIDER = EMPTY_DIVIDER;
 
     // layout representing quick calculations
@@ -139,6 +140,9 @@ public class LayoutType {
     // Layout for a quick settings tile
     public static final String QS_TILE = "qs_tile";
 
+    // Layout for a quick settings tile container
+    public static final String QS_TILE_CONTAINER = "qs_tile_container";
+
     // Placeholder for web suggest.
     public static final String PLACEHOLDER = "placeholder";
 
@@ -146,10 +150,10 @@ public class LayoutType {
     // Only available on or above version code 3.
     public static final String RICHANSWER_PLACEHOLDER = "richanswer_placeholder";
 
+    // Play placeholder
+    public static final String PLAY_PLACEHOLDER = "play_placeholder";
 
-    // layout representing the empty, no query state
-    public static final String EMPTY_STATE = "empty_state";
-
-    // layout representing search settings
-    public static final String SEARCH_SETTINGS = "launcher_settings";
+    // Only available on or above version code 8 (UP1A)
+    // This layout is for educard.
+    public static final String EDUCARD = "educard";
 }
