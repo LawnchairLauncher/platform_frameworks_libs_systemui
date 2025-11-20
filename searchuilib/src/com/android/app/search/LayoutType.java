@@ -156,4 +156,10 @@ public class LayoutType {
     // Only available on or above version code 8 (UP1A)
     // This layout is for educard.
     public static final String EDUCARD = "educard";
+
+    // layout representing the empty, no query state
+    public static final String EMPTY_STATE = "empty_state";
+
+    // layout representing search settings
+    public static final String SEARCH_SETTINGS = "launcher_settings";
 }
