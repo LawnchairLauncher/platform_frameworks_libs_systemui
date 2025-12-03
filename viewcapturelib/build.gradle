@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.google.protobuf)
 }
 
 android {
@@ -15,6 +16,7 @@ android {
             java.srcDirs = ['src']
             kotlin.directories.add('src')
             manifest.srcFile 'AndroidManifest.xml'
+            proto.srcDirs = ['src']
         }
         androidTest {
             java.srcDirs = ["tests"]
