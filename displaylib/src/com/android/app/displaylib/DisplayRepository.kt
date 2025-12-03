@@ -195,8 +195,7 @@ constructor(
     // This is necessary because there might be multiple displays, and we could
     // have missed events for those added before this process or flow started.
     // Note it causes a binder call from the main thread (it's traced).
-    private val initialDisplays: Set<Display> =
-        { displayManager.displays?.toSet() ?: emptySet() }
+    private val initialDisplays: Set<Display> = displayManager.displays?.toSet() ?: emptySet()
     private val initialDisplayIds = initialDisplays.map { display -> display.displayId }.toSet()
 
     /** Propagate to the listeners only enabled displays */
@@ -327,20 +326,18 @@ constructor(
     private val connectedExternalDisplayIds: Flow<Set<Int>> =
         connectedDisplayIds
             .map { connectedDisplayIds ->
-                traceSection("$TAG#filteringExternalDisplays") {
+
                     connectedDisplayIds
                         .filter { id -> getDisplayType(id) == Display.TYPE_EXTERNAL }
                         .toSet()
-                }
+
             }
             .flowOn(backgroundCoroutineDispatcher)
             .debugLog("connectedExternalDisplayIds")
 
-    private fun getDisplayType(displayId: Int): Int? =
-        { displayManager.getDisplay(displayId)?.type }
+    private fun getDisplayType(displayId: Int): Int? = displayManager.getDisplay(displayId)?.type
 
-    private fun getDisplayFromDisplayManager(displayId: Int): Display? =
-        { displayManager.getDisplay(displayId) }
+    private fun getDisplayFromDisplayManager(displayId: Int): Display? = displayManager.getDisplay(displayId)
 
     /**
      * Pending displays are the ones connected, but not enabled and not ignored.
@@ -446,20 +443,16 @@ constructor(
         // In case of option one, let's get it synchronously from display manager to make sure for
         // this to be consistent.
         return if (displayIds.value.contains(displayId)) {
-            traceSection("$TAG#getDisplayFallbackToDisplayManager") {
+
                 getDisplayFromDisplayManager(displayId)
-            }
+
         } else {
             null
         }
     }
 
     private fun <T> Flow<T>.debugLog(flowName: String): Flow<T> {
-        return if (DEBUG) {
-
-        } else {
-            this
-        }
+        return this
     }
 
     /**
