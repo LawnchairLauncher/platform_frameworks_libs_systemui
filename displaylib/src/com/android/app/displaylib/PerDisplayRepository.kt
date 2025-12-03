@@ -19,9 +19,9 @@ package com.android.app.displaylib
 import android.util.Log
 import android.view.Display
 import android.view.Display.DEFAULT_DISPLAY
-import com.android.app.tracing.coroutines.flow.stateInTraced
-import com.android.app.tracing.coroutines.launchTraced as launch
-import com.android.app.tracing.traceSection
+//import com.android.app.tracing.coroutines.flow.stateInTraced
+//import com.android.app.tracing.coroutines.launchTraced as launch
+//import com.android.app.tracing.traceSection
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -33,6 +33,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.launch
 
 /**
  * Used to create instances of type `T` for a specific display.
@@ -112,8 +113,8 @@ interface PerDisplayRepository<T> {
         if (instance == null) {
             Log.e(
                 "PerDisplayRepository",
-                """<$debugName> getOrDefault: instance for display with id $displayId returned 
-                    |null. The display likely doesn't exist anymore. Returning an instance for the 
+                """<$debugName> getOrDefault: instance for display with id $displayId returned
+                    |null. The display likely doesn't exist anymore. Returning an instance for the
                     |default display."""
                     .trimMargin(),
             )
@@ -198,16 +199,10 @@ constructor(
                     connectedDisplays ->
                     lifecycleAllowedDisplayIds.intersect(connectedDisplays)
                 }
-            }
-            .stateInTraced(
-                "allowed displays for $debugName",
-                bgApplicationScope,
-                SharingStarted.WhileSubscribed(),
-                setOf(Display.DEFAULT_DISPLAY),
-            )
+            } as StateFlow<Set<Int>>
 
     init {
-        bgApplicationScope.launch("$debugName#start") { start() }
+        bgApplicationScope.launch { start() }
     }
 
     private suspend fun start() {
@@ -263,10 +258,7 @@ constructor(
                         TAG,
                         "<$debugName> creating instance for displayId=$key, as it wasn't available.",
                     )
-                    val instance =
-                        traceSection({ "creating instance of $debugName for displayId=$key" }) {
-                            instanceProvider.createInstance(key)
-                        }
+                    val instance = instanceProvider.createInstance(key)
                     if (instance == null) {
                         Log.e(
                             TAG,
@@ -282,9 +274,7 @@ constructor(
                     instance != null &&
                     instanceProvider is PerDisplayInstanceProviderWithSetup
             ) {
-                traceSection({ "setting up instance of $debugName for displayId=$displayId" }) {
                     instanceProvider.setupInstance(instance)
-                }
             }
             instance
         }
