@@ -19,6 +19,9 @@ package com.android.app.displaylib
 import android.util.Log
 import android.view.Display
 import android.view.Display.DEFAULT_DISPLAY
+import com.android.app.tracing.coroutines.flow.stateInTraced
+import com.android.app.tracing.coroutines.launchTraced as launch
+import com.android.app.tracing.traceSection
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -30,7 +33,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.launch
 
 /**
  * Used to create instances of type `T` for a specific display.
@@ -78,6 +80,20 @@ interface PerDisplayInstanceProviderWithTeardown<T> : PerDisplayInstanceProvider
 }
 
 /**
+ * Extends [PerDisplayInstanceProvider], adding support for setting up an instance after it's
+ * created.
+ *
+ * This is useful to run custom setup after an instance of the repository is created and cached. Why
+ * not doing it in the [createInstance] itself? if some deps of the setup code tries to get the
+ * instance again through the repository, it would cause a recursive loop (as it will try to create
+ * a new instance). Splitting this into another method helps avoiding the recursion.
+ */
+interface PerDisplayInstanceProviderWithSetup<T> : PerDisplayInstanceProvider<T> {
+    /** Sets up a previously created instance of `T`. */
+    fun setupInstance(instance: T)
+}
+
+/**
  * Provides access to per-display instances of type `T`.
  *
  * Acts as a repository, managing the caching and retrieval of instances created by a
@@ -86,6 +102,25 @@ interface PerDisplayInstanceProviderWithTeardown<T> : PerDisplayInstanceProvider
 interface PerDisplayRepository<T> {
     /** Gets the cached instance or create a new one for a given display. */
     operator fun get(displayId: Int): T?
+
+    /**
+     * Gets the cached instance or create a new one for a given display. If the given display
+     * doesn't exist, returns an instance for the default display.
+     */
+    fun getOrDefault(displayId: Int): T {
+        val instance = get(displayId)
+        if (instance == null) {
+            Log.e(
+                "PerDisplayRepository",
+                """<$debugName> getOrDefault: instance for display with id $displayId returned 
+                    |null. The display likely doesn't exist anymore. Returning an instance for the 
+                    |default display."""
+                    .trimMargin(),
+            )
+            return get(DEFAULT_DISPLAY)!!
+        }
+        return instance
+    }
 
     /** Debug name for this repository, mainly for tracing and logging. */
     val debugName: String
@@ -145,32 +180,46 @@ constructor(
     @DisplayLibBackground bgApplicationScope: CoroutineScope,
     private val displayRepository: DisplayRepository,
     private val initCallback: PerDisplayRepository.InitCallback,
+    @Assisted private val createInstanceEagerly: Boolean = false,
 ) : PerDisplayRepository<T> {
 
     private val perDisplayInstances = ConcurrentHashMap<Int, T?>()
 
     private val allowedDisplays: StateFlow<Set<Int>> =
-        (if (lifecycleManager == null) {
-            displayRepository.displayIds
-        } else {
-            // If there is a lifecycle manager, we still consider the smallest subset between
-            // the ones connected and the ones from the lifecycle. This is to safeguard against
-            // leaks, in case of lifecycle manager misbehaving (as it's provided by clients, and
-            // we can't guarantee it's correct).
-            combine(lifecycleManager.displayIds, displayRepository.displayIds) {
+        if (lifecycleManager == null) {
+                displayRepository.displayIds
+            } else {
+                // If there is a lifecycle manager, we still consider the smallest subset between
+                // the ones connected and the ones from the lifecycle. This is to safeguard against
+                // leaks, in case of lifecycle manager misbehaving (as it's provided by clients, and
+                // we can't guarantee it's correct).
+                combine(lifecycleManager.displayIds, displayRepository.displayIds) {
                     lifecycleAllowedDisplayIds,
                     connectedDisplays ->
-                lifecycleAllowedDisplayIds.intersect(connectedDisplays)
+                    lifecycleAllowedDisplayIds.intersect(connectedDisplays)
+                }
             }
-        }) as StateFlow<Set<Int>>
+            .stateInTraced(
+                "allowed displays for $debugName",
+                bgApplicationScope,
+                SharingStarted.WhileSubscribed(),
+                setOf(Display.DEFAULT_DISPLAY),
+            )
 
     init {
-        bgApplicationScope.launch { start() }
+        bgApplicationScope.launch("$debugName#start") { start() }
     }
 
     private suspend fun start() {
         initCallback.onInit(debugName, this)
         allowedDisplays.collectLatest { displayIds ->
+            if (createInstanceEagerly) {
+                val toAdd = displayIds - perDisplayInstances.keys
+                toAdd.forEach { displayId ->
+                    Log.d(TAG, "<$debugName> eagerly creating instance for displayId=$displayId.")
+                    get(displayId)
+                }
+            }
             val toRemove = perDisplayInstances.keys - displayIds
             toRemove.forEach { displayId ->
                 Log.d(TAG, "<$debugName> destroying instance for displayId=$displayId.")
@@ -184,7 +233,10 @@ constructor(
     }
 
     override fun get(displayId: Int): T? {
-        if (!displayRepository.containsDisplay(displayId)) {
+        if (
+            !displayRepository.containsDisplay(displayId) ||
+                displayRepository.getDisplay(displayId) == null
+        ) {
             Log.e(TAG, "<$debugName: Display with id $displayId doesn't exist.")
             return null
         }
@@ -198,15 +250,41 @@ constructor(
             return null
         }
 
-        // If it doesn't exist, create it and put it in the map.
-        return perDisplayInstances.computeIfAbsent(displayId) { key ->
-            Log.d(TAG, "<$debugName> creating instance for displayId=$key, as it wasn't available.")
-            val instance = instanceProvider.createInstance(key)
-            if (instance == null) {
-                Log.e(
-                    TAG,
-                    "<$debugName> returning null because createInstance($key) returned null.",
-                )
+        // Let's not let this method return the new instance until the possible setup for it was
+        // executed.
+        // There is no need to synchronize the other accesses to the map as it's already a
+        // concurrent one.
+        return synchronized(this) {
+            var newlyCreated = false
+            // If it doesn't exist, create it and put it in the map.
+            val instance =
+                perDisplayInstances.computeIfAbsent(displayId) { key ->
+                    Log.d(
+                        TAG,
+                        "<$debugName> creating instance for displayId=$key, as it wasn't available.",
+                    )
+                    val instance =
+                        traceSection({ "creating instance of $debugName for displayId=$key" }) {
+                            instanceProvider.createInstance(key)
+                        }
+                    if (instance == null) {
+                        Log.e(
+                            TAG,
+                            "<$debugName> returning null because createInstance($key) returned null.",
+                        )
+                    }
+                    newlyCreated = true
+                    instance
+                }
+
+            if (
+                newlyCreated &&
+                    instance != null &&
+                    instanceProvider is PerDisplayInstanceProviderWithSetup
+            ) {
+                traceSection({ "setting up instance of $debugName for displayId=$displayId" }) {
+                    instanceProvider.setupInstance(instance)
+                }
             }
             instance
         }
@@ -218,6 +296,7 @@ constructor(
             debugName: String,
             instanceProvider: PerDisplayInstanceProvider<T>,
             overrideLifecycleManager: DisplayInstanceLifecycleManager? = null,
+            createInstanceEagerly: Boolean = false,
         ): PerDisplayInstanceRepositoryImpl<T>
     }
 

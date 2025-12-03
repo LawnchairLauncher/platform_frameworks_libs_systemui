@@ -20,6 +20,7 @@ import android.content.res.Configuration
 import android.graphics.Rect
 import android.view.IDisplayWindowListener
 import android.view.IWindowManager
+import android.window.DesktopExperienceFlags.ENABLE_DISPLAY_CONTENT_MODE_MANAGEMENT
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
@@ -53,7 +54,13 @@ constructor(
         val callback =
             object : IDisplayWindowListener.Stub() {
                 override fun onDisplayAddSystemDecorations(displayId: Int) {
-                    trySend(Event.Add(displayId))
+                    if (ENABLE_DISPLAY_CONTENT_MODE_MANAGEMENT.isTrue()) {
+                        trySend(Event.Add(displayId))
+                    } else {
+                        if (windowManager.shouldShowSystemDecors(displayId)) {
+                            trySend(Event.Add(displayId))
+                        }
+                    }
                 }
 
                 override fun onDisplayRemoveSystemDecorations(displayId: Int) {
@@ -61,6 +68,8 @@ constructor(
                 }
 
                 override fun onDesktopModeEligibleChanged(displayId: Int) {}
+
+                override fun onDisplayAnimationsDisabledChanged(displayId: Int, enabled: Boolean) {}
 
                 override fun onDisplayAdded(p0: Int) {}
 

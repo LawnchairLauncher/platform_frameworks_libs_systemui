@@ -18,7 +18,6 @@ package {
 
 java_library {
     name: "displaylib",
-    manifest: "AndroidManifest.xml",
     static_libs: [
         "kotlinx_coroutines_android",
         "dagger2",
