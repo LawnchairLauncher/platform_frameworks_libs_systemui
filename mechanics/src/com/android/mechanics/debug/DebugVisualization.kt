@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -46,18 +47,25 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastCoerceAtLeast
 import androidx.compose.ui.util.fastCoerceAtMost
 import androidx.compose.ui.util.fastForEachIndexed
-import com.android.mechanics.MotionValue
+import com.android.mechanics.MotionValueState
 import com.android.mechanics.spec.DirectionalMotionSpec
 import com.android.mechanics.spec.Guarantee
 import com.android.mechanics.spec.InputDirection
 import com.android.mechanics.spec.Mapping
 import com.android.mechanics.spec.MotionSpec
 import com.android.mechanics.spec.SegmentKey
+import com.android.mechanics.spec.SemanticKey
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+
+/** Computes the output range for a debug visualization given a spec and an input range. */
+typealias OutputRangeFn =
+    (spec: MotionSpec, inputRange: ClosedFloatingPointRange<Float>) -> ClosedFloatingPointRange<
+            Float
+        >
 
 /**
  * A debug visualization of the [motionValue].
@@ -72,16 +80,17 @@ import kotlinx.coroutines.launch
  */
 @Composable
 fun DebugMotionValueVisualization(
-    motionValue: MotionValue,
+    motionValue: MotionValueState,
     inputRange: ClosedFloatingPointRange<Float>,
     modifier: Modifier = Modifier,
+    outputRange: OutputRangeFn = DebugMotionValueVisualization.default,
     maxAgeMillis: Long = 1000L,
 ) {
-    val spec = motionValue.spec
-    val outputRange = remember(spec, inputRange) { spec.computeOutputValueRange(inputRange) }
-
     val inspector = remember(motionValue) { motionValue.debugInspector() }
 
+    val spec = remember(motionValue) { derivedStateOf { inspector.frame.spec } }.value
+
+    val computedOutputRange = remember(spec, inputRange) { outputRange(spec, inputRange) }
     DisposableEffect(inspector) { onDispose { inspector.dispose() } }
 
     val colorScheme = MaterialTheme.colorScheme
@@ -89,7 +98,7 @@ fun DebugMotionValueVisualization(
     val specColor = colorScheme.tertiary
     val valueColor = colorScheme.primary
 
-    val primarySpec = motionValue.spec.get(inspector.frame.gestureDirection)
+    val primarySpec = spec.get(inspector.frame.gestureDirection)
     val activeSegment = inspector.frame.segmentKey
 
     Spacer(
@@ -98,7 +107,7 @@ fun DebugMotionValueVisualization(
                 .debugMotionSpecGraph(
                     primarySpec,
                     inputRange,
-                    outputRange,
+                    computedOutputRange,
                     axisColor,
                     specColor,
                     activeSegment,
@@ -107,10 +116,34 @@ fun DebugMotionValueVisualization(
                     motionValue,
                     valueColor,
                     inputRange,
-                    outputRange,
+                    computedOutputRange,
                     maxAgeMillis,
                 )
     )
+}
+
+object DebugMotionValueVisualization {
+
+    /**
+     * Returns the output range as annotated in the spec using [OutputRangeKey], or
+     * [minMaxOutputRange] is not specified.
+     */
+    val default: OutputRangeFn = { spec, inputRange ->
+        spec.semanticState(OutputRangeKey) ?: spec.computeOutputValueRange(inputRange)
+    }
+    /**
+     * Returns an output range containing the min and max output values at each breakpoint within
+     * the input range
+     */
+    val minMaxOutputRange: OutputRangeFn = { spec, inputRange ->
+        spec.computeOutputValueRange(inputRange)
+    }
+
+    /** Returns an output range that is identical to the input range */
+    val inputRange: OutputRangeFn = { _, inputRange -> inputRange }
+
+    /** Defines the output range for the visualization. */
+    val OutputRangeKey = SemanticKey<ClosedFloatingPointRange<Float>>("visualizationOutputRange")
 }
 
 /**
@@ -148,7 +181,7 @@ fun Modifier.debugMotionSpecGraph(
  */
 @Composable
 fun Modifier.debugMotionValueGraph(
-    motionValue: MotionValue,
+    motionValue: MotionValueState,
     color: Color,
     inputRange: ClosedFloatingPointRange<Float>,
     outputRange: ClosedFloatingPointRange<Float>,
@@ -210,7 +243,7 @@ fun DirectionalMotionSpec.computeOutputValueRange(
 }
 
 private data class DebugMotionValueGraphElement(
-    val motionValue: MotionValue,
+    val motionValue: MotionValueState,
     val color: Color,
     val inputRange: ClosedFloatingPointRange<Float>,
     val outputRange: ClosedFloatingPointRange<Float>,
@@ -238,7 +271,7 @@ private data class DebugMotionValueGraphElement(
 }
 
 private class DebugMotionValueGraphNode(
-    motionValue: MotionValue,
+    motionValue: MotionValueState,
     var color: Color,
     var inputRange: ClosedFloatingPointRange<Float>,
     var outputRange: ClosedFloatingPointRange<Float>,

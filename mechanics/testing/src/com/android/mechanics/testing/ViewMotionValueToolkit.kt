@@ -21,6 +21,7 @@ package com.android.mechanics.testing
 import android.animation.AnimatorTestRule
 import com.android.mechanics.spec.InputDirection
 import com.android.mechanics.spec.MotionSpec
+import com.android.mechanics.testing.MotionValueToolkit.Companion.FrameDuration
 import com.android.mechanics.view.DistanceGestureContext
 import com.android.mechanics.view.ViewMotionValue
 import kotlinx.coroutines.Dispatchers
@@ -42,7 +43,12 @@ import platform.test.motion.golden.TimestampFrameId
 
 /** Toolkit to support [ViewMotionValue] motion tests. */
 class ViewMotionValueToolkit(private val animatorTestRule: AnimatorTestRule) :
-    MotionValueToolkit<ViewMotionValue, DistanceGestureContext>() {
+    MotionValueToolkit<
+        InputScope<ViewMotionValue, DistanceGestureContext>,
+        ViewMotionValue,
+        ViewMotionValue,
+        DistanceGestureContext,
+    >() {
 
     override fun goldenTest(
         motionTestRule: MotionTestRule<*>,
@@ -137,6 +143,12 @@ private class ViewMotionValueTestHarness(
         input = value
         gestureContext.dragOffset = value
     }
+
+    override var spec: MotionSpec
+        get() = underTest.spec
+        set(value) {
+            underTest.spec = value
+        }
 
     override suspend fun awaitStable() {
         val debugInspectors = buildList { add(underTest.debugInspector()) }

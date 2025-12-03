@@ -1,0 +1,1142 @@
+{
+  "frame_ids": [
+    "before",
+    0,
+    16,
+    32,
+    48,
+    64,
+    80,
+    96,
+    112,
+    128,
+    144,
+    160,
+    176,
+    192,
+    208,
+    224,
+    240,
+    256,
+    272,
+    288,
+    304,
+    320,
+    336,
+    352,
+    368,
+    384,
+    400,
+    416,
+    432,
+    448,
+    464,
+    480,
+    496,
+    512,
+    528,
+    544,
+    560,
+    "after"
+  ],
+  "features": [
+    {
+      "name": "isTransitioning",
+      "type": "int",
+      "data_points": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        0
+      ]
+    },
+    {
+      "name": "ContainerElement_height",
+      "type": "dp",
+      "data_points": [
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        9.6,
+        18,
+        28.8,
+        40,
+        53.6,
+        68,
+        68,
+        87.6,
+        112.4,
+        138.4,
+        164,
+        188,
+        209.2,
+        227.2,
+        242.8,
+        255.6,
+        266,
+        274.4,
+        281.2,
+        286.4,
+        290.4,
+        293.2,
+        295.6,
+        297.2,
+        298.4,
+        299.2,
+        299.6,
+        300,
+        300
+      ]
+    },
+    {
+      "name": "box0_y",
+      "type": "dp",
+      "data_points": [
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4,
+        4
+      ]
+    },
+    {
+      "name": "box0_height",
+      "type": "dp",
+      "data_points": [
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        0,
+        10.4,
+        21.2,
+        29.2,
+        44.4,
+        46,
+        47.2,
+        48,
+        48.4,
+        49.2,
+        49.6,
+        49.6,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50
+      ]
+    },
+    {
+      "name": "box1_y",
+      "type": "dp",
+      "data_points": [
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        12,
+        22.4,
+        33.2,
+        41.2,
+        56.4,
+        58,
+        59.2,
+        60,
+        60.4,
+        61.2,
+        61.6,
+        61.6,
+        62,
+        62,
+        62,
+        62,
+        62,
+        62,
+        62,
+        62,
+        62,
+        62,
+        62,
+        62,
+        62,
+        62,
+        62,
+        62,
+        62
+      ]
+    },
+    {
+      "name": "box1_height",
+      "type": "dp",
+      "data_points": [
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        18,
+        43.6,
+        44.8,
+        46,
+        47.2,
+        48,
+        48.8,
+        49.2,
+        49.6,
+        49.6,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50
+      ]
+    },
+    {
+      "name": "box2_y",
+      "type": "dp",
+      "data_points": [
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        20,
+        30.4,
+        41.2,
+        49.2,
+        64.4,
+        66,
+        67.2,
+        86,
+        112,
+        114,
+        115.6,
+        116.8,
+        118,
+        118.8,
+        119.2,
+        119.6,
+        119.6,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120,
+        120
+      ]
+    },
+    {
+      "name": "box2_height",
+      "type": "dp",
+      "data_points": [
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        10.4,
+        36.8,
+        44.4,
+        45.6,
+        46.8,
+        47.6,
+        48.4,
+        48.8,
+        49.2,
+        49.6,
+        49.6,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50
+      ]
+    },
+    {
+      "name": "box3_y",
+      "type": "dp",
+      "data_points": [
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        28,
+        38.4,
+        49.2,
+        57.2,
+        72.4,
+        74,
+        75.2,
+        94,
+        120,
+        132.4,
+        160.4,
+        169.2,
+        171.6,
+        173.6,
+        174.8,
+        176,
+        176.4,
+        177.2,
+        177.6,
+        177.6,
+        178,
+        178,
+        178,
+        178,
+        178,
+        178,
+        178,
+        178,
+        178
+      ]
+    },
+    {
+      "name": "box3_height",
+      "type": "dp",
+      "data_points": [
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        2,
+        24,
+        43.2,
+        45.2,
+        46.4,
+        47.2,
+        48,
+        48.8,
+        49.2,
+        49.6,
+        49.6,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50,
+        50
+      ]
+    },
+    {
+      "name": "box4_y",
+      "type": "dp",
+      "data_points": [
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        36,
+        46.4,
+        57.2,
+        65.2,
+        80.4,
+        82,
+        83.2,
+        102,
+        128,
+        140.4,
+        168.4,
+        179.2,
+        203.6,
+        224.8,
+        228,
+        230.4,
+        231.6,
+        233.2,
+        234.4,
+        234.8,
+        235.6,
+        235.6,
+        236,
+        236,
+        236,
+        236,
+        236,
+        236,
+        236
+      ]
+    },
+    {
+      "name": "box4_height",
+      "type": "dp",
+      "data_points": [
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        12,
+        23.6,
+        33.2,
+        41.2,
+        47.2,
+        48,
+        48.8,
+        49.2,
+        49.6,
+        49.6,
+        50,
+        50,
+        50,
+        50
+      ]
+    },
+    {
+      "name": "box5_y",
+      "type": "dp",
+      "data_points": [
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        44,
+        54.4,
+        65.2,
+        73.2,
+        88.4,
+        90,
+        91.2,
+        110,
+        136,
+        148.4,
+        176.4,
+        187.2,
+        211.6,
+        232.8,
+        236,
+        250.4,
+        263.2,
+        274.4,
+        283.6,
+        290,
+        291.6,
+        292.4,
+        293.2,
+        293.6,
+        293.6,
+        294,
+        294,
+        294,
+        294
+      ]
+    },
+    {
+      "name": "box5_height",
+      "type": "dp",
+      "data_points": [
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        50
+      ]
+    },
+    {
+      "name": "box6_y",
+      "type": "dp",
+      "data_points": [
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        52,
+        62.4,
+        73.2,
+        81.2,
+        96.4,
+        98,
+        99.2,
+        118,
+        144,
+        156.4,
+        184.4,
+        195.2,
+        219.6,
+        240.8,
+        244,
+        258.4,
+        271.2,
+        282.4,
+        291.6,
+        298,
+        299.6,
+        300.4,
+        301.2,
+        301.6,
+        301.6,
+        302,
+        302,
+        302,
+        352
+      ]
+    },
+    {
+      "name": "box6_height",
+      "type": "dp",
+      "data_points": [
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        50
+      ]
+    },
+    {
+      "name": "box7_y",
+      "type": "dp",
+      "data_points": [
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        60,
+        70.4,
+        81.2,
+        89.2,
+        104.4,
+        106,
+        107.2,
+        126,
+        152,
+        164.4,
+        192.4,
+        203.2,
+        227.6,
+        248.8,
+        252,
+        266.4,
+        279.2,
+        290.4,
+        299.6,
+        306,
+        307.6,
+        308.4,
+        309.2,
+        309.6,
+        309.6,
+        310,
+        310,
+        310,
+        410
+      ]
+    },
+    {
+      "name": "box7_height",
+      "type": "dp",
+      "data_points": [
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        {
+          "type": "not_found"
+        },
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        50
+      ]
+    }
+  ]
+}

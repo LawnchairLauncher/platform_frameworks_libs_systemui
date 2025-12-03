@@ -33,9 +33,9 @@ fun MotionBuilderContext.spatialMotionSpec(
     baseMapping: Mapping = Mapping.Identity,
     defaultSpring: SpringParameters = this.spatial.default,
     resetSpring: SpringParameters = defaultSpring,
-    baseSemantics: List<SemanticValue<*>> = emptyList(),
+    semantics: List<SemanticValue<*>> = emptyList(),
     init: MotionSpecBuilderScope.() -> Unit,
-) = motionSpec(baseMapping, defaultSpring, resetSpring, baseSemantics, init)
+) = motionSpec(baseMapping, defaultSpring, resetSpring, semantics, init)
 
 /**
  * Creates a [MotionSpec] for an effects value.
@@ -49,9 +49,9 @@ fun MotionBuilderContext.effectsMotionSpec(
     baseMapping: Mapping = Mapping.Zero,
     defaultSpring: SpringParameters = this.effects.default,
     resetSpring: SpringParameters = defaultSpring,
-    baseSemantics: List<SemanticValue<*>> = emptyList(),
+    semantics: List<SemanticValue<*>> = emptyList(),
     init: MotionSpecBuilderScope.() -> Unit,
-) = motionSpec(baseMapping, defaultSpring, resetSpring, baseSemantics, init)
+) = motionSpec(baseMapping, defaultSpring, resetSpring, semantics, init)
 
 /**
  * Creates a [MotionSpec], based on reusable effects.
@@ -61,21 +61,21 @@ fun MotionBuilderContext.effectsMotionSpec(
  *   unless otherwise specified.
  * @param resetSpring spring parameters to animate a difference in output, if the difference is
  *   caused by setting this new spec.
- * @param baseSemantics initial semantics that apply before of effects override them.
+ * @param semantics initial semantics that apply before of effects override them.
  * @param init
  */
 fun MotionBuilderContext.motionSpec(
     baseMapping: Mapping,
     defaultSpring: SpringParameters,
     resetSpring: SpringParameters = defaultSpring,
-    baseSemantics: List<SemanticValue<*>> = emptyList(),
+    semantics: List<SemanticValue<*>> = emptyList(),
     init: MotionSpecBuilderScope.() -> Unit,
 ): MotionSpec {
     return MotionSpecBuilderImpl(
             baseMapping,
             defaultSpring,
             resetSpring,
-            baseSemantics,
+            semantics,
             motionBuilderContext = this,
         )
         .apply(init)
@@ -121,8 +121,9 @@ fun MotionBuilderContext.fixedValueSpec(
     semantics: List<SemanticValue<*>> = emptyList(),
 ): MotionSpec {
     return MotionSpec(
-        directionalMotionSpec(Mapping.Fixed(value), semantics),
+        directionalMotionSpec(Mapping.Fixed(value)),
         resetSpring = resetSpring,
+        semantics = semantics,
     )
 }
 

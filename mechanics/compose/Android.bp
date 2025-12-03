@@ -24,8 +24,10 @@ android_library {
         "src/**/*.kt",
     ],
     static_libs: [
-        "PlatformComposeCore",
+        // Private APIs
         "PlatformComposeSceneTransitionLayout",
+
+        // Public APIs
         "//frameworks/libs/systemui/mechanics:mechanics",
         "androidx.compose.runtime_runtime",
     ],

@@ -17,6 +17,7 @@
 package com.android.mechanics.spec
 
 import androidx.compose.ui.util.fastIsFinite
+import com.android.mechanics.haptics.BreakpointHaptics
 import com.android.mechanics.spring.SpringParameters
 
 /**
@@ -65,12 +66,14 @@ class BreakpointKey(val debugLabel: String? = null, val identity: Any = Object()
  * @param spring Parameters of the spring used to animate the breakpoints discontinuity.
  * @param guarantee Optional constraints to accelerate the completion of the spring motion, based on
  *   `MotionValue`'s input or other non-time signals.
+ * @param breakpointHaptics A description of haptics when the input crosses this breakpoint.
  */
 data class Breakpoint(
     val key: BreakpointKey,
     val position: Float,
     val spring: SpringParameters,
     val guarantee: Guarantee,
+    val breakpointHaptics: BreakpointHaptics = BreakpointHaptics.None,
 ) : Comparable<Breakpoint> {
 
     init {
@@ -89,6 +92,7 @@ data class Breakpoint(
                 Float.NEGATIVE_INFINITY,
                 SpringParameters.Snap,
                 Guarantee.None,
+                BreakpointHaptics.None,
             )
 
         /** Last breakpoint of each spec. */
@@ -98,6 +102,7 @@ data class Breakpoint(
                 Float.POSITIVE_INFINITY,
                 SpringParameters.Snap,
                 Guarantee.None,
+                BreakpointHaptics.None,
             )
 
         internal fun create(
@@ -105,11 +110,19 @@ data class Breakpoint(
             breakpointPosition: Float,
             springSpec: SpringParameters,
             guarantee: Guarantee,
+            breakpointHaptics: BreakpointHaptics,
         ): Breakpoint {
             return when (breakpointKey) {
                 BreakpointKey.MinLimit -> minLimit
                 BreakpointKey.MaxLimit -> maxLimit
-                else -> Breakpoint(breakpointKey, breakpointPosition, springSpec, guarantee)
+                else ->
+                    Breakpoint(
+                        breakpointKey,
+                        breakpointPosition,
+                        springSpec,
+                        guarantee,
+                        breakpointHaptics,
+                    )
             }
         }
     }

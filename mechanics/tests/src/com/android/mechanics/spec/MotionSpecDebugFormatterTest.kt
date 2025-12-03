@@ -37,11 +37,13 @@ class MotionSpecDebugFormatterTest : MotionBuilderContext by FakeMotionSpecBuild
             .isEqualTo(
                 """
 unidirectional:
-  @-Infinity [built-in::min|id:0x1234cdef]
+  @-Infinity [built-in::min|id:0x1234cdef] [breakpointHaptics=None]
     Fixed(value=0.0)
-  @0.0 [id:0x1234cdef] spring=1600.0/1.0
+    segment haptics: None
+  @0.0 [id:0x1234cdef] spring=1600.0/1.0 [breakpointHaptics=None]
     Fixed(value=1.0)
-  @Infinity [built-in::max|id:0x1234cdef]"""
+    segment haptics: None
+  @Infinity [built-in::max|id:0x1234cdef] [breakpointHaptics=None]"""
                     .trimIndent()
             )
     }
@@ -58,17 +60,21 @@ unidirectional:
             .isEqualTo(
                 """
 maxDirection:
-  @-Infinity [built-in::min|id:0x1234cdef]
+  @-Infinity [built-in::min|id:0x1234cdef] [breakpointHaptics=None]
     Fixed(value=0.0)
-  @0.0 [id:0x1234cdef] spring=700.0/0.9
+    segment haptics: None
+  @0.0 [id:0x1234cdef] spring=700.0/0.9 [breakpointHaptics=None]
     Fixed(value=1.0)
-  @Infinity [built-in::max|id:0x1234cdef]
+    segment haptics: None
+  @Infinity [built-in::max|id:0x1234cdef] [breakpointHaptics=None]
 minDirection:
-  @-Infinity [built-in::min|id:0x1234cdef]
+  @-Infinity [built-in::min|id:0x1234cdef] [breakpointHaptics=None]
     Fixed(value=1.0)
-  @0.0 [id:0x1234cdef] spring=700.0/0.9
+    segment haptics: None
+  @0.0 [id:0x1234cdef] spring=700.0/0.9 [breakpointHaptics=None]
     Fixed(value=0.0)
-  @Infinity [built-in::max|id:0x1234cdef]"""
+    segment haptics: None
+  @Infinity [built-in::max|id:0x1234cdef] [breakpointHaptics=None]"""
                     .trimIndent()
             )
     }
@@ -88,13 +94,15 @@ minDirection:
             .isEqualTo(
                 """
 unidirectional:
-  @-Infinity [built-in::min|id:0x1234cdef]
+  @-Infinity [built-in::min|id:0x1234cdef] [breakpointHaptics=None]
     Fixed(value=0.0)
+    segment haptics: None
       foo[id:0x1234cdef]=42.0
-  @0.0 [id:0x1234cdef] spring=1600.0/1.0
+  @0.0 [id:0x1234cdef] spring=1600.0/1.0 [breakpointHaptics=None]
     Fixed(value=1.0)
+    segment haptics: None
       foo[id:0x1234cdef]=43.0
-  @Infinity [built-in::max|id:0x1234cdef]"""
+  @Infinity [built-in::max|id:0x1234cdef] [breakpointHaptics=None]"""
                     .trimIndent()
             )
     }
@@ -122,13 +130,16 @@ unidirectional:
             .isEqualTo(
                 """
 unidirectional:
-  @-Infinity [built-in::min|id:0x1234cdef]
+  @-Infinity [built-in::min|id:0x1234cdef] [breakpointHaptics=None]
     Fixed(value=0.0)
-  @0.0 [1|id:0x1234cdef] spring=1600.0/1.0
+    segment haptics: None
+  @0.0 [1|id:0x1234cdef] spring=1600.0/1.0 [breakpointHaptics=None]
     Fixed(value=1.0)
-  @2.0 [1|id:0x1234cdef] spring=1600.0/1.0
+    segment haptics: None
+  @2.0 [1|id:0x1234cdef] spring=1600.0/1.0 [breakpointHaptics=None]
     Fixed(value=2.0)
-  @Infinity [built-in::max|id:0x1234cdef]
+    segment haptics: None
+  @Infinity [built-in::max|id:0x1234cdef] [breakpointHaptics=None]
 segmentHandlers:
   1|id:0x1234cdef >> 2|id:0x1234cdef
   1|id:0x1234cdef << 2|id:0x1234cdef"""

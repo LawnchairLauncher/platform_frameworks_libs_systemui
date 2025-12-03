@@ -26,6 +26,7 @@ import com.android.mechanics.DistanceGestureContext
 import com.android.mechanics.MotionValue
 import com.android.mechanics.spec.InputDirection
 import com.android.mechanics.spec.MotionSpec
+import com.android.mechanics.testing.MotionValueToolkit.Companion.FrameDuration
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,7 +44,13 @@ import platform.test.motion.golden.TimeSeries
 import platform.test.motion.golden.TimestampFrameId
 
 /** Toolkit to support [MotionValue] motion tests. */
-data object ComposeMotionValueToolkit : MotionValueToolkit<MotionValue, DistanceGestureContext>() {
+data object ComposeMotionValueToolkit :
+    MotionValueToolkit<
+        InputScope<MotionValue, DistanceGestureContext>,
+        MotionValue,
+        MotionValue,
+        DistanceGestureContext,
+    >() {
 
     override fun goldenTest(
         motionTestRule: MotionTestRule<*>,
@@ -118,7 +125,7 @@ data object ComposeMotionValueToolkit : MotionValueToolkit<MotionValue, Distance
 private class ComposeMotionValueTestHarness(
     initialInput: Float,
     initialDirection: InputDirection,
-    spec: MotionSpec,
+    override var spec: MotionSpec,
     stableThreshold: Float,
     directionChangeSlop: Float,
     val onFrame: StateFlow<Long>,
@@ -131,10 +138,10 @@ private class ComposeMotionValueTestHarness(
 
     override val underTest =
         MotionValue(
-            { input },
-            gestureContext,
+            input = { input },
+            gestureContext = gestureContext,
+            spec = { spec },
             stableThreshold = stableThreshold,
-            initialSpec = spec,
         )
 
     val derived = createDerived(underTest)

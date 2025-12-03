@@ -17,6 +17,8 @@
 package com.android.mechanics.spec
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.mechanics.haptics.BreakpointHaptics
+import com.android.mechanics.haptics.SegmentHaptics
 import com.android.mechanics.spec.builder.directionalMotionSpec
 import com.android.mechanics.spring.SpringParameters
 import com.google.common.truth.Truth.assertThat
@@ -32,24 +34,34 @@ class DirectionalMotionSpecTest {
     @Test
     fun noBreakpoints_throws() {
         assertFailsWith<IllegalArgumentException> {
-            DirectionalMotionSpec(emptyList(), emptyList())
+            DirectionalMotionSpec(emptyList(), emptyList(), emptyList())
         }
     }
 
     @Test
     fun wrongSentinelBreakpoints_throws() {
-        val breakpoint1 = Breakpoint(B1, position = 10f, Spring, Guarantee.None)
-        val breakpoint2 = Breakpoint(B2, position = 20f, Spring, Guarantee.None)
+        val breakpoint1 =
+            Breakpoint(B1, position = 10f, Spring, Guarantee.None, BreakpointHaptics.None)
+        val breakpoint2 =
+            Breakpoint(B2, position = 20f, Spring, Guarantee.None, BreakpointHaptics.None)
 
         assertFailsWith<IllegalArgumentException> {
-            DirectionalMotionSpec(listOf(breakpoint1, breakpoint2), listOf(Mapping.Identity))
+            DirectionalMotionSpec(
+                listOf(breakpoint1, breakpoint2),
+                listOf(Mapping.Identity),
+                listOf(SegmentHaptics.None),
+            )
         }
     }
 
     @Test
     fun tooFewMappings_throws() {
         assertFailsWith<IllegalArgumentException> {
-            DirectionalMotionSpec(listOf(Breakpoint.minLimit, Breakpoint.maxLimit), emptyList())
+            DirectionalMotionSpec(
+                listOf(Breakpoint.minLimit, Breakpoint.maxLimit),
+                emptyList(),
+                listOf(SegmentHaptics.None),
+            )
         }
     }
 
@@ -59,25 +71,51 @@ class DirectionalMotionSpecTest {
             DirectionalMotionSpec(
                 listOf(Breakpoint.minLimit, Breakpoint.maxLimit),
                 listOf(Mapping.One, Mapping.Two),
+                listOf(SegmentHaptics.None),
+            )
+        }
+    }
+
+    @Test
+    fun tooFewHaptics_throws() {
+        assertFailsWith<IllegalArgumentException> {
+            DirectionalMotionSpec(
+                listOf(Breakpoint.minLimit, Breakpoint.maxLimit),
+                listOf(Mapping.One),
+                emptyList(),
+            )
+        }
+    }
+
+    @Test
+    fun tooManyHaptics_throws() {
+        assertFailsWith<IllegalArgumentException> {
+            DirectionalMotionSpec(
+                listOf(Breakpoint.minLimit, Breakpoint.maxLimit),
+                listOf(Mapping.One),
+                listOf(SegmentHaptics.None, SegmentHaptics.None),
             )
         }
     }
 
     @Test
     fun breakpointsOutOfOrder_throws() {
-        val breakpoint1 = Breakpoint(B1, position = 10f, Spring, Guarantee.None)
-        val breakpoint2 = Breakpoint(B2, position = 20f, Spring, Guarantee.None)
+        val breakpoint1 =
+            Breakpoint(B1, position = 10f, Spring, Guarantee.None, BreakpointHaptics.None)
+        val breakpoint2 =
+            Breakpoint(B2, position = 20f, Spring, Guarantee.None, BreakpointHaptics.None)
         assertFailsWith<IllegalArgumentException> {
             DirectionalMotionSpec(
                 listOf(Breakpoint.minLimit, breakpoint2, breakpoint1, Breakpoint.maxLimit),
                 listOf(Mapping.Zero, Mapping.One, Mapping.Two),
+                listOf(SegmentHaptics.None, SegmentHaptics.None, SegmentHaptics.None),
             )
         }
     }
 
     @Test
     fun findBreakpointIndex_returnsMinForEmptySpec() {
-        val underTest = DirectionalMotionSpec.Empty
+        val underTest = DirectionalMotionSpec.Identity
 
         assertThat(underTest.findBreakpointIndex(0f)).isEqualTo(0)
         assertThat(underTest.findBreakpointIndex(Float.MAX_VALUE)).isEqualTo(0)
@@ -86,7 +124,7 @@ class DirectionalMotionSpecTest {
 
     @Test
     fun findBreakpointIndex_throwsForNonFiniteInput() {
-        val underTest = DirectionalMotionSpec.Empty
+        val underTest = DirectionalMotionSpec.Identity
 
         assertFailsWith<IllegalArgumentException> { underTest.findBreakpointIndex(Float.NaN) }
         assertFailsWith<IllegalArgumentException> {
@@ -172,6 +210,7 @@ class DirectionalMotionSpecTest {
             DirectionalMotionSpec(
                 listOf(Breakpoint.minLimit, Breakpoint.maxLimit),
                 listOf(Mapping.Identity),
+                listOf(SegmentHaptics.None),
                 listOf(SegmentSemanticValues(Semantic1, emptyList())),
             )
         }
@@ -183,6 +222,7 @@ class DirectionalMotionSpecTest {
             DirectionalMotionSpec(
                 listOf(Breakpoint.minLimit, Breakpoint.maxLimit),
                 listOf(Mapping.Identity),
+                listOf(SegmentHaptics.None),
                 listOf(SegmentSemanticValues(Semantic1, listOf("One", "Two"))),
             )
         }

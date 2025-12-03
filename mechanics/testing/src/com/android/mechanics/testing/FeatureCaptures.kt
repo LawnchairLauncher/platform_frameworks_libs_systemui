@@ -20,6 +20,7 @@ import com.android.mechanics.debug.DebugInspector
 import com.android.mechanics.spec.SemanticKey
 import com.android.mechanics.spring.SpringParameters
 import com.android.mechanics.spring.SpringState
+import platform.test.motion.golden.DataPoint
 import platform.test.motion.golden.DataPointType
 import platform.test.motion.golden.FeatureCapture
 import platform.test.motion.golden.asDataPoint
@@ -60,6 +61,16 @@ object FeatureCaptures {
     val isStable =
         FeatureCapture<DebugInspector, Boolean>("isStable") { it.frame.isStable.asDataPoint() }
 
+    /** Whether the motion value currently is running the animation loop. */
+    val isAnimating =
+        FeatureCapture<DebugInspector, Boolean>("isAnimating") { it.isAnimating.asDataPoint() }
+
+    /** Whether the output can change. */
+    val isOutputFixed =
+        FeatureCapture<DebugInspector, Boolean>("isOutputFixed") {
+            it.frame.isOutputFixed.asDataPoint()
+        }
+
     /** A semantic value to capture in the golden. */
     fun <T> semantics(
         key: SemanticKey<T>,
@@ -68,4 +79,9 @@ object FeatureCaptures {
     ): FeatureCapture<DebugInspector, T & Any> {
         return FeatureCapture(name) { dataPointType.makeDataPoint(it.frame.semantic(key)) }
     }
+}
+
+/** Returns notFound if the motion value is not active. */
+fun <T : Any> FeatureCapture<DebugInspector, T>.whenActive(): FeatureCapture<DebugInspector, T> {
+    return FeatureCapture(name) { if (it.isActive) capture(it) else DataPoint.notFound() }
 }

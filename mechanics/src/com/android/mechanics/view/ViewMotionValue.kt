@@ -49,7 +49,7 @@ class ViewMotionValue
 constructor(
     initialInput: Float,
     gestureContext: ViewGestureContext,
-    initialSpec: MotionSpec = MotionSpec.Empty,
+    initialSpec: MotionSpec = MotionSpec.Identity,
     label: String? = null,
     stableThreshold: Float = StableThresholdEffect,
 ) : DisposableHandle {
@@ -69,7 +69,7 @@ constructor(
     var spec: MotionSpec by impl::spec
 
     /** Animated [output] value. */
-    val output: Float by impl::output
+    val output: Float by impl::computedOutput
 
     /**
      * [output] value, but without animations.
@@ -78,10 +78,10 @@ constructor(
      *
      * While [isStable], [outputTarget] and [output] are the same value.
      */
-    val outputTarget: Float by impl::outputTarget
+    val outputTarget: Float by impl::computedOutputTarget
 
     /** Whether an animation is currently running. */
-    val isStable: Boolean by impl::isStable
+    val isStable: Boolean by impl::computedIsStable
 
     /**
      * The current value for the [SemanticKey].
@@ -89,7 +89,7 @@ constructor(
      * `null` if not defined in the spec.
      */
     operator fun <T> get(key: SemanticKey<T>): T? {
-        return impl.semanticState(key)
+        return impl.computedSemanticState(key)
     }
 
     /** The current segment used to compute the output. */
@@ -140,6 +140,7 @@ constructor(
                         impl.lastSpringState,
                         impl.lastSegment,
                         impl.lastAnimation,
+                        impl.computedIsOutputFixed,
                     ),
                     impl.isActive,
                     impl.animationFrameDriver.isRunning,
@@ -204,6 +205,7 @@ private class ImperativeComputations(
     override var lastInput: Float = currentInput
     override var lastGestureDragOffset: Float = currentGestureDragOffset
     override var directMappedVelocity: Float = 0f
+    override var lastHapticsTimeNanos: Long = -1L
     var lastDirection: InputDirection = currentDirection
 
     // ---- Lifecycle ------------------------------------------------------------------------------
@@ -221,9 +223,9 @@ private class ImperativeComputations(
             repeatMode = ValueAnimator.RESTART
             repeatCount = ValueAnimator.INFINITE
             start()
-            pause()
             addUpdateListener {
                 val isAnimationFinished = updateOutputValue(currentPlayTime)
+                debugInspector?.isAnimating = !isAnimationFinished
                 if (isAnimationFinished) {
                     pause()
                 }
@@ -233,14 +235,12 @@ private class ImperativeComputations(
     fun ensureFrameRequested() {
         if (animationFrameDriver.isPaused) {
             animationFrameDriver.resume()
-            debugInspector?.isAnimating = true
         }
     }
 
     fun pauseFrameRequests() {
         if (animationFrameDriver.isRunning) {
             animationFrameDriver.pause()
-            debugInspector?.isAnimating = false
         }
     }
 
@@ -285,8 +285,11 @@ private class ImperativeComputations(
                     currentSpringState,
                     currentValues.segment,
                     currentValues.animation,
+                    computedIsOutputFixed,
                 )
         }
+
+        if (currentValues.segment.spec == MotionSpec.InitiallyUndefined) return true
 
         listeners.fastForEach { it.onMotionValueUpdated(motionValue) }
 
@@ -298,7 +301,7 @@ private class ImperativeComputations(
             directMappedVelocity = 0f
         }
 
-        var isAnimationFinished = isStable
+        var isAnimationFinished = computedIsStable
         if (lastSegment != currentValues.segment) {
             lastSegment = currentValues.segment
             isAnimationFinished = false
