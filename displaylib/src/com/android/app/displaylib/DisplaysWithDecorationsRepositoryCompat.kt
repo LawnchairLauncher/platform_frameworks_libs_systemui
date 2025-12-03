@@ -16,7 +16,7 @@
 
 package com.android.app.displaylib
 
-import com.android.app.tracing.TraceUtils.traceAsync
+
 import com.android.internal.annotations.GuardedBy
 import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject

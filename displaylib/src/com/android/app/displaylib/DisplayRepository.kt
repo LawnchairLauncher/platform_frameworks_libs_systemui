@@ -30,8 +30,8 @@ import android.view.Display
 import com.android.app.displaylib.ExternalDisplayConnectionType.DESKTOP
 import com.android.app.displaylib.ExternalDisplayConnectionType.MIRROR
 import com.android.app.displaylib.ExternalDisplayConnectionType.NOT_SPECIFIED
-import com.android.app.tracing.FlowTracing.traceEach
-import com.android.app.tracing.traceSection
+
+
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
@@ -196,7 +196,7 @@ constructor(
     // have missed events for those added before this process or flow started.
     // Note it causes a binder call from the main thread (it's traced).
     private val initialDisplays: Set<Display> =
-        traceSection("$TAG#initialDisplays") { displayManager.displays?.toSet() ?: emptySet() }
+        { displayManager.displays?.toSet() ?: emptySet() }
     private val initialDisplayIds = initialDisplays.map { display -> display.displayId }.toSet()
 
     /** Propagate to the listeners only enabled displays */
@@ -266,7 +266,7 @@ constructor(
     private val ignoredDisplayIds: Flow<Set<Int>> = _ignoredDisplayIds.debugLog("ignoredDisplayIds")
 
     private fun getInitialConnectedDisplays(): Set<Int> =
-        traceSection("$TAG#getInitialConnectedDisplays") {
+
             displayManager
                 .getDisplays(DISPLAY_CATEGORY_ALL_INCLUDING_DISABLED)
                 .map { it.displayId }
@@ -276,7 +276,7 @@ constructor(
                         Log.d(TAG, "getInitialConnectedDisplays: $it")
                     }
                 }
-        }
+
 
     /* keeps connected displays until they are disconnected. */
     private val connectedDisplayIds: StateFlow<Set<Int>> =
@@ -337,10 +337,10 @@ constructor(
             .debugLog("connectedExternalDisplayIds")
 
     private fun getDisplayType(displayId: Int): Int? =
-        traceSection("$TAG#getDisplayType") { displayManager.getDisplay(displayId)?.type }
+        { displayManager.getDisplay(displayId)?.type }
 
     private fun getDisplayFromDisplayManager(displayId: Int): Display? =
-        traceSection("$TAG#getDisplay") { displayManager.getDisplay(displayId) }
+        { displayManager.getDisplay(displayId) }
 
     /**
      * Pending displays are the ones connected, but not enabled and not ignored.
@@ -397,30 +397,30 @@ constructor(
                     }
 
                     override suspend fun enable() {
-                        traceSection("DisplayRepository#enable($id)") {
+
                             if (DEBUG) {
                                 Log.d(TAG, "Enabling display with id=$id")
                             }
                             displayManager.enableConnectedDisplay(id)
-                        }
+
                         // After the display has been enabled, it is automatically ignored.
                         ignore()
                     }
 
                     override suspend fun ignore() {
-                        traceSection("DisplayRepository#ignore($id)") {
+
                             _ignoredDisplayIds.value += id
-                        }
+
                     }
 
                     override suspend fun disable() {
                         ignore()
-                        traceSection("DisplayRepository#disable($id)") {
+
                             if (DEBUG) {
                                 Log.d(TAG, "Disabling display with id=$id")
                             }
                             displayManager.disableConnectedDisplay(id)
-                        }
+
                     }
                 }
             }
@@ -456,7 +456,7 @@ constructor(
 
     private fun <T> Flow<T>.debugLog(flowName: String): Flow<T> {
         return if (DEBUG) {
-            traceEach(flowName, logcat = true, traceEmissionCount = true)
+
         } else {
             this
         }
