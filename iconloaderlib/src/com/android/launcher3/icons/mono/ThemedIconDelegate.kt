@@ -93,6 +93,9 @@ class ThemedIconDelegate(
                 res.getColor(R.color.themed_icon_adaptive_background_color),
             )
         }
+
+        @JvmStatic
+        var COLORS_LOADER: (Context) -> IntArray = { context -> getColors(context) }
     }
 }
 

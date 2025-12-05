@@ -308,7 +308,7 @@ public class IconProvider {
             mResID = resID;
         }
 
-        Drawable loadPaddedDrawable() {
+        public Drawable loadPaddedDrawable() {
             if (!"drawable".equals(mResources.getResourceTypeName(mResID))) {
                 return null;
             }

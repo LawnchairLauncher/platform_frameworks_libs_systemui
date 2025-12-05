@@ -30,9 +30,12 @@ import android.graphics.drawable.AdaptiveIconDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.LayerDrawable
 import android.os.Build
+import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
 import androidx.annotation.RequiresApi
+import app.lawnchair.icons.ClockMetadata
+import app.lawnchair.icons.CustomAdaptiveIconDrawable
 import com.android.launcher3.icons.BitmapInfo.Extender
 import com.android.launcher3.icons.FastBitmapDrawableDelegate.Companion.drawShaderInBounds
 import com.android.launcher3.icons.FastBitmapDrawableDelegate.DelegateFactory
@@ -40,13 +43,14 @@ import com.android.launcher3.icons.GraphicsUtils.getColorMultipliedFilter
 import com.android.launcher3.icons.GraphicsUtils.resizeToContentSize
 import java.util.Calendar
 import java.util.concurrent.TimeUnit.MINUTES
+import java.util.function.IntFunction
 
 /**
  * Wrapper over [AdaptiveIconDrawable] to intercept icon flattening logic for dynamic clock icons
  */
 class ClockDrawableWrapper
 private constructor(base: AdaptiveIconDrawable, private val animationInfo: ClockAnimationInfo) :
-    AdaptiveIconDrawable(base.background, base.foreground), Extender {
+    CustomAdaptiveIconDrawable(base.background, base.foreground), Extender {
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun getMonochrome(): Drawable? {
@@ -71,7 +75,7 @@ private constructor(base: AdaptiveIconDrawable, private val animationInfo: Clock
                 animationInfo.copy(
                     themeFgColor = NO_COLOR,
                     shader = BitmapShader(flattenBG, CLAMP, CLAMP),
-                )
+                ),
         )
     }
 
@@ -253,6 +257,65 @@ private constructor(base: AdaptiveIconDrawable, private val animationInfo: Clock
                 Log.d(TAG, "Unable to load clock drawable info", e)
             }
             return null
+        }
+
+        /**
+         * Loads and returns the wrapper from the provided Bundle metadata.
+         */
+        @JvmStatic
+        fun forExtras(
+            metadata: Bundle?,
+            drawableProvider: IntFunction<Drawable>,
+        ): ClockDrawableWrapper? {
+            if (metadata == null) return null
+            val drawableId = metadata.getInt(ROUND_ICON_METADATA_KEY, 0)
+            if (drawableId == 0) return null
+
+            val clockMetadata = ClockMetadata(
+                hourLayerIndex = metadata.getInt(HOUR_INDEX_METADATA_KEY, INVALID_VALUE),
+                minuteLayerIndex = metadata.getInt(MINUTE_INDEX_METADATA_KEY, INVALID_VALUE),
+                secondLayerIndex = metadata.getInt(SECOND_INDEX_METADATA_KEY, INVALID_VALUE),
+                defaultHour = metadata.getInt(DEFAULT_HOUR_METADATA_KEY, 0),
+                defaultMinute = metadata.getInt(DEFAULT_MINUTE_METADATA_KEY, 0),
+                defaultSecond = metadata.getInt(DEFAULT_SECOND_METADATA_KEY, 0),
+            )
+            return forMeta(0, clockMetadata) { drawableProvider.apply(drawableId) }
+        }
+
+        /**
+         * Loads and returns the wrapper from the provided ClockMetadata.
+         */
+        @JvmStatic
+        fun forMeta(
+            @Suppress("UNUSED_PARAMETER") targetSdkVersion: Int,
+            metadata: ClockMetadata,
+            drawableProvider: () -> Drawable,
+        ): ClockDrawableWrapper? {
+            val drawable = drawableProvider().mutate()
+            if (drawable !is AdaptiveIconDrawable) return null
+
+            val foreground = drawable.foreground as LayerDrawable
+            val layerCount = foreground.numberOfLayers
+
+            fun validateIndex(index: Int) = if (index < 0 || index >= layerCount) INVALID_VALUE else index
+
+            var animInfo = ClockAnimationInfo(
+                hourLayerIndex = validateIndex(metadata.hourLayerIndex),
+                minuteLayerIndex = validateIndex(metadata.minuteLayerIndex),
+                secondLayerIndex = validateIndex(metadata.secondLayerIndex),
+                defaultHour = metadata.defaultHour,
+                defaultMinute = metadata.defaultMinute,
+                defaultSecond = metadata.defaultSecond,
+                baseDrawableState = drawable.constantState!!,
+            )
+
+            if (DISABLE_SECONDS && animInfo.secondLayerIndex != INVALID_VALUE) {
+                foreground.setDrawable(animInfo.secondLayerIndex, null)
+                animInfo = animInfo.copy(secondLayerIndex = INVALID_VALUE)
+            }
+
+            animInfo.applyTime(Calendar.getInstance(), foreground)
+            return ClockDrawableWrapper(drawable, animInfo)
         }
 
         private inline fun LayerDrawable.applyLevel(index: Int, level: () -> Int) =
