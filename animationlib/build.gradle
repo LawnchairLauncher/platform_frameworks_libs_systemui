@@ -19,7 +19,7 @@ android {
             manifest.srcFile 'tests/AndroidManifest.xml'
         }
     }
-    lintOptions {
+    lint {
         abortOnError false
     }
     tasks.lint.enabled = false
