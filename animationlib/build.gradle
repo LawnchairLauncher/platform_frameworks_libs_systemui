@@ -20,7 +20,7 @@ android {
         }
     }
 
-    lintOptions {
+    lint {
         abortOnError false
     }
     tasks.lint.enabled = false
