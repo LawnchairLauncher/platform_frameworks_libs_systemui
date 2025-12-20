@@ -44,7 +44,7 @@ dependencies {
     implementation libs.compose.ui
     implementation libs.compose.ui.util
     implementation libs.compose.ui.graphics
-    implementation libs.compose.runtime
+    implementation libs.compose.runtime.livedata
     implementation libs.kotlinx.coroutines.android
     implementation libs.compose.material3
 }

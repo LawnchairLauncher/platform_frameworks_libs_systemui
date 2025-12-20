@@ -33,7 +33,7 @@ addFrameworkJar('framework-16.jar')
 compileOnlyCommonJars()
 
 dependencies {
-    implementation libs.androidx.core
+    implementation libs.androidx.core.ktx
 //    implementation project(":frameworks:libs:systemui:viewcapturelib:view_capture_proto")
 //    api project(":frameworks:base:core:FrameworkFlags")
 //    androidTestImplementation project(':SharedTestLib')
