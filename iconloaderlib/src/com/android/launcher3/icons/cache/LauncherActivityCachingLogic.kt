@@ -45,17 +45,19 @@ object LauncherActivityCachingLogic : CachingLogic<LauncherActivityInfo> {
         cache: BaseIconCache,
         info: LauncherActivityInfo,
     ): BitmapInfo {
+        // LC-Note: LauncherActivityInfo.getActivityInfo or known as info.getActivityInfo in the code requires Android 12
+        val activityInfo = context.packageManager.getActivityInfo(info.componentName, 0)
         cache.iconFactory.use { li ->
             val iconOptions: IconOptions = IconOptions().setUser(info.user)
             iconOptions
                 .setIsArchived(
                     useNewIconForArchivedApps() &&
                         VERSION.SDK_INT >= 35 &&
-                        info.activityInfo.isArchived
+                        activityInfo.isArchived
                 )
                 .setSourceHint(getSourceHint(info, cache))
-            val iconDrawable = cache.iconProvider.getIcon(info.activityInfo, li.fullResIconDpi)
-            if (context.packageManager.isDefaultApplicationIcon(iconDrawable)) {
+            val iconDrawable = cache.iconProvider.getIcon(activityInfo, li.fullResIconDpi)
+            if (VERSION.SDK_INT >= 30 && context.packageManager.isDefaultApplicationIcon(iconDrawable)) {
                 Log.w(
                     TAG,
                     "loadIcon: Default app icon returned from PackageManager." +
