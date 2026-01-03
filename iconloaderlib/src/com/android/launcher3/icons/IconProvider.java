@@ -39,8 +39,6 @@ import android.graphics.drawable.AdaptiveIconDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.InsetDrawable;
 import android.os.Build;
-import android.os.Build.VERSION;
-import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Process;
@@ -60,9 +58,7 @@ import com.android.launcher3.util.SafeCloseable;
 import java.util.Calendar;
 import java.util.Objects;
 
-// Lawnchair-TODO: NO-OP IconProvider
 import app.lawnchair.icons.CustomAdaptiveIconDrawable;
-import app.lawnchair.icons.IconPreferencesKt;
 
 /**
  * Class to handle icon loading from different packages
@@ -78,8 +74,8 @@ public class IconProvider {
     private static final String SYSTEM_STATE_SEPARATOR = " ";
 
     protected final Context mContext;
-    private final ComponentName mCalendar;
-    private final ComponentName mClock;
+    protected final ComponentName mCalendar;
+    protected final ComponentName mClock;
 
     @NonNull
     protected String mSystemState = "";
@@ -159,9 +155,11 @@ public class IconProvider {
         if (icon == null) {
             icon = loadPackageIconWithFallback(info, appInfo, iconDpi);
             if (ATLEAST_T && icon instanceof AdaptiveIconDrawable && td != null) {
-                AdaptiveIconDrawable aid = (AdaptiveIconDrawable) icon;
+                CustomAdaptiveIconDrawable aid = (CustomAdaptiveIconDrawable) CustomAdaptiveIconDrawable.wrapNonNull(
+                    icon
+                );
                 if  (aid.getMonochrome() == null) {
-                    icon = new AdaptiveIconDrawable(aid.getBackground(),
+                    icon = new CustomAdaptiveIconDrawable(aid.getBackground(),
                             aid.getForeground(), td.loadPaddedDrawable());
                 }
             }
@@ -173,7 +171,7 @@ public class IconProvider {
         return null;
     }
 
-    private Drawable loadPackageIconWithFallback(
+    protected Drawable loadPackageIconWithFallback(
             PackageItemInfo info, ApplicationInfo appInfo, int density) {
         Drawable icon = null;
         if (BuildCompat.isAtLeastV() && info.isArchived) {
@@ -210,7 +208,7 @@ public class IconProvider {
     }
 
     @TargetApi(Build.VERSION_CODES.TIRAMISU)
-    private Drawable loadCalendarDrawable(int iconDpi, @Nullable ThemeData td) {
+    protected Drawable loadCalendarDrawable(int iconDpi, @Nullable ThemeData td) {
         PackageManager pm = mContext.getPackageManager();
         try {
             final Bundle metadata = pm.getActivityInfo(
@@ -295,7 +293,7 @@ public class IconProvider {
     /**
      * @return Today's day of the month, zero-indexed.
      */
-    private static int getDay() {
+    protected static int getDay() {
         return Calendar.getInstance().get(Calendar.DAY_OF_MONTH) - 1;
     }
 
