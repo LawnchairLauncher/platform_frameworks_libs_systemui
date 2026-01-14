@@ -18,7 +18,9 @@ package com.android.launcher3.icons.cache
 
 import android.content.ComponentName
 import android.content.Context
+import android.content.pm.ActivityInfo
 import android.content.pm.LauncherActivityInfo
+import android.os.Build
 import android.os.Build.VERSION
 import android.os.UserHandle
 import android.util.Log
@@ -46,7 +48,11 @@ object LauncherActivityCachingLogic : CachingLogic<LauncherActivityInfo> {
         info: LauncherActivityInfo,
     ): BitmapInfo {
         // LC-Note: LauncherActivityInfo.getActivityInfo or known as info.getActivityInfo in the code requires Android 12
-        val activityInfo = context.packageManager.getActivityInfo(info.componentName, 0)
+        val activityInfo = if (VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            info.activityInfo
+        } else {
+            context.packageManager.getActivityInfo(info.componentName, 0)
+        }
         cache.iconFactory.use { li ->
             val iconOptions: IconOptions = IconOptions().setUser(info.user)
             iconOptions
