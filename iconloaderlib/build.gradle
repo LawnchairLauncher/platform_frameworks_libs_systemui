@@ -1,6 +1,5 @@
 plugins {
     id 'com.android.library'
-    id 'org.jetbrains.kotlin.android'
 }
 
 // Lawnchair-TODO-Postmerge: AOSP now uses kts build scripts for this
