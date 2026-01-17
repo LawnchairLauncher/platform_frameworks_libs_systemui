@@ -10,11 +10,13 @@ android {
     sourceSets {
         main {
             java.srcDirs = ['src']
+            kotlin.srcDirs = ['src']
             res.srcDirs = ['res']
             manifest.srcFile 'AndroidManifest.xml'
         }
         androidTest {
             java.srcDirs = ["tests/src", "tests/robolectric/src"]
+            kotlin.srcDirs = ["tests/src", "tests/robolectric/src"]
             manifest.srcFile 'tests/AndroidManifest.xml'
         }
     }
