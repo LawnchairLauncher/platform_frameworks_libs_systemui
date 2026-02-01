@@ -16,7 +16,7 @@ android {
     sourceSets {
         main {
             java.srcDirs = ['src', 'compose']
-            kotlin.srcDirs = ['src', 'compose']
+            kotlin.directories.addAll('src', 'compose')
             manifest.srcFile 'AndroidManifest.xml'
         }
     }
