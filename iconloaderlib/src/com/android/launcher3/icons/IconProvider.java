@@ -68,6 +68,7 @@ public class IconProvider {
     private static final String TAG = "IconProvider";
     private static final boolean DEBUG = false;
     public static final boolean ATLEAST_T = BuildCompat.isAtLeastT();
+    public static final boolean ATLEAST_OREO = BuildCompat.isAtLeastO();
 
     private static final String ICON_METADATA_KEY_PREFIX = ".dynamic_icons";
 

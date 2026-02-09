@@ -226,7 +226,7 @@ public class BaseIconFactory implements AutoCloseable {
             // Need to convert to Adaptive Icon with insets to avoid cropping.
             tempIcon = createShapedAdaptiveIcon(bitmapDrawable.getBitmap());
         }
-        AdaptiveIconDrawable adaptiveIcon = normalizeAndWrapToAdaptiveIcon(tempIcon, scale);
+        Drawable adaptiveIcon = normalizeAndWrapToAdaptiveIcon(tempIcon, scale);
         Bitmap bitmap = createIconBitmap(adaptiveIcon, scale[0],
                 options == null ? MODE_WITH_SHADOW : options.mGenerationMode);
         int color = (options != null && options.mExtractedColor != null)
@@ -235,10 +235,10 @@ public class BaseIconFactory implements AutoCloseable {
 
         if (adaptiveIcon instanceof Extender extender) {
             info = extender.getExtendedInfo(bitmap, color, this, scale[0]);
-        } else if (IconProvider.ATLEAST_T && mThemeController != null && adaptiveIcon != null) {
+        } else if (IconProvider.ATLEAST_T && mThemeController != null && adaptiveIcon instanceof AdaptiveIconDrawable aid) {
             info.setThemedBitmap(
                     mThemeController.createThemedBitmap(
-                        adaptiveIcon,
+                        aid,
                         info,
                         this,
                         options == null ? null : options.mSourceHint
@@ -356,40 +356,51 @@ public class BaseIconFactory implements AutoCloseable {
     }
 
     @Nullable
-    protected AdaptiveIconDrawable normalizeAndWrapToAdaptiveIcon(
+    protected Drawable normalizeAndWrapToAdaptiveIcon(
             @Nullable Drawable icon, @NonNull final float[] outScale) {
         if (icon == null) {
             return null;
         }
+
         boolean isFromIconPack = ExtendedBitmapDrawable.isFromIconPack(icon);
-        boolean shrinkNonAdaptiveIcons = !isFromIconPack && IconPreferencesKt.shouldWrapAdaptive(mContext);
+        boolean shouldWrapAdaptive = !isFromIconPack && IconPreferencesKt.shouldWrapAdaptive(mContext);
+        boolean shrinkNonAdaptiveIcons = IconProvider.ATLEAST_OREO && shouldWrapAdaptive;
+
         float scale;
-        
+
         if (shrinkNonAdaptiveIcons && !(icon instanceof AdaptiveIconDrawable)) {
             scale = new IconNormalizer(mIconBitmapSize).getScale(icon);
-            
-            int wrapperBackgroundColor = IconPreferencesKt.getWrapperBackgroundColor(mContext, icon);
-            
+
+            int wrapperBackgroundColor = IconPreferencesKt.getWrapperBackgroundColor(mContext,
+                icon);
+
             FixedScaleDrawable foreground = new FixedScaleDrawable();
             foreground.setDrawable(icon);
             foreground.setScale(scale);
-            
+
             CustomAdaptiveIconDrawable wrapper = new CustomAdaptiveIconDrawable(
                 new ColorDrawable(wrapperBackgroundColor),
                 foreground
             );
-            
+
             scale = new IconNormalizer(mIconBitmapSize).getScale(wrapper);
             outScale[0] = scale;
-            
-            // pE-TODO: If this is wrapper, shouldn't we be using DEFAULT_WRAPPER_BACKGROUND for background? To be fair the background doesn't seem to be rendering
+
             return wrapper;
         } else {
-            scale = new IconNormalizer(mIconBitmapSize).getScale(icon);
-            outScale[0] = scale;
-            
-            // Icon is either legacy or isn't an proper icon, and/or doesn't support monochrome
-            return wrapToAdaptiveIcon(icon);
+            if (icon instanceof AdaptiveIconDrawable) {
+                outScale[0] = ICON_VISIBLE_AREA_FACTOR;
+                return icon;
+            }
+
+            if (shouldWrapAdaptive) {
+                outScale[0] = ICON_VISIBLE_AREA_FACTOR;
+                return wrapToAdaptiveIcon(icon);
+            } else {
+                scale = new IconNormalizer(mIconBitmapSize).getScale(icon);
+                outScale[0] = scale;
+                return icon;
+            }
         }
     }
 
@@ -420,15 +431,10 @@ public class BaseIconFactory implements AutoCloseable {
         } else {
             int wrapperBackgroundColor = IconPreferencesKt.getWrapperBackgroundColor(mContext, icon);
 
-            FixedScaleDrawable foreground = new FixedScaleDrawable();
-            // pE-TODO(QPR1): Investigate
-            // foreground = createScaledDrawable(icon, scale * LEGACY_ICON_SCALE)
-            CustomAdaptiveIconDrawable dr = new CustomAdaptiveIconDrawable(
-                    new ColorDrawable(wrapperBackgroundColor), foreground);
-            dr.setBounds(0, 0, 1, 1);
             float scale = new IconNormalizer(mIconBitmapSize).getScale(icon);
-            foreground.setDrawable(icon);
-            foreground.setScale(scale);
+            CustomAdaptiveIconDrawable dr = new CustomAdaptiveIconDrawable(
+                    new ColorDrawable(wrapperBackgroundColor), createScaledDrawable(icon, scale * LEGACY_ICON_SCALE));
+            dr.setBounds(0, 0, 1, 1);
             
             return dr;
         }
