@@ -56,7 +56,7 @@ fun getCustomAppNameForComponent(info: LauncherActivityInfo): CharSequence? {
 
 
 fun getWrapperBackgroundColor(context: Context, icon: Drawable): Int {
-    val lightness = context.prefs.getFloat("pref_coloredBackgroundLightness", 0.9f)
+    val lightness = context.prefs.getFloat("pref_coloredBackgroundLightness", 1f)
     val palette = Palette.Builder(drawableToBitmap(icon)).generate()
     val dominantColor = palette.getDominantColor(DEFAULT_WRAPPER_BACKGROUND)
     return setLightness(dominantColor, lightness)
