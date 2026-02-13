@@ -33,6 +33,7 @@ import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.InsetDrawable
 import android.os.Build
+import app.lawnchair.icons.shouldForceMonochrome
 import com.android.launcher3.Flags
 import com.android.launcher3.icons.BaseIconFactory
 import com.android.launcher3.icons.BaseIconFactory.MODE_ALPHA
@@ -92,7 +93,7 @@ class MonoIconThemeController(
         if (mono != null) {
             return ClippedMonoDrawable(mono, shapePath)
         }
-        if (Flags.forceMonochromeAppIcons() && shouldForceThemeIcon && !isFileDrawable) {
+        if (shouldForceMonochrome() && shouldForceThemeIcon && !isFileDrawable) {
             return MonochromeIconFactory(info.icon.width).wrap(base, shapePath)
         }
         return null

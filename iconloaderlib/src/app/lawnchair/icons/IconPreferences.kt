@@ -28,6 +28,12 @@ fun Context.shouldTintIconPackBackgrounds(): Boolean = prefs.getBoolean("tint_ic
 val prefsNoContext: SharedPreferences get() = ActivityThread.currentApplication()
     .getSharedPreferences(SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
 
+fun shouldForceMonochrome(): Boolean {
+    val prefs = prefsNoContext
+
+    return prefs.getBoolean("pref_forceIconMonochrome", false)
+}
+
 private fun getCustomAppNameMap(): Map<ComponentKey, String> {
     val prefs = prefsNoContext
 
