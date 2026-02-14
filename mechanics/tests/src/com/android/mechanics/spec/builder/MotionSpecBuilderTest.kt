@@ -49,6 +49,22 @@ class MotionSpecBuilderTest : MotionBuilderContext by FakeMotionSpecBuilderConte
     }
 
     @Test
+    fun motionSpec_semantics_appliedToSpec() {
+        val result = spatialMotionSpec(semantics = listOf(TestSemantics with "One")) {}
+
+        assertThat(result.semanticState(TestSemantics)).isEqualTo("One")
+        assertThat(result).bothDirections().semantics().withKey(TestSemantics).isNull()
+    }
+
+    @Test
+    fun fixedMotionSpec_semantics_appliedToSpec() {
+        val result = fixedSpatialValueSpec(0f, semantics = listOf(TestSemantics with "One"))
+
+        assertThat(result.semanticState(TestSemantics)).isEqualTo("One")
+        assertThat(result).bothDirections().semantics().withKey(TestSemantics).isNull()
+    }
+
+    @Test
     fun placement_absoluteAfter_createsTwoSegments() {
         val result =
             motionSpec(baseMapping = Mapping.Zero, defaultSpring = spatial.default) {

@@ -16,6 +16,8 @@
 
 package com.android.mechanics.spec.builder
 
+import com.android.mechanics.haptics.BreakpointHaptics
+import com.android.mechanics.haptics.SegmentHaptics
 import com.android.mechanics.spec.Guarantee
 import com.android.mechanics.spec.Mapping
 import com.android.mechanics.spec.OnChangeSegmentHandler
@@ -26,7 +28,7 @@ import com.android.mechanics.spring.SpringParameters
 /**
  * Defines the contract for applying [Effect]s within a [MotionSpecBuilder]
  *
- * Provides methods to define breakpoints and mappings for the motion specification.
+ * Provides methods to define breakpoints, mappings and haptics for the motion specification.
  *
  * Breakpoints for [minLimit] and [maxLimit] will be created, with the specified key and parameters.
  */
@@ -90,12 +92,14 @@ interface EffectApplyScope : MotionBuilderContext {
      * spec, unless redefined in another spec.
      *
      * @param initialMapping [Mapping] for the first segment after [minLimit].
+     * @param initialSegmentHaptics [SegmentHaptics] for the first segment after [minLimit]
      * @param semantics Initial semantics for the effect.
      * @param init Configures the effect's spec using [DirectionalBuilderScope].
      * @see com.android.mechanics.spec.directionalMotionSpec for in-depth documentation.
      */
     fun forward(
         initialMapping: Mapping,
+        initialSegmentHaptics: SegmentHaptics = SegmentHaptics.None,
         semantics: List<SemanticValue<*>> = emptyList(),
         init: DirectionalEffectBuilderScope.() -> Unit,
     )
@@ -171,6 +175,7 @@ interface DirectionalEffectBuilderScope : DirectionalBuilderScope {
         guarantee: Guarantee? = null,
         semantics: List<SemanticValue<*>>? = null,
         mapping: Mapping? = null,
+        breakpointHaptics: BreakpointHaptics? = null,
     )
 
     fun after(
@@ -178,5 +183,6 @@ interface DirectionalEffectBuilderScope : DirectionalBuilderScope {
         guarantee: Guarantee? = null,
         semantics: List<SemanticValue<*>>? = null,
         mapping: Mapping? = null,
+        breakpointHaptics: BreakpointHaptics? = null,
     )
 }

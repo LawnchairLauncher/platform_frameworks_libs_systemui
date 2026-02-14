@@ -50,6 +50,7 @@ import com.android.mechanics.testing.input
 import com.android.mechanics.testing.isStable
 import com.android.mechanics.testing.output
 import com.google.common.truth.Truth.assertThat
+import kotlin.test.assertFailsWith
 import kotlinx.coroutines.launch
 import org.junit.Rule
 import org.junit.Test
@@ -71,7 +72,7 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
     @Test
     fun emptySpec_outputMatchesInput_withoutAnimation() =
         motion.goldenTest(
-            spec = MotionSpec.Empty,
+            spec = MotionSpec.Identity,
             verifyTimeSeries = {
                 // Output always matches the input
                 assertThat(output).containsExactlyElementsIn(input).inOrder()
@@ -83,6 +84,48 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
         ) {
             animateValueTo(100f)
         }
+
+    @Test
+    fun unspecifiedSpec_outputIsNan() =
+        motion.goldenTest(
+            spec = MotionSpec.InitiallyUndefined,
+            verifyTimeSeries = {
+                // This must only produce NaN values
+                output.forEach { assertThat(it).isNaN() }
+                // There must never be an ongoing animation.
+                assertThat(isStable).doesNotContain(false)
+                AssertTimeSeriesMatchesGolden()
+            },
+        ) {
+            animateValueTo(100f)
+        }
+
+    @Test
+    fun unspecifiedSpec_atTheBeginning_jumpcutsToFirstValue() =
+        motion.goldenTest(
+            spec = MotionSpec.InitiallyUndefined,
+            verifyTimeSeries = {
+                // There must never be an ongoing animation.
+                assertThat(isStable).doesNotContain(false)
+
+                AssertTimeSeriesMatchesGolden()
+            },
+        ) {
+            animateValueTo(10f, changePerFrame = 5f)
+            spec = MotionSpec.Identity
+            animateValueTo(20f, changePerFrame = 5f)
+        }
+
+    @Test
+    fun unspecifiedSpec_onAlreadyInitializedValue_throws() {
+        assertFailsWith<IllegalArgumentException> {
+            motion.goldenTest(spec = MotionSpec.Identity) {
+                animateValueTo(10f, changePerFrame = 5f)
+                spec = MotionSpec.InitiallyUndefined
+                animateValueTo(20f, changePerFrame = 5f)
+            }
+        }
+    }
 
     // TODO the tests should describe the expected values not only in terms of goldens, but
     //  also explicitly in verifyTimeSeries
@@ -252,6 +295,66 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
         }
 
     @Test
+    fun observeWhen_isOutputFixed() {
+        motion.goldenTest(
+            spec =
+                specBuilder(Mapping.Zero) {
+                    fixedValue(breakpoint = 1f, value = 10f)
+                    fractionalInput(breakpoint = 2f, from = 20f, fraction = 1f)
+                    fixedValue(breakpoint = 3f, value = 10f)
+                },
+            stableThreshold = 1f,
+            capture = {
+                defaultFeatureCaptures()
+                feature(FeatureCaptures.isOutputFixed)
+            },
+        ) {
+            // Segment: Mapping.Zero
+
+            updateInput(0.5f)
+            assertThat(underTest.isOutputFixed).isTrue()
+
+            // Segment: fixedValue(breakpoint = 1f, value = 10f)
+
+            updateInput(1.5f)
+            assertThat(underTest.isOutputFixed).isFalse()
+            awaitStable()
+            assertThat(underTest.isOutputFixed).isFalse()
+            awaitFrames(1)
+            assertThat(underTest.isOutputFixed).isTrue()
+
+            updateInput(1.9f)
+            assertThat(underTest.isOutputFixed).isTrue()
+
+            // Segment: fractionalInput(breakpoint = 2f, from = 20f, fraction = 1f)
+
+            updateInput(2.5f)
+            assertThat(underTest.isOutputFixed).isFalse()
+            awaitStable()
+            assertThat(underTest.isOutputFixed).isFalse()
+            awaitFrames(1)
+            assertThat(underTest.isOutputFixed).isFalse()
+
+            updateInput(2.9f)
+            awaitStable()
+            awaitFrames(1)
+            assertThat(underTest.isOutputFixed).isFalse()
+
+            // Segment: fixedValue(breakpoint = 3f, value = 10f)
+
+            updateInput(3.5f)
+            assertThat(underTest.isOutputFixed).isFalse()
+            awaitStable()
+            assertThat(underTest.isOutputFixed).isFalse()
+            awaitFrames(1)
+            assertThat(underTest.isOutputFixed).isTrue()
+
+            updateInput(3.9f)
+            assertThat(underTest.isOutputFixed).isTrue()
+        }
+    }
+
+    @Test
     fun specChange_shiftSegmentBackwards_doesNotAnimateWithinSegment_animatesSegmentChange() {
         fun generateSpec(offset: Float) =
             specBuilder(Mapping.Zero) {
@@ -263,7 +366,7 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
             var offset = 0f
             repeat(4) {
                 offset -= .2f
-                underTest.spec = generateSpec(offset)
+                spec = generateSpec(offset)
                 awaitFrames()
             }
             awaitStable()
@@ -282,7 +385,7 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
             var offset = 0f
             repeat(4) {
                 offset += .2f
-                underTest.spec = generateSpec(offset)
+                spec = generateSpec(offset)
                 awaitFrames()
             }
             awaitStable()
@@ -426,7 +529,7 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
 
     @Test
     fun semantics_returnsNullForUnknownKey() {
-        val underTest = MotionValue({ 1f }, FakeGestureContext)
+        val underTest = MotionValue({ 1f }, FakeGestureContext, { MotionSpec.Identity })
 
         val s1 = SemanticKey<String>("Foo")
 
@@ -443,7 +546,7 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
             }
 
         val input = mutableFloatStateOf(0f)
-        val underTest = MotionValue(input::value, FakeGestureContext, spec)
+        val underTest = MotionValue(input::value, FakeGestureContext, { spec })
 
         assertThat(underTest[s1]).isEqualTo("zero")
         input.floatValue = 2f
@@ -459,7 +562,7 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
             }
 
         val input = mutableFloatStateOf(1f)
-        val underTest = MotionValue(input::value, FakeGestureContext, spec)
+        val underTest = MotionValue(input::value, FakeGestureContext, { spec })
 
         assertThat(underTest.segmentKey).isEqualTo(SegmentKey(B1, B2, InputDirection.Max))
         input.floatValue = 2f
@@ -472,7 +575,9 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
         motion.goldenTest(
             spec = specBuilder(Mapping.Zero) { fixedValue(breakpoint = 0.5f, value = 1f) },
             createDerived = { primary ->
-                listOf(MotionValue.createDerived(primary, MotionSpec.Empty, label = "derived"))
+                listOf(
+                    MotionValue.createDerived(primary, { MotionSpec.Identity }, label = "derived")
+                )
             },
             verifyTimeSeries = {
                 // the output of the derived value must match the primary value
@@ -497,8 +602,10 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
             createDerived = { primary ->
                 listOf(
                     MotionValue.createDerived(
-                        primary,
-                        specBuilder(Mapping.One) { fixedValue(breakpoint = 0.5f, value = 0f) },
+                        source = primary,
+                        spec = {
+                            specBuilder(Mapping.One) { fixedValue(breakpoint = 0.5f, value = 0f) }
+                        },
                         label = "derived",
                     )
                 )
@@ -529,7 +636,7 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
     @Test
     fun nonFiniteNumbers_segmentChange_skipsAnimation() {
         motion.goldenTest(
-            spec = MotionSpec.Empty,
+            spec = MotionSpec.Identity,
             verifyTimeSeries = {
                 // The mappings produce a non-finite number during a segment change.
                 // The animation thereof is skipped to avoid poisoning the state with non-finite
@@ -541,9 +648,7 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
             },
         ) {
             animatedInputSequence(0f, 1f)
-            underTest.spec = specBuilder {
-                mapping(breakpoint = 0f) { if (it >= 1f) Float.NaN else 0f }
-            }
+            spec = specBuilder { mapping(breakpoint = 0f) { if (it >= 1f) Float.NaN else 0f } }
 
             awaitFrames()
 
@@ -581,7 +686,8 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
 
     @Test
     fun keepRunning_concurrentInvocationThrows() = runMonotonicClockTest {
-        val underTest = MotionValue({ 1f }, FakeGestureContext, label = "Foo")
+        val underTest =
+            MotionValue({ 1f }, FakeGestureContext, { MotionSpec.Identity }, label = "Foo")
         val realJob = launch { underTest.keepRunning() }
         testScheduler.runCurrent()
 
@@ -599,7 +705,7 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
 
     @Test
     fun debugInspector_sameInstance_whileInUse() {
-        val underTest = MotionValue({ 1f }, FakeGestureContext)
+        val underTest = MotionValue({ 1f }, FakeGestureContext, { MotionSpec.Identity })
 
         val originalInspector = underTest.debugInspector()
         assertThat(underTest.debugInspector()).isSameInstanceAs(originalInspector)
@@ -607,7 +713,7 @@ class MotionValueTest : MotionBuilderContext by FakeMotionSpecBuilderContext.Def
 
     @Test
     fun debugInspector_newInstance_afterUnused() {
-        val underTest = MotionValue({ 1f }, FakeGestureContext)
+        val underTest = MotionValue({ 1f }, FakeGestureContext, { MotionSpec.Identity })
 
         val originalInspector = underTest.debugInspector()
         originalInspector.dispose()

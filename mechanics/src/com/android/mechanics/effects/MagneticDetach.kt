@@ -21,8 +21,11 @@ package com.android.mechanics.effects
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.lerp
+import com.android.mechanics.haptics.BreakpointHaptics
+import com.android.mechanics.haptics.HapticsExperimentalApi
+import com.android.mechanics.haptics.SegmentHaptics
 import com.android.mechanics.spec.BreakpointKey
+import com.android.mechanics.spec.ChangeSegmentHandlers.DirectionChangePreservesCurrentValue
 import com.android.mechanics.spec.ChangeSegmentHandlers.PreventDirectionChangeWithinCurrentSegment
 import com.android.mechanics.spec.InputDirection
 import com.android.mechanics.spec.Mapping
@@ -56,6 +59,7 @@ class MagneticDetach(
     private val attachScale: Float = Defaults.AttachDetachScale * (attachPosition / detachPosition),
     private val detachSpring: SpringParameters = Defaults.Spring,
     private val attachSpring: SpringParameters = Defaults.Spring,
+    private val enableHaptics: Boolean = false,
 ) : Effect.PlaceableAfter, Effect.PlaceableBefore {
 
     init {
@@ -96,6 +100,7 @@ class MagneticDetach(
     }
 
     /* Effect is attached at minLimit, and detaches at maxLimit. */
+    @OptIn(HapticsExperimentalApi::class)
     private fun EffectApplyScope.createPlacedAfterSpec(
         minLimit: Float,
         minLimitKey: BreakpointKey,
@@ -115,12 +120,32 @@ class MagneticDetach(
         val scaledDetachValue = attachedValue + (detachedValue - attachedValue) * detachScale
         val scaledReattachValue = attachedValue + (reattachValue - attachedValue) * attachScale
 
+        // Haptic specs
+        val tensionHaptics =
+            if (enableHaptics) {
+                SegmentHaptics.SpringTension(anchorPointPx = minLimit)
+            } else {
+                SegmentHaptics.None
+            }
+        val thresholdHaptics =
+            if (enableHaptics) {
+                BreakpointHaptics.GenericThreshold
+            } else {
+                BreakpointHaptics.None
+            }
+
         val attachKey = BreakpointKey("attach")
+
         forward(
             initialMapping = Mapping.Linear(minLimit, attachedValue, maxLimit, scaledDetachValue),
+            initialSegmentHaptics = tensionHaptics,
             semantics = attachedSemantics,
         ) {
-            after(spring = detachSpring, semantics = detachedSemantics)
+            after(
+                spring = detachSpring,
+                semantics = detachedSemantics,
+                breakpointHaptics = thresholdHaptics,
+            )
             before(semantics = listOf(semanticAttachedValue with null))
         }
 
@@ -135,6 +160,7 @@ class MagneticDetach(
                 spring = attachSpring,
                 semantics = detachedSemantics,
                 mapping = baseMapping,
+                breakpointHaptics = thresholdHaptics,
             )
             before(semantics = listOf(semanticAttachedValue with null))
             after(semantics = listOf(semanticAttachedValue with null))
@@ -144,8 +170,6 @@ class MagneticDetach(
             beforeDetachSegment = SegmentKey(minLimitKey, maxLimitKey, InputDirection.Max),
             beforeAttachSegment = SegmentKey(attachKey, maxLimitKey, InputDirection.Min),
             afterAttachSegment = SegmentKey(minLimitKey, attachKey, InputDirection.Min),
-            minLimit = minLimit,
-            maxLimit = maxLimit,
         )
     }
 
@@ -195,8 +219,6 @@ class MagneticDetach(
             beforeDetachSegment = SegmentKey(minLimitKey, maxLimitKey, InputDirection.Min),
             beforeAttachSegment = SegmentKey(minLimitKey, attachKey, InputDirection.Max),
             afterAttachSegment = SegmentKey(attachKey, maxLimitKey, InputDirection.Max),
-            minLimit = minLimit,
-            maxLimit = maxLimit,
         )
     }
 
@@ -204,8 +226,6 @@ class MagneticDetach(
         beforeDetachSegment: SegmentKey,
         beforeAttachSegment: SegmentKey,
         afterAttachSegment: SegmentKey,
-        minLimit: Float,
-        maxLimit: Float,
     ) {
         // Suppress direction change during detach. This prevents snapping to the origin when
         // changing the direction while detaching.
@@ -216,44 +236,6 @@ class MagneticDetach(
 
         // When changing direction after re-attaching, the pre-detach ratio is tweaked to
         // interpolate between the direction change-position and the detach point.
-        addSegmentHandler(afterAttachSegment) { currentSegment, newInput, newDirection ->
-            val nextSegment = segmentAtInput(newInput, newDirection)
-            if (nextSegment.key == beforeDetachSegment) {
-                nextSegment.copy(
-                    mapping =
-                        switchMappingWithSamePivotValue(
-                            currentSegment.mapping,
-                            nextSegment.mapping,
-                            minLimit,
-                            newInput,
-                            maxLimit,
-                        )
-                )
-            } else {
-                nextSegment
-            }
-        }
-    }
-
-    private fun switchMappingWithSamePivotValue(
-        source: Mapping,
-        target: Mapping,
-        minLimit: Float,
-        pivot: Float,
-        maxLimit: Float,
-    ): Mapping {
-        val minValue = target.map(minLimit)
-        val pivotValue = source.map(pivot)
-        val maxValue = target.map(maxLimit)
-
-        return Mapping { input ->
-            if (input <= pivot) {
-                val t = (input - minLimit) / (pivot - minLimit)
-                lerp(minValue, pivotValue, t)
-            } else {
-                val t = (input - pivot) / (maxLimit - pivot)
-                lerp(pivotValue, maxValue, t)
-            }
-        }
+        addSegmentHandler(afterAttachSegment, DirectionChangePreservesCurrentValue)
     }
 }

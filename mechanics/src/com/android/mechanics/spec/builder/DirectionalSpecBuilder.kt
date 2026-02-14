@@ -16,6 +16,7 @@
 
 package com.android.mechanics.spec.builder
 
+import com.android.mechanics.haptics.SegmentHaptics
 import com.android.mechanics.spec.Breakpoint
 import com.android.mechanics.spec.DirectionalMotionSpec
 import com.android.mechanics.spec.Mapping
@@ -115,6 +116,7 @@ fun directionalMotionSpec(
  */
 fun directionalMotionSpec(
     mapping: Mapping = Mapping.Identity,
+    segmentHaptics: SegmentHaptics = SegmentHaptics.None,
     semantics: List<SemanticValue<*>> = emptyList(),
 ): DirectionalMotionSpec {
     fun <T> toSegmentSemanticValues(semanticValue: SemanticValue<T>) =
@@ -123,6 +125,7 @@ fun directionalMotionSpec(
     return DirectionalMotionSpec(
         listOf(Breakpoint.minLimit, Breakpoint.maxLimit),
         listOf(mapping),
+        listOf(segmentHaptics),
         semantics.map { toSegmentSemanticValues(it) },
     )
 }

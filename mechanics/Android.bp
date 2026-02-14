@@ -20,7 +20,8 @@ package {
 android_library {
     name: "mechanics",
     manifest: "AndroidManifest.xml",
-    sdk_version: "system_current",
+    // sdk_version must be specified, otherwise it compiles against private APIs.
+    sdk_version: "current",
     min_sdk_version: "31",
     static_libs: [
         "androidx.compose.runtime_runtime",

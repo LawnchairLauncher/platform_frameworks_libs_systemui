@@ -16,8 +16,10 @@
 
 package com.android.mechanics.spec.builder
 
+import com.android.mechanics.haptics.BreakpointHaptics
+import com.android.mechanics.haptics.HapticsExperimentalApi
+import com.android.mechanics.haptics.SegmentHaptics
 import com.android.mechanics.spec.BreakpointKey
-import com.android.mechanics.spec.DirectionalMotionSpec
 import com.android.mechanics.spec.Guarantee
 import com.android.mechanics.spec.Mapping
 import com.android.mechanics.spec.SemanticKey
@@ -48,6 +50,7 @@ interface DirectionalBuilderScope {
      * @param from The output value at the previous breakpoint, explicitly setting the starting
      *   point for the linear mapping.
      * @param to The desired output value at the new breakpoint.
+     * @param breakpointHaptics Haptics at the breakpoint that ends the current segment.
      * @param spring The [SpringParameters] for the transition to this breakpoint. Defaults to
      *   [defaultSpring].
      * @param guarantee The animation guarantee for this transition. Defaults to [Guarantee.None].
@@ -59,6 +62,7 @@ interface DirectionalBuilderScope {
         breakpoint: Float,
         from: Float,
         to: Float,
+        breakpointHaptics: BreakpointHaptics = BreakpointHaptics.None,
         spring: SpringParameters = defaultSpring,
         guarantee: Guarantee = Guarantee.None,
         key: BreakpointKey = BreakpointKey(),
@@ -77,6 +81,7 @@ interface DirectionalBuilderScope {
      *   next.
      * @param to The desired output value at the new breakpoint.
      * @param delta An optional offset to apply to the calculated starting value. Defaults to 0f.
+     * @param breakpointHaptics Haptics at the breakpoint that ends the current segment.
      * @param spring The [SpringParameters] for the transition to this breakpoint. Defaults to
      *   [defaultSpring].
      * @param guarantee The animation guarantee for this transition. Defaults to [Guarantee.None].
@@ -88,6 +93,7 @@ interface DirectionalBuilderScope {
         breakpoint: Float,
         to: Float,
         delta: Float = 0f,
+        breakpointHaptics: BreakpointHaptics = BreakpointHaptics.None,
         spring: SpringParameters = defaultSpring,
         guarantee: Guarantee = Guarantee.None,
         key: BreakpointKey = BreakpointKey(),
@@ -107,6 +113,7 @@ interface DirectionalBuilderScope {
      *   point for the linear mapping.
      * @param fraction The fractional multiplier applied to the input difference between
      *   breakpoints.
+     * @param breakpointHaptics Haptics at the breakpoint that ends the current segment.
      * @param spring The [SpringParameters] for the transition to this breakpoint. Defaults to
      *   [defaultSpring].
      * @param guarantee The animation guarantee for this transition. Defaults to [Guarantee.None].
@@ -118,6 +125,7 @@ interface DirectionalBuilderScope {
         breakpoint: Float,
         from: Float,
         fraction: Float,
+        breakpointHaptics: BreakpointHaptics = BreakpointHaptics.None,
         spring: SpringParameters = defaultSpring,
         guarantee: Guarantee = Guarantee.None,
         key: BreakpointKey = BreakpointKey(),
@@ -136,6 +144,7 @@ interface DirectionalBuilderScope {
      * @param fraction The fractional multiplier applied to the input difference between
      *   breakpoints.
      * @param delta An optional offset to apply to the calculated starting value. Defaults to 0f.
+     * @param breakpointHaptics Haptics at the breakpoint that ends the current segment.
      * @param spring The [SpringParameters] for the transition to this breakpoint. Defaults to
      *   [defaultSpring].
      * @param guarantee The animation guarantee for this transition. Defaults to [Guarantee.None].
@@ -147,6 +156,7 @@ interface DirectionalBuilderScope {
         breakpoint: Float,
         fraction: Float,
         delta: Float = 0f,
+        breakpointHaptics: BreakpointHaptics = BreakpointHaptics.None,
         spring: SpringParameters = defaultSpring,
         guarantee: Guarantee = Guarantee.None,
         key: BreakpointKey = BreakpointKey(),
@@ -162,6 +172,7 @@ interface DirectionalBuilderScope {
      * @param breakpoint The breakpoint defining the end of the current segment and the start of the
      *   next.
      * @param value The constant output value for this segment.
+     * @param breakpointHaptics Haptics at the breakpoint that ends the current segment.
      * @param spring The [SpringParameters] for the transition to this breakpoint. Defaults to
      *   [defaultSpring].
      * @param guarantee The animation guarantee for this transition. Defaults to [Guarantee.None].
@@ -172,6 +183,7 @@ interface DirectionalBuilderScope {
     fun fixedValue(
         breakpoint: Float,
         value: Float,
+        breakpointHaptics: BreakpointHaptics = BreakpointHaptics.None,
         spring: SpringParameters = defaultSpring,
         guarantee: Guarantee = Guarantee.None,
         key: BreakpointKey = BreakpointKey(),
@@ -189,6 +201,7 @@ interface DirectionalBuilderScope {
      *   next.
      * @param delta An optional offset to apply to the mapped value to determine the fixed value.
      *   Defaults to 0f.
+     * @param breakpointHaptics Haptics at the breakpoint that ends the current segment.
      * @param spring The [SpringParameters] for the transition to this breakpoint. Defaults to
      *   [defaultSpring].
      * @param guarantee The animation guarantee for this transition. Defaults to [Guarantee.None].
@@ -199,6 +212,7 @@ interface DirectionalBuilderScope {
     fun fixedValueFromCurrent(
         breakpoint: Float,
         delta: Float = 0f,
+        breakpointHaptics: BreakpointHaptics = BreakpointHaptics.None,
         spring: SpringParameters = defaultSpring,
         guarantee: Guarantee = Guarantee.None,
         key: BreakpointKey = BreakpointKey(),
@@ -219,6 +233,7 @@ interface DirectionalBuilderScope {
      * @param key A unique [BreakpointKey] for this breakpoint. Defaults to a newly generated key.
      * @param semantics Updated semantics values to be applied. Must be a subset of the
      *   [SemanticKey]s used when first creating this builder.
+     * @param breakpointHaptics Haptics at the breakpoint that ends the current segment.
      * @param mapping The custom [Mapping] to use.
      */
     fun mapping(
@@ -227,6 +242,7 @@ interface DirectionalBuilderScope {
         guarantee: Guarantee = Guarantee.None,
         key: BreakpointKey = BreakpointKey(),
         semantics: List<SemanticValue<*>> = emptyList(),
+        breakpointHaptics: BreakpointHaptics = BreakpointHaptics.None,
         mapping: Mapping,
     ): CanBeLastSegment
 
@@ -239,6 +255,7 @@ interface DirectionalBuilderScope {
      * @param breakpoint The breakpoint defining the end of the current segment and the start of the
      *   next.
      * @param delta An optional offset to apply to the mapped value to determine the fixed value.
+     * @param breakpointHaptics Haptics at the breakpoint that ends the current segment.
      * @param spring The [SpringParameters] for the transition to this breakpoint.
      * @param guarantee The animation guarantee for this transition.
      * @param key A unique [BreakpointKey] for this breakpoint.
@@ -248,17 +265,27 @@ interface DirectionalBuilderScope {
     fun identity(
         breakpoint: Float,
         delta: Float = 0f,
+        breakpointHaptics: BreakpointHaptics = BreakpointHaptics.None,
         spring: SpringParameters = defaultSpring,
         guarantee: Guarantee = Guarantee.None,
         key: BreakpointKey = BreakpointKey(),
         semantics: List<SemanticValue<*>> = emptyList(),
     ): CanBeLastSegment {
         return if (delta == 0f) {
-            mapping(breakpoint, spring, guarantee, key, semantics, Mapping.Identity)
+            mapping(
+                breakpoint,
+                spring,
+                guarantee,
+                key,
+                semantics,
+                breakpointHaptics,
+                Mapping.Identity,
+            )
         } else {
             fractionalInput(
                 breakpoint,
                 fraction = 1f,
+                breakpointHaptics = breakpointHaptics,
                 from = breakpoint + delta,
                 spring = spring,
                 guarantee = guarantee,
@@ -267,6 +294,16 @@ interface DirectionalBuilderScope {
             )
         }
     }
+
+    /**
+     * Builds the [DirectionalMotionSpec] according to the given [block] with the given
+     * [SegmentHaptics].
+     *
+     * Within the block, one or more segments can be defined and the same type of haptics will be
+     * delivered during interactions with the segments.
+     */
+    @HapticsExperimentalApi
+    fun <T> haptics(segmentHaptics: SegmentHaptics, block: DirectionalBuilderScope.() -> T)
 }
 
 /** Marker interface to indicate that a segment can be the last one in a [DirectionalMotionSpec]. */

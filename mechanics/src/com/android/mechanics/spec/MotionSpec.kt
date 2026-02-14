@@ -17,6 +17,7 @@
 package com.android.mechanics.spec
 
 import androidx.compose.ui.util.fastFirstOrNull
+import com.android.mechanics.haptics.SegmentHaptics
 import com.android.mechanics.spring.SpringParameters
 
 /**
@@ -31,12 +32,14 @@ import com.android.mechanics.spring.SpringParameters
  *   caused by setting this new spec.
  * @param segmentHandlers allow for custom segment-change logic, when the `MotionValue` runtime
  *   would leave the [SegmentKey].
+ * @param semantics semantics applied to the complete [MotionSpec]
  */
 data class MotionSpec(
     val maxDirection: DirectionalMotionSpec,
     val minDirection: DirectionalMotionSpec = maxDirection,
     val resetSpring: SpringParameters = DefaultResetSpring,
     val segmentHandlers: Map<SegmentKey, OnChangeSegmentHandler> = emptyMap(),
+    val semantics: List<SemanticValue<*>> = emptyList(),
 ) {
 
     /** The [DirectionalMotionSpec] for the specified [direction]. */
@@ -53,6 +56,16 @@ data class MotionSpec(
     }
 
     /**
+     * The semantic state for [key], as defined for the [MotionSpec].
+     *
+     * Returns `null` if no semantic value with [key] is defined.
+     */
+    fun <T> semanticState(key: SemanticKey<T>): T? {
+        @Suppress("UNCHECKED_CAST")
+        return semantics.fastFirstOrNull { it.key == key }?.value as T?
+    }
+
+    /**
      * The semantic state for [key] at segment with [segmentKey].
      *
      * Returns `null` if no semantic value with [key] is defined. Throws [NoSuchElementException] if
@@ -60,7 +73,8 @@ data class MotionSpec(
      */
     fun <T> semanticState(key: SemanticKey<T>, segmentKey: SegmentKey): T? {
         with(get(segmentKey.direction)) {
-            val semanticValues = semantics.fastFirstOrNull { it.key == key } ?: return null
+            val semanticValues =
+                semantics.fastFirstOrNull { it.key == key } ?: return semanticState(key)
             val segmentIndex = findSegmentIndex(segmentKey)
             if (segmentIndex < 0) throw NoSuchElementException()
 
@@ -106,6 +120,7 @@ data class MotionSpec(
                 breakpoints[idx + 1],
                 direction,
                 mappings[idx],
+                haptics[idx],
             )
         }
     }
@@ -135,8 +150,21 @@ data class MotionSpec(
          */
         private val DefaultResetSpring = SpringParameters(stiffness = 1400f, dampingRatio = 1f)
 
-        /* Empty motion spec, the output is the same as the input. */
-        val Empty = MotionSpec(DirectionalMotionSpec.Empty)
+        /* Identity motion spec, the output is the same as the input. */
+        val Identity = MotionSpec(DirectionalMotionSpec.Identity)
+
+        /**
+         * Placeholder to indicate that a [MotionSpec] cannot be supplied yet.
+         *
+         * As long as this spec is set, the MotionValue output is NaN. When the MotionValue is first
+         * supplied with an actual spec, the output value will be set immediately, without an
+         * animation.
+         *
+         * This must only ever be supplied as a spec for new `MotionValue`s, which never were
+         * supplied any other spec. Supplying this [InitiallyUndefined] spec to a MotionValue that
+         * has already been supplied a spec will throw an exception.
+         */
+        val InitiallyUndefined = MotionSpec(DirectionalMotionSpec.InitiallyUndefined)
     }
 }
 
@@ -154,12 +182,14 @@ data class MotionSpec(
  *   element, and [Breakpoint.maxLimit] as the last element.
  * @param mappings All mappings in between the breakpoints, thus must always contain
  *   `breakpoints.size - 1` elements.
- * @param semantics semantics provided by this spec, must only reference to breakpoint keys included
- *   in [breakpoints].
+ * @param haptics All segment haptics in between the breakpoints, thus must always contain
+ *   `breakpoints.size - 1` elements.
+ * @param semantics Semantics that apply to the [MotionSpec].
  */
 data class DirectionalMotionSpec(
     val breakpoints: List<Breakpoint>,
     val mappings: List<Mapping>,
+    val haptics: List<SegmentHaptics> = List(mappings.size) { SegmentHaptics.None },
     val semantics: List<SegmentSemanticValues<*>> = emptyList(),
 ) {
     /** Maps all [BreakpointKey]s used in this spec to its index in [breakpoints]. */
@@ -173,6 +203,10 @@ data class DirectionalMotionSpec(
             "Breakpoints are not sorted ascending ${breakpoints.map { "${it.key}@${it.position}" }}"
         }
         require(mappings.size == breakpoints.size - 1)
+        require(haptics.size == breakpoints.size - 1) {
+            "${haptics.size} segment haptics were provided but ${breakpoints.size - 1} are " +
+                "required"
+        }
 
         breakpointIndexByKey =
             breakpoints.mapIndexed { index, breakpoint -> breakpoint.key to index }.toMap()
@@ -229,11 +263,30 @@ data class DirectionalMotionSpec(
     override fun toString() = toDebugString()
 
     companion object {
-        /* Empty spec, the full input domain is mapped to output using [Mapping.identity]. */
-        val Empty =
+        /* Identity spec, the full input domain is mapped to output using [Mapping.identity]. */
+        val Identity =
             DirectionalMotionSpec(
                 listOf(Breakpoint.minLimit, Breakpoint.maxLimit),
                 listOf(Mapping.Identity),
+                listOf(SegmentHaptics.None),
+            )
+
+        /** Internal marker for [MotionSpec.InitiallyUndefined]. */
+        internal val InitiallyUndefined =
+            DirectionalMotionSpec(
+                listOf(Breakpoint.minLimit, Breakpoint.maxLimit),
+                listOf(
+                    object : Mapping {
+                        override fun map(input: Float): Float {
+                            return Float.NaN
+                        }
+
+                        override fun toString(): String {
+                            return "InitiallyUndefined"
+                        }
+                    }
+                ),
+                listOf<SegmentHaptics>(SegmentHaptics.None),
             )
     }
 }

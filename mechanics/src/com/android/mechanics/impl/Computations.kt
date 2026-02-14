@@ -22,6 +22,7 @@ import androidx.compose.ui.util.fastCoerceIn
 import androidx.compose.ui.util.fastIsFinite
 import androidx.compose.ui.util.lerp
 import com.android.mechanics.MotionValue.Companion.TAG
+import com.android.mechanics.haptics.BreakpointHaptics
 import com.android.mechanics.spec.Guarantee
 import com.android.mechanics.spec.InputDirection
 import com.android.mechanics.spec.Mapping
@@ -36,20 +37,32 @@ internal abstract class Computations : CurrentFrameInput, LastFrameState, Static
         val segment: SegmentData,
         val guarantee: GuaranteeState,
         val animation: DiscontinuityAnimation,
+        val breakpointHaptics: BreakpointHaptics?,
     )
 
     // currentComputedValues input
-    private var memoizedSpec: MotionSpec? = null
+    private var memoizedSpec: MotionSpec = MotionSpec.InitiallyUndefined
     private var memoizedInput: Float = Float.MIN_VALUE
     private var memoizedAnimationTimeNanos: Long = Long.MIN_VALUE
     private var memoizedDirection: InputDirection = InputDirection.Min
 
     // currentComputedValues output
-    private lateinit var memoizedComputedValues: ComputedValues
+    private var memoizedComputedValues: ComputedValues =
+        ComputedValues(
+            MotionSpec.InitiallyUndefined.segmentAtInput(memoizedInput, memoizedDirection),
+            GuaranteeState.Inactive,
+            DiscontinuityAnimation.None,
+            BreakpointHaptics.None,
+        )
 
     internal val currentComputedValues: ComputedValues
         get() {
             val currentSpec: MotionSpec = spec
+            if (currentSpec == MotionSpec.InitiallyUndefined) {
+                requireNoMotionSpecSet()
+                return memoizedComputedValues
+            }
+
             val currentInput: Float = currentInput
             val currentAnimationTimeNanos: Long = currentAnimationTimeNanos
             val currentDirection: InputDirection = currentDirection
@@ -63,45 +76,58 @@ internal abstract class Computations : CurrentFrameInput, LastFrameState, Static
                 return memoizedComputedValues
             }
 
+            val isInitialComputation = memoizedSpec == MotionSpec.InitiallyUndefined
+
             memoizedSpec = currentSpec
             memoizedInput = currentInput
             memoizedAnimationTimeNanos = currentAnimationTimeNanos
             memoizedDirection = currentDirection
 
-            val segment: SegmentData =
-                computeSegmentData(
-                    spec = currentSpec,
-                    input = currentInput,
-                    direction = currentDirection,
-                )
+            memoizedComputedValues =
+                if (isInitialComputation) {
+                    ComputedValues(
+                        currentSpec.segmentAtInput(currentInput, currentDirection),
+                        GuaranteeState.Inactive,
+                        DiscontinuityAnimation.None,
+                        BreakpointHaptics.None,
+                    )
+                } else {
+                    val segment: SegmentData =
+                        computeSegmentData(
+                            spec = currentSpec,
+                            input = currentInput,
+                            direction = currentDirection,
+                        )
 
-            val segmentChange: SegmentChangeType =
-                getSegmentChangeType(
-                    segment = segment,
-                    input = currentInput,
-                    direction = currentDirection,
-                )
+                    val segmentChange: SegmentChangeType =
+                        getSegmentChangeType(
+                            segment = segment,
+                            input = currentInput,
+                            direction = currentDirection,
+                        )
 
-            val guarantee: GuaranteeState =
-                computeGuaranteeState(
-                    segment = segment,
-                    segmentChange = segmentChange,
-                    input = currentInput,
-                )
+                    val guarantee: GuaranteeState =
+                        computeGuaranteeState(
+                            segment = segment,
+                            segmentChange = segmentChange,
+                            input = currentInput,
+                        )
 
-            val animation: DiscontinuityAnimation =
-                computeAnimation(
-                    segment = segment,
-                    guarantee = guarantee,
-                    segmentChange = segmentChange,
-                    spec = currentSpec,
-                    input = currentInput,
-                    animationTimeNanos = currentAnimationTimeNanos,
-                )
+                    val animation: DiscontinuityAnimation =
+                        computeAnimation(
+                            segment = segment,
+                            guarantee = guarantee,
+                            segmentChange = segmentChange,
+                            spec = currentSpec,
+                            input = currentInput,
+                            animationTimeNanos = currentAnimationTimeNanos,
+                        )
 
-            return ComputedValues(segment, guarantee, animation).also {
-                memoizedComputedValues = it
-            }
+                    val breakpointHaptics = computeBreakpointHaptics(segment, segmentChange)
+
+                    ComputedValues(segment, guarantee, animation, breakpointHaptics)
+                }
+            return memoizedComputedValues
         }
 
     // currentSpringState input
@@ -129,15 +155,15 @@ internal abstract class Computations : CurrentFrameInput, LastFrameState, Static
                 lastSegment.spec == spec &&
                 lastSegment.isValidForInput(currentInput, currentDirection)
 
-    val output: Float
+    val computedOutput: Float
         get() =
             if (isSameSegmentAndAtRest) {
                 lastSegment.mapping.map(currentInput)
             } else {
-                outputTarget + currentSpringState.displacement
+                computedOutputTarget + currentSpringState.displacement
             }
 
-    val outputTarget: Float
+    val computedOutputTarget: Float
         get() =
             if (isSameSegmentAndAtRest) {
                 lastSegment.mapping.map(currentInput)
@@ -145,7 +171,7 @@ internal abstract class Computations : CurrentFrameInput, LastFrameState, Static
                 currentComputedValues.segment.mapping.map(currentInput)
             }
 
-    val isStable: Boolean
+    val computedIsStable: Boolean
         get() =
             if (isSameSegmentAndAtRest) {
                 true
@@ -153,7 +179,47 @@ internal abstract class Computations : CurrentFrameInput, LastFrameState, Static
                 currentSpringState == SpringState.AtRest
             }
 
-    fun <T> semanticState(semanticKey: SemanticKey<T>): T? {
+    /**
+     * Determines if the output value is fixed.
+     *
+     * The output is considered fixed if the animation has settled and the input falls into a
+     * segment with a [Mapping.Fixed], and that mapping's value has not changed from the previous
+     * frame.
+     */
+    val computedIsOutputFixed: Boolean
+        get() {
+            if (lastSpringState != SpringState.AtRest) {
+                // The spring is still settling.
+                return false
+            }
+
+            val lastMapping = lastSegment.mapping
+            if (lastMapping !is Mapping.Fixed) {
+                // We need to compute a new output value.
+                return false
+            }
+
+            val isSameSegment =
+                lastSegment.spec == spec &&
+                    lastSegment.isValidForInput(currentInput, currentDirection)
+
+            return if (isSameSegment) {
+                // We are in the same fixed-value segment as the last frame.
+                true
+            } else {
+                val currentMapping = currentComputedValues.segment.mapping
+                if (currentMapping is Mapping.Fixed) {
+                    // Both old and new mappings are fixed. The output is only considered fixed if
+                    // their target values are identical.
+                    lastMapping.value == currentMapping.value
+                } else {
+                    // The new mapping isn't a fixed value.
+                    false
+                }
+            }
+        }
+
+    fun <T> computedSemanticState(semanticKey: SemanticKey<T>): T? {
         return with(if (isSameSegmentAndAtRest) lastSegment else currentComputedValues.segment) {
             spec.semanticState(semanticKey, key)
         }
@@ -572,5 +638,44 @@ internal abstract class Computations : CurrentFrameInput, LastFrameState, Static
                 updatedSpringState
             }
         }
+    }
+
+    private fun computeBreakpointHaptics(
+        segment: SegmentData,
+        segmentChange: SegmentChangeType,
+    ): BreakpointHaptics? =
+        when (segmentChange) {
+            SegmentChangeType.Traverse -> segment.entryBreakpoint.breakpointHaptics
+            else -> null
+        }
+
+    /**
+     * Precondition to ensure that this [Computations] has not yet been initialized with a
+     * MotionSpec other than [MotionSpec.InitiallyUndefined].
+     *
+     * This precondition is added since the desired behavior of the MotionValue when toggling back
+     * to a [MotionSpec.InitiallyUndefined] spec is unclear. If there is a compelling usecase, this
+     * restriction could be lifted.
+     */
+    private fun requireNoMotionSpecSet() {
+        // A MotionValue's spec can be MotionValue.Undefined initially. However, once a real spec
+        // has been set, it cannot be changed back to MotionValue.Undefined.
+
+        require(memoizedSpec == MotionSpec.InitiallyUndefined) {
+            // memoizedSpec is only ever Undefined initially, before a motionSpec was set.
+            //  This is used as a signal to detect if a user switches back to Undefined.
+            "MotionSpec must not be changed back to undefined!\n" +
+                " MotionValue: $label\n" +
+                " last MotionSpec: $memoizedSpec"
+        }
+
+        // memoizedComputedValues must not have been reassigned either.
+        require(
+            with(memoizedComputedValues) {
+                segment.spec == MotionSpec.InitiallyUndefined &&
+                    guarantee == GuaranteeState.Inactive &&
+                    animation == DiscontinuityAnimation.None
+            }
+        )
     }
 }

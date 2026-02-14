@@ -30,7 +30,7 @@ class MotionSpecTest {
 
     @Test
     fun containsSegment_unknownSegment_returnsFalse() {
-        val underTest = MotionSpec.Empty
+        val underTest = MotionSpec.Identity
         assertThat(underTest.containsSegment(SegmentKey(B1, B2, InputDirection.Max))).isFalse()
     }
 
@@ -57,7 +57,7 @@ class MotionSpecTest {
                         fixedValue(breakpoint = 10f, key = B1, value = 1f)
                         identity(breakpoint = 20f, key = B2)
                     },
-                minDirection = DirectionalMotionSpec.Empty,
+                minDirection = DirectionalMotionSpec.Identity,
             )
 
         assertThat(underTest.containsSegment(SegmentKey(B1, B2, InputDirection.Max))).isTrue()
@@ -68,7 +68,7 @@ class MotionSpecTest {
     fun containsSegment_asymmetricSpec_knownMinDirectionSegment_trueOnlyInMinDirection() {
         val underTest =
             MotionSpec(
-                maxDirection = DirectionalMotionSpec.Empty,
+                maxDirection = DirectionalMotionSpec.Identity,
                 minDirection =
                     directionalMotionSpec(Spring) {
                         fixedValue(breakpoint = 10f, key = B1, value = 1f)
@@ -82,7 +82,7 @@ class MotionSpecTest {
 
     @Test
     fun segmentAtInput_emptySpec_maxDirection_segmentDataIsCorrect() {
-        val underTest = MotionSpec.Empty
+        val underTest = MotionSpec.Identity
 
         val segmentAtInput = underTest.segmentAtInput(0f, InputDirection.Max)
 
@@ -95,7 +95,7 @@ class MotionSpecTest {
 
     @Test
     fun segmentAtInput_emptySpec_minDirection_segmentDataIsCorrect() {
-        val underTest = MotionSpec.Empty
+        val underTest = MotionSpec.Identity
 
         val segmentAtInput = underTest.segmentAtInput(0f, InputDirection.Min)
 
@@ -302,9 +302,41 @@ class MotionSpecTest {
 
     @Test
     fun semantics_unknownSegment_throws() {
-        val underTest = MotionSpec.Empty
+        val underTest = MotionSpec.Identity
         val unknownSegment = SegmentKey(BMin, B1, InputDirection.Max)
         assertFailsWith<NoSuchElementException> { underTest.semantics(unknownSegment) }
+    }
+
+    @Test
+    fun semantics_atSpecLevel_canBeAssociatedWithSpec() {
+        val underTest =
+            MotionSpec(DirectionalMotionSpec.Identity, semantics = listOf(S1 with "One"))
+
+        assertThat(underTest.semanticState(S1)).isEqualTo("One")
+    }
+
+    @Test
+    fun semantics_atSpecLevel_canBeQueriedViaSegment() {
+        val underTest =
+            MotionSpec(DirectionalMotionSpec.Identity, semantics = listOf(S1 with "One"))
+
+        val maxDirectionSegment = SegmentKey(BMin, BMax, InputDirection.Max)
+        assertThat(underTest.semanticState(S1, maxDirectionSegment)).isEqualTo("One")
+    }
+
+    @Test
+    fun semantics_atSpecLevel_segmentLevelTakesPrecedence() {
+        val underTest =
+            MotionSpec(
+                maxDirection = directionalMotionSpec(semantics = listOf(S1 with "Two")),
+                minDirection = DirectionalMotionSpec.Identity,
+                semantics = listOf(S1 with "One"),
+            )
+
+        assertThat(underTest.semanticState(S1, SegmentKey(BMin, BMax, InputDirection.Max)))
+            .isEqualTo("Two")
+        assertThat(underTest.semanticState(S1, SegmentKey(BMin, BMax, InputDirection.Min)))
+            .isEqualTo("One")
     }
 
     companion object {

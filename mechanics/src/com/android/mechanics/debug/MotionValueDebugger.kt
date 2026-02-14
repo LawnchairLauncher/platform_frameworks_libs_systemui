@@ -16,93 +16,87 @@
 
 package com.android.mechanics.debug
 
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.node.CompositionLocalConsumerModifierNode
 import androidx.compose.ui.node.DelegatableNode
 import androidx.compose.ui.node.ModifierNodeElement
-import androidx.compose.ui.node.TraversableNode
-import androidx.compose.ui.node.findNearestAncestor
+import androidx.compose.ui.node.ObserverModifierNode
+import androidx.compose.ui.node.currentValueOf
+import androidx.compose.ui.node.observeReads
 import androidx.compose.ui.platform.InspectorInfo
-import com.android.mechanics.MotionValue
-import com.android.mechanics.debug.MotionValueDebuggerNode.Companion.TRAVERSAL_NODE_KEY
+import com.android.mechanics.MotionValueState
 import kotlinx.coroutines.DisposableHandle
 
-/** State for the [MotionValueDebugger]. */
-sealed interface MotionValueDebuggerState {
-    val observedMotionValues: List<MotionValue>
+/** Keeps track of MotionValues that are registered for debug-inspection. */
+class MotionValueDebugController {
+    private val observedMotionValues = mutableStateListOf<MotionValueState>()
+
+    /**
+     * Registers a [MotionValueState] to be debugged.
+     *
+     * Clients must call [DisposableHandle.dispose] when done.
+     */
+    fun register(motionValue: MotionValueState): DisposableHandle {
+        observedMotionValues.add(motionValue)
+        return DisposableHandle { observedMotionValues.remove(motionValue) }
+    }
+
+    /** The currently registered `MotionValues`. */
+    val observed: List<MotionValueState>
+        get() = observedMotionValues
 }
 
-/** Factory for [MotionValueDebugger]. */
-fun MotionValueDebuggerState(): MotionValueDebuggerState {
-    return MotionValueDebuggerStateImpl()
-}
-
-/** Collector for [MotionValue]s in the Node subtree that should be observed for debug purposes. */
-fun Modifier.motionValueDebugger(state: MotionValueDebuggerState): Modifier =
-    this.then(MotionValueDebuggerElement(state as MotionValueDebuggerStateImpl))
+/** Composition-local to provide a [MotionValueDebugController]. */
+val LocalMotionValueDebugController = staticCompositionLocalOf<MotionValueDebugController?> { null }
 
 /**
- * [motionValueDebugger]'s interface, nodes in the subtree of a [motionValueDebugger] can retrieve
- * it using [findMotionValueDebugger].
+ * Provides a [MotionValueDebugController], to which [MotionValue]s within [content] can be
+ * registered to.
+ *
+ * With [enableDebugger] set to `false` (or this composable not being in the composition in the
+ * first place), downstream [debugMotionValue] and [DebugEffect] will be no-ops.
  */
-sealed interface MotionValueDebugger {
-    fun register(motionValue: MotionValue): DisposableHandle
+@Composable
+fun MotionValueDebuggerProvider(enableDebugger: Boolean = true, content: @Composable () -> Unit) {
+    val debugger =
+        remember(enableDebugger) { if (enableDebugger) MotionValueDebugController() else null }
+    CompositionLocalProvider(LocalMotionValueDebugController provides debugger) { content() }
 }
 
-/** Finds a [MotionValueDebugger] that was registered via a [motionValueDebugger] modifier. */
-fun DelegatableNode.findMotionValueDebugger(): MotionValueDebugger? {
-    return findNearestAncestor(TRAVERSAL_NODE_KEY) as? MotionValueDebugger
-}
-
-/** Registers the motion value for debugging with the parent [MotionValue]. */
-fun Modifier.debugMotionValue(motionValue: MotionValue): Modifier =
+/** Registers the [motionValue] with the [LocalMotionValueDebugController], if available. */
+fun Modifier.debugMotionValue(motionValue: MotionValueState): Modifier =
     this.then(DebugMotionValueElement(motionValue))
 
-internal class MotionValueDebuggerNode(internal var state: MotionValueDebuggerStateImpl) :
-    Modifier.Node(), TraversableNode, MotionValueDebugger {
-
-    override val traverseKey = TRAVERSAL_NODE_KEY
-
-    override fun register(motionValue: MotionValue): DisposableHandle {
-        val state = state
-        state.observedMotionValues.add(motionValue)
-        return DisposableHandle { state.observedMotionValues.remove(motionValue) }
-    }
-
-    companion object {
-        const val TRAVERSAL_NODE_KEY = "com.android.mechanics.debug.DEBUG_CONNECTOR_NODE_KEY"
-    }
-}
-
-private data class MotionValueDebuggerElement(val state: MotionValueDebuggerStateImpl) :
-    ModifierNodeElement<MotionValueDebuggerNode>() {
-    override fun create(): MotionValueDebuggerNode = MotionValueDebuggerNode(state)
-
-    override fun InspectorInfo.inspectableProperties() {
-        // Intentionally empty
-    }
-
-    override fun update(node: MotionValueDebuggerNode) {
-        check(node.state === state)
-    }
-}
-
-internal class DebugMotionValueNode(motionValue: MotionValue) : Modifier.Node() {
-
-    private var debugger: MotionValueDebugger? = null
-
-    internal var motionValue = motionValue
-        set(value) {
-            registration?.dispose()
-            registration = debugger?.register(value)
-            field = value
+/** Registers the [motionValue] with the [LocalMotionValueDebugController], if available. */
+@Composable
+fun DebugEffect(motionValue: MotionValueState) {
+    val debugger = LocalMotionValueDebugController.current
+    if (debugger != null) {
+        DisposableEffect(debugger, motionValue) {
+            val handle = debugger.register(motionValue)
+            onDispose { handle.dispose() }
         }
+    }
+}
+
+/**
+ * [DelegatableNode] to register the [motionValue] with the [LocalMotionValueDebugController], if
+ * available.
+ */
+class DebugMotionValueNode(motionValue: MotionValueState) :
+    Modifier.Node(), DelegatableNode, CompositionLocalConsumerModifierNode, ObserverModifierNode {
+    private var debugger: MotionValueDebugController? = null
 
     internal var registration: DisposableHandle? = null
 
     override fun onAttach() {
-        debugger = findMotionValueDebugger()
-        registration = debugger?.register(motionValue)
+        onObservedReadsChanged()
     }
 
     override fun onDetach() {
@@ -110,9 +104,21 @@ internal class DebugMotionValueNode(motionValue: MotionValue) : Modifier.Node() 
         registration?.dispose()
         registration = null
     }
+
+    override fun onObservedReadsChanged() {
+        registration?.dispose()
+        observeReads { debugger = currentValueOf(LocalMotionValueDebugController) }
+        registration = debugger?.register(motionValue)
+    }
+
+    var motionValue = motionValue
+        set(value) {
+            registration = debugger?.register(value)
+            field = value
+        }
 }
 
-private data class DebugMotionValueElement(val motionValue: MotionValue) :
+private data class DebugMotionValueElement(val motionValue: MotionValueState) :
     ModifierNodeElement<DebugMotionValueNode>() {
     override fun create(): DebugMotionValueNode = DebugMotionValueNode(motionValue)
 
@@ -123,8 +129,4 @@ private data class DebugMotionValueElement(val motionValue: MotionValue) :
     override fun update(node: DebugMotionValueNode) {
         node.motionValue = motionValue
     }
-}
-
-internal class MotionValueDebuggerStateImpl : MotionValueDebuggerState {
-    override val observedMotionValues: MutableList<MotionValue> = mutableStateListOf()
 }

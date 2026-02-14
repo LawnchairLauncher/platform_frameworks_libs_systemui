@@ -16,6 +16,8 @@
 
 package com.android.mechanics.spec
 
+import com.android.mechanics.haptics.SegmentHaptics
+
 /**
  * Identifies a segment in a [MotionSpec].
  *
@@ -49,6 +51,7 @@ data class SegmentData(
     val maxBreakpoint: Breakpoint,
     val direction: InputDirection,
     val mapping: Mapping,
+    val haptics: SegmentHaptics,
 ) {
     val key = SegmentKey(minBreakpoint.key, maxBreakpoint.key, direction)
 
@@ -89,67 +92,6 @@ data class SegmentData(
         get() = minBreakpoint.position..maxBreakpoint.position
 
     override fun toString(): String {
-        return "SegmentData(key=$key, range=$range, mapping=$mapping)"
-    }
-}
-
-/**
- * Maps the `input` of a [MotionValue] to the desired output value.
- *
- * The mapping implementation can be arbitrary, but must not produce discontinuities.
- */
-fun interface Mapping {
-    /** Computes the [MotionValue]'s target output, given the input. */
-    fun map(input: Float): Float
-
-    /** `f(x) = x` */
-    object Identity : Mapping {
-        override fun map(input: Float): Float {
-            return input
-        }
-
-        override fun toString(): String {
-            return "Identity"
-        }
-    }
-
-    /** `f(x) = value` */
-    data class Fixed(val value: Float) : Mapping {
-        init {
-            require(value.isFinite())
-        }
-
-        override fun map(input: Float): Float {
-            return value
-        }
-    }
-
-    /** `f(x) = factor*x + offset` */
-    data class Linear(val factor: Float, val offset: Float = 0f) : Mapping {
-        init {
-            require(factor.isFinite())
-            require(offset.isFinite())
-        }
-
-        override fun map(input: Float): Float {
-            return input * factor + offset
-        }
-    }
-
-    companion object {
-        val Zero = Fixed(0f)
-        val One = Fixed(1f)
-        val Two = Fixed(2f)
-
-        /** Create a linear mapping defined as a line between {in0,out0} and {in1,out1}. */
-        fun Linear(in0: Float, out0: Float, in1: Float, out1: Float): Linear {
-            require(in0 != in1) {
-                "Cannot define a linear function with both inputs being the same ($in0)."
-            }
-
-            val factor = (out1 - out0) / (in1 - in0)
-            val offset = out0 - factor * in0
-            return Linear(factor, offset)
-        }
+        return "SegmentData(key=$key, range=$range, mapping=$mapping, segmentHaptics: $haptics)"
     }
 }

@@ -21,9 +21,17 @@ import android.hardware.display.DisplayManager.DisplayListener
 import android.hardware.display.DisplayManager.EVENT_TYPE_DISPLAY_ADDED
 import android.hardware.display.DisplayManager.EVENT_TYPE_DISPLAY_CHANGED
 import android.hardware.display.DisplayManager.EVENT_TYPE_DISPLAY_REMOVED
+import android.hardware.display.DisplayManager.EXTERNAL_DISPLAY_CONNECTION_PREFERENCE_ASK
+import android.hardware.display.DisplayManager.EXTERNAL_DISPLAY_CONNECTION_PREFERENCE_DESKTOP
+import android.hardware.display.DisplayManager.EXTERNAL_DISPLAY_CONNECTION_PREFERENCE_MIRROR
 import android.os.Handler
 import android.util.Log
 import android.view.Display
+import com.android.app.displaylib.ExternalDisplayConnectionType.DESKTOP
+import com.android.app.displaylib.ExternalDisplayConnectionType.MIRROR
+import com.android.app.displaylib.ExternalDisplayConnectionType.NOT_SPECIFIED
+
+
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineDispatcher
@@ -79,7 +87,7 @@ interface DisplayRepository {
     val pendingDisplay: Flow<PendingDisplay?>
 
     /** Whether the default display is currently off. */
-    val defaultDisplayOff: Flow<Boolean>
+    val defaultDisplayOff: StateFlow<Boolean>
 
     /**
      * Given a display ID int, return the corresponding Display object, or null if none exist.
@@ -110,6 +118,20 @@ interface DisplayRepository {
     interface PendingDisplay {
         /** Id of the pending display. */
         val id: Int
+
+        /**
+         * The saved connection preference for the display, either desktop, mirroring or show the
+         * dialog. Defaults to [ExternalDisplayConnectionType.NOT_SPECIFIED], if no value saved.
+         */
+        val connectionType: ExternalDisplayConnectionType
+
+        /**
+         * Updates the saved connection preference for the display, triggered by the connection
+         * dialog's "remember my choice" checkbox
+         *
+         * @see com.android.systemui.display.ui.viewmodel.ConnectingDisplayViewModel
+         */
+        suspend fun updateConnectionPreference(connectionType: ExternalDisplayConnectionType)
 
         /** Enables the display, making it available to the system. */
         suspend fun enable()
@@ -243,6 +265,7 @@ constructor(
     private val ignoredDisplayIds: Flow<Set<Int>> = _ignoredDisplayIds.debugLog("ignoredDisplayIds")
 
     private fun getInitialConnectedDisplays(): Set<Int> =
+
             displayManager
                 .getDisplays(DISPLAY_CATEGORY_ALL_INCLUDING_DISABLED)
                 .map { it.displayId }
@@ -252,6 +275,7 @@ constructor(
                         Log.d(TAG, "getInitialConnectedDisplays: $it")
                     }
                 }
+
 
     /* keeps connected displays until they are disconnected. */
     private val connectedDisplayIds: StateFlow<Set<Int>> =
@@ -302,9 +326,11 @@ constructor(
     private val connectedExternalDisplayIds: Flow<Set<Int>> =
         connectedDisplayIds
             .map { connectedDisplayIds ->
+
                     connectedDisplayIds
                         .filter { id -> getDisplayType(id) == Display.TYPE_EXTERNAL }
                         .toSet()
+
             }
             .flowOn(backgroundCoroutineDispatcher)
             .debugLog("connectedExternalDisplayIds")
@@ -344,38 +370,68 @@ constructor(
         pendingDisplayId
             .map { displayId ->
                 val id = displayId ?: return@map null
+                val pendingDisplay = getDisplay(id) ?: displayManager.getDisplay(id)
+                val uniqueId = pendingDisplay?.uniqueId ?: return@map null
+                val connectionPreference =
+                    displayManager.getExternalDisplayConnectionPreference(uniqueId)
+
                 object : DisplayRepository.PendingDisplay {
                     override val id = id
+                    override val connectionType: ExternalDisplayConnectionType =
+                        when (connectionPreference) {
+                            EXTERNAL_DISPLAY_CONNECTION_PREFERENCE_DESKTOP -> DESKTOP
+                            EXTERNAL_DISPLAY_CONNECTION_PREFERENCE_MIRROR -> MIRROR
+                            else -> NOT_SPECIFIED
+                        }
+
+                    override suspend fun updateConnectionPreference(
+                        connectionType: ExternalDisplayConnectionType
+                    ) {
+                        displayManager.setExternalDisplayConnectionPreference(
+                            uniqueId,
+                            connectionType.preference,
+                        )
+                    }
 
                     override suspend fun enable() {
+
                             if (DEBUG) {
                                 Log.d(TAG, "Enabling display with id=$id")
                             }
                             displayManager.enableConnectedDisplay(id)
+
                         // After the display has been enabled, it is automatically ignored.
                         ignore()
                     }
 
                     override suspend fun ignore() {
+
                             _ignoredDisplayIds.value += id
+
                     }
 
                     override suspend fun disable() {
                         ignore()
+
                             if (DEBUG) {
                                 Log.d(TAG, "Disabling display with id=$id")
                             }
                             displayManager.disableConnectedDisplay(id)
+
                     }
                 }
             }
             .debugLog("pendingDisplay")
 
-    override val defaultDisplayOff: Flow<Boolean> =
+    override val defaultDisplayOff: StateFlow<Boolean> =
         displayChangeEvent
             .filter { it == Display.DEFAULT_DISPLAY }
             .map { defaultDisplay.state == Display.STATE_OFF }
-            .distinctUntilChanged()
+            .stateIn(
+                bgApplicationScope,
+                SharingStarted.WhileSubscribed(),
+                defaultDisplay.state == Display.STATE_OFF,
+            )
 
     override fun getDisplay(displayId: Int): Display? {
         val cachedDisplay = getCachedDisplay(displayId)
@@ -387,19 +443,16 @@ constructor(
         // In case of option one, let's get it synchronously from display manager to make sure for
         // this to be consistent.
         return if (displayIds.value.contains(displayId)) {
+
                 getDisplayFromDisplayManager(displayId)
+
         } else {
             null
         }
     }
 
     private fun <T> Flow<T>.debugLog(flowName: String): Flow<T> {
-        return if (DEBUG) {
-            // LC-Ignored
-            this
-        } else {
-            this
-        }
+        return this
     }
 
     /**
@@ -441,6 +494,17 @@ constructor(
         const val TAG = "DisplayRepository"
         val DEBUG = Log.isLoggable(TAG, Log.DEBUG)
     }
+}
+
+/**
+ * Possible connection types for an external display.
+ *
+ * @property preference The integer value that represents the connection type in the system.
+ */
+enum class ExternalDisplayConnectionType(val preference: Int) {
+    NOT_SPECIFIED(EXTERNAL_DISPLAY_CONNECTION_PREFERENCE_ASK),
+    DESKTOP(EXTERNAL_DISPLAY_CONNECTION_PREFERENCE_DESKTOP),
+    MIRROR(EXTERNAL_DISPLAY_CONNECTION_PREFERENCE_MIRROR),
 }
 
 /** Used to provide default implementations for all methods. */

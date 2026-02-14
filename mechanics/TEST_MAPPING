@@ -15,10 +15,28 @@
       ]
     },
     {
-      "name": "PlatformComposeSceneTransitionLayoutTests"
+      "name": "PlatformComposeSceneTransitionLayoutTests",
+      "keywords": ["internal"],
+      "options": [
+        {
+          "exclude-annotation": "org.junit.Ignore"
+        },
+        {
+          "exclude-annotation": "androidx.test.filters.FlakyTest"
+        }
+      ]
     },
     {
-      "name": "PlatformComposeCoreTests"
+      "name": "PlatformComposeCoreTests",
+      "keywords": ["internal"],
+      "options": [
+        {
+          "exclude-annotation": "org.junit.Ignore"
+        },
+        {
+          "exclude-annotation": "androidx.test.filters.FlakyTest"
+        }
+      ]
     }
   ],
   "presubmit-large": [
@@ -30,7 +48,7 @@
       ]
     }
   ],
-  "wm-cf": [
+  "wm": [
     {
       "name": "WMShellUnitTests"
     }

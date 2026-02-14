@@ -17,6 +17,8 @@
 package com.android.mechanics.spec.builder
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.mechanics.haptics.HapticsExperimentalApi
+import com.android.mechanics.haptics.SegmentHaptics
 import com.android.mechanics.spec.BreakpointKey
 import com.android.mechanics.spec.Guarantee
 import com.android.mechanics.spec.Mapping
@@ -186,7 +188,12 @@ class DirectionalBuilderImplTest {
 
     @Test
     fun semantics_appliedForSingleSegment() {
-        val result = directionalMotionSpec(Mapping.Identity, listOf(S1 with "One", S2 with "Two"))
+        val result =
+            directionalMotionSpec(
+                Mapping.Identity,
+                SegmentHaptics.None,
+                listOf(S1 with "One", S2 with "Two"),
+            )
 
         assertThat(result).semantics().containsExactly(S1, S2)
         assertThat(result).semantics().withKey(S1).containsExactly("One")
@@ -283,6 +290,37 @@ class DirectionalBuilderImplTest {
 
         assertThat(result).mappings().containsExactly(Mapping.Zero, Mapping.One).inOrder()
         assertThat(result).breakpoints().atPosition(0f).spring().isEqualTo(context.effects.default)
+    }
+
+    @OptIn(HapticsExperimentalApi::class)
+    @Test
+    fun directionalSpec_segmentHapticsBuilder_createsSegmentHapticsForSingleSegment() {
+        val expectedHaptics = SegmentHaptics.SpringTension(anchorPointPx = 0f)
+        val result =
+            directionalMotionSpec(Spring) {
+                haptics(expectedHaptics) { mapping(breakpoint = 30f, mapping = Mapping.Identity) }
+                mapping(breakpoint = 40f, mapping = Mapping.Identity)
+            }
+
+        assertThat(result).segmentHaptics().at(30f).isEqualTo(expectedHaptics)
+        assertThat(result).segmentHaptics().at(40f).isEqualTo(SegmentHaptics.None)
+    }
+
+    @OptIn(HapticsExperimentalApi::class)
+    @Test
+    fun directionalSpec_segmentHapticsBuilder_createsSegmentHapticsForMultipleSegments() {
+        val expectedHaptics = SegmentHaptics.SpringTension(anchorPointPx = 0f)
+        val result =
+            directionalMotionSpec(Spring) {
+                haptics(expectedHaptics) {
+                    mapping(breakpoint = 30f, mapping = Mapping.Identity)
+                    mapping(breakpoint = 40f, mapping = Mapping.Identity)
+                }
+                mapping(breakpoint = 50f, mapping = Mapping.Identity)
+            }
+
+        assertThat(result).segmentHaptics().at(30f).isEqualTo(expectedHaptics)
+        assertThat(result).segmentHaptics().at(40f).isEqualTo(expectedHaptics)
     }
 
     companion object {

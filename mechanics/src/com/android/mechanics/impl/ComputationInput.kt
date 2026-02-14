@@ -98,4 +98,7 @@ internal interface LastFrameState {
     val lastGestureDragOffset: Float
 
     val directMappedVelocity: Float
+
+    /** Last time that haptics played */
+    var lastHapticsTimeNanos: Long
 }

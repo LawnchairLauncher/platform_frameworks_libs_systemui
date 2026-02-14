@@ -45,4 +45,36 @@ object ChangeSegmentHandlers {
                     it.isValidForInput(newInput, currentSegment.direction)
             }
         }
+
+    /**
+     * When changing direction, modifies the mapping of the reverse segments so that the output
+     * values
+     *
+     * at the min/max breakpoint are the same, yet the value at the direction change position maps
+     * the current output value.
+     */
+    val DirectionChangePreservesCurrentValue: OnChangeSegmentHandler =
+        { currentSegment, newInput, newDirection ->
+            val nextSegment = segmentAtInput(newInput, newDirection)
+            val minLimit = nextSegment.minBreakpoint.position
+            val maxLimit = nextSegment.maxBreakpoint.position
+
+            if (
+                currentSegment.direction == newDirection ||
+                    minLimit == newInput && newInput == maxLimit
+            ) {
+                nextSegment
+            } else {
+                val modifiedMapping =
+                    LinearMappings.linearMappingWithPivot(
+                        minLimit,
+                        nextSegment.mapping.map(minLimit),
+                        newInput,
+                        currentSegment.mapping.map(newInput),
+                        maxLimit,
+                        nextSegment.mapping.map(maxLimit),
+                    )
+                nextSegment.copy(mapping = modifiedMapping)
+            }
+        }
 }

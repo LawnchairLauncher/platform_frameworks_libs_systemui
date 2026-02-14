@@ -73,11 +73,11 @@ class MotionValueBenchmark {
     private fun testData(
         gestureContext: DistanceGestureContext = DistanceGestureContext(0f, InputDirection.Max, 2f),
         input: Float = 0f,
-        spec: MotionSpec = MotionSpec.Empty,
+        spec: MotionSpec = MotionSpec.Identity,
     ): TestData {
         val inputState = mutableFloatStateOf(input)
         return TestData(
-            motionValue = MotionValue(inputState::floatValue, gestureContext, spec),
+            motionValue = MotionValue(inputState::floatValue, gestureContext, { spec }),
             gestureContext = gestureContext,
             input = inputState,
             spec = spec,
@@ -91,7 +91,9 @@ class MotionValueBenchmark {
         val gestureContext = DistanceGestureContext(0f, InputDirection.Max, 2f)
         val input = { 0f }
 
-        benchmarkRule.measureRepeated { MotionValue(input, gestureContext) }
+        benchmarkRule.measureRepeated {
+            MotionValue(input, gestureContext, { MotionSpec.Identity })
+        }
     }
 
     @Test

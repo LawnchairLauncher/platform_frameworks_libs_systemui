@@ -57,7 +57,9 @@ import platform.test.motion.golden.TimeSeriesCaptureScope
  * @see ViewMotionValueToolkit
  */
 fun <
-    T : MotionValueToolkit<MotionValueType, GestureContextType>,
+    T : MotionValueToolkit<I, UnderTestType, MotionValueType, GestureContextType>,
+    I : InputScope<UnderTestType, GestureContextType>,
+    UnderTestType,
     MotionValueType,
     GestureContextType,
 > MotionTestRule<T>.goldenTest(
@@ -69,9 +71,9 @@ fun <
     verifyTimeSeries: VerifyTimeSeriesFn = {
         VerifyTimeSeriesResult.AssertTimeSeriesMatchesGolden()
     },
-    createDerived: (underTest: MotionValueType) -> List<MotionValueType> = { emptyList() },
+    createDerived: (underTest: UnderTestType) -> List<MotionValueType> = { emptyList() },
     capture: CaptureTimeSeriesFn = defaultFeatureCaptures,
-    testInput: suspend (InputScope<MotionValueType, GestureContextType>).() -> Unit,
+    testInput: suspend (I).() -> Unit,
 ) {
     toolkit.goldenTest(
         this,
@@ -93,6 +95,8 @@ interface InputScope<MotionValueType, GestureContextType> {
     val input: Float
     /** GestureContext created for the `MotionValue` */
     val gestureContext: GestureContextType
+    /** Current spec of the `MotionValue` */
+    var spec: MotionSpec
     /** MotionValue being tested. */
     val underTest: MotionValueType
 
@@ -161,27 +165,32 @@ val defaultFeatureCaptures: CaptureTimeSeriesFn = {
     feature(FeatureCaptures.isStable)
 }
 
-sealed class MotionValueToolkit<MotionValueType, GestureContextType> {
+sealed class MotionValueToolkit<
+    I : InputScope<UnderTestType, GestureContextType>,
+    UnderTestType,
+    MotionValueType,
+    GestureContextType,
+> {
     internal abstract fun goldenTest(
         motionTestRule: MotionTestRule<*>,
         spec: MotionSpec,
-        createDerived: (underTest: MotionValueType) -> List<MotionValueType>,
+        createDerived: (underTest: UnderTestType) -> List<MotionValueType>,
         initialValue: Float,
         initialDirection: InputDirection,
         directionChangeSlop: Float,
         stableThreshold: Float,
         verifyTimeSeries: TimeSeries.() -> VerifyTimeSeriesResult,
         capture: CaptureTimeSeriesFn,
-        testInput: suspend (InputScope<MotionValueType, GestureContextType>).() -> Unit,
+        testInput: suspend (I).() -> Unit,
     )
 
     internal fun createTimeSeries(
         frameIds: List<FrameId>,
-        motionValueCaptures: List<MotionValueCapture>,
+        frameValueCaptures: List<FrameValueCapture>,
     ): TimeSeries {
         return TimeSeries(
             frameIds.toList(),
-            motionValueCaptures.flatMap { motionValueCapture ->
+            frameValueCaptures.flatMap { motionValueCapture ->
                 motionValueCapture.propertyCollector.entries.map { (name, dataPoints) ->
                     Feature("${motionValueCapture.prefix}$name", dataPoints)
                 }
@@ -220,11 +229,24 @@ sealed class MotionValueToolkit<MotionValueType, GestureContextType> {
     }
 }
 
-internal class MotionValueCapture(val debugger: DebugInspector, val prefix: String = "") {
+internal sealed class FrameValueCapture(val prefix: String) {
     val propertyCollector = mutableMapOf<String, MutableList<DataPoint<*>>>()
+}
+
+internal class MotionValueCapture(val debugger: DebugInspector, prefix: String = "") :
+    FrameValueCapture(prefix) {
     val captureScope = TimeSeriesCaptureScope(debugger, propertyCollector)
 
     fun captureCurrentFrame(captureFn: CaptureTimeSeriesFn) {
+        captureFn(captureScope)
+    }
+}
+
+internal class GenericValueCapture<T>(val scope: T, prefix: String = "") :
+    FrameValueCapture(prefix) {
+    val captureScope = TimeSeriesCaptureScope(scope, propertyCollector)
+
+    fun captureCurrentFrame(captureFn: TimeSeriesCaptureScope<T>.() -> Unit) {
         captureFn(captureScope)
     }
 }

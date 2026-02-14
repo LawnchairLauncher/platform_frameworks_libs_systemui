@@ -10,7 +10,7 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import androidx.core.graphics.ColorUtils
 import androidx.palette.graphics.Palette
-import com.android.launcher3.icons.BaseIconFactory.DEFAULT_WRAPPER_BACKGROUND
+import com.android.launcher3.icons.BaseIconFactory.Companion.DEFAULT_WRAPPER_BACKGROUND
 import com.android.launcher3.util.ComponentKey
 import org.json.JSONObject
 

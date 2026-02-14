@@ -16,6 +16,9 @@
 
 package com.android.mechanics.spec.builder
 
+import com.android.mechanics.haptics.BreakpointHaptics
+import com.android.mechanics.haptics.HapticsExperimentalApi
+import com.android.mechanics.haptics.SegmentHaptics
 import com.android.mechanics.spec.Breakpoint
 import com.android.mechanics.spec.BreakpointKey
 import com.android.mechanics.spec.DirectionalMotionSpec
@@ -38,6 +41,8 @@ internal open class DirectionalBuilderImpl(
     internal val breakpoints = mutableListOf(Breakpoint.minLimit)
     internal val semantics = mutableListOf<SegmentSemanticValuesBuilder<*>>()
     internal val mappings = mutableListOf<Mapping>()
+    internal val segmentHaptics = mutableListOf<SegmentHaptics>()
+    private var currentSegmentHaptics: SegmentHaptics = SegmentHaptics.None
     private var sourceValue: Float = Float.NaN
     private var targetValue: Float = Float.NaN
     private var fractionalMapping: Float = Float.NaN
@@ -51,11 +56,14 @@ internal open class DirectionalBuilderImpl(
     /** Prepares the builder for invoking the [DirectionalBuilderFn] on it. */
     fun prepareBuilderFn(
         initialMapping: Mapping = Mapping.Identity,
+        initialSegmentHaptics: SegmentHaptics = SegmentHaptics.None,
         initialSemantics: List<SemanticValue<*>> = emptyList(),
     ) {
         check(mappings.size == breakpoints.size - 1)
+        check(segmentHaptics.size == breakpoints.size - 1)
 
         mappings.add(initialMapping)
+        segmentHaptics.add(initialSegmentHaptics)
         val semanticIndex = mappings.size - 1
         initialSemantics.forEach { semantic ->
             getSemantics(semantic.key).apply { set(semanticIndex, semantic.value) }
@@ -80,6 +88,7 @@ internal open class DirectionalBuilderImpl(
     fun finalizeBuilderFn(
         atPosition: Float,
         key: BreakpointKey,
+        breakpointHaptics: BreakpointHaptics,
         springSpec: SpringParameters,
         guarantee: Guarantee,
         semantics: List<SemanticValue<*>>,
@@ -87,9 +96,13 @@ internal open class DirectionalBuilderImpl(
         if (!(targetValue.isNaN() && fractionalMapping.isNaN())) {
             // Finalizing will produce the mapping and breakpoint
             check(mappings.size == breakpoints.size - 1)
+            check(segmentHaptics.size == breakpoints.size - 1)
         } else {
             // Mapping is already added, this will add the breakpoint
             check(mappings.size == breakpoints.size)
+            check(segmentHaptics.size == breakpoints.size) {
+                "Total segment haptics: ${segmentHaptics.size}. A total of ${breakpoints.size} was expected"
+            }
         }
 
         if (key == BreakpointKey.MaxLimit) {
@@ -103,13 +116,14 @@ internal open class DirectionalBuilderImpl(
         }
 
         toBreakpointImpl(atPosition, key, semantics)
-        doAddBreakpointImpl(springSpec, guarantee)
+        doAddBreakpointImpl(springSpec, guarantee, breakpointHaptics)
     }
 
     fun finalizeBuilderFn(breakpoint: Breakpoint) =
         finalizeBuilderFn(
             breakpoint.position,
             breakpoint.key,
+            breakpoint.breakpointHaptics,
             breakpoint.spring,
             breakpoint.guarantee,
             emptyList(),
@@ -118,26 +132,33 @@ internal open class DirectionalBuilderImpl(
     /* Creates the [DirectionalMotionSpec] from the current builder state. */
     fun build(): DirectionalMotionSpec {
         require(mappings.size == breakpoints.size - 1)
+        require(segmentHaptics.size == breakpoints.size - 1)
         check(breakpoints.last() == Breakpoint.maxLimit)
 
         val segmentCount = mappings.size
 
         val semantics = semantics.map { builder -> with(builder) { build(segmentCount) } }
 
-        return DirectionalMotionSpec(breakpoints.toList(), mappings.toList(), semantics)
+        return DirectionalMotionSpec(
+            breakpoints.toList(),
+            mappings.toList(),
+            segmentHaptics.toList(),
+            semantics,
+        )
     }
 
     override fun target(
         breakpoint: Float,
         from: Float,
         to: Float,
+        breakpointHaptics: BreakpointHaptics,
         spring: SpringParameters,
         guarantee: Guarantee,
         key: BreakpointKey,
         semantics: List<SemanticValue<*>>,
     ) {
         toBreakpointImpl(breakpoint, key, semantics)
-        jumpToImpl(from, spring, guarantee)
+        jumpToImpl(from, spring, guarantee, breakpointHaptics)
         continueWithTargetValueImpl(to)
     }
 
@@ -145,13 +166,14 @@ internal open class DirectionalBuilderImpl(
         breakpoint: Float,
         to: Float,
         delta: Float,
+        breakpointHaptics: BreakpointHaptics,
         spring: SpringParameters,
         guarantee: Guarantee,
         key: BreakpointKey,
         semantics: List<SemanticValue<*>>,
     ) {
         toBreakpointImpl(breakpoint, key, semantics)
-        jumpByImpl(delta, spring, guarantee)
+        jumpByImpl(delta, spring, guarantee, breakpointHaptics)
         continueWithTargetValueImpl(to)
     }
 
@@ -159,13 +181,14 @@ internal open class DirectionalBuilderImpl(
         breakpoint: Float,
         from: Float,
         fraction: Float,
+        breakpointHaptics: BreakpointHaptics,
         spring: SpringParameters,
         guarantee: Guarantee,
         key: BreakpointKey,
         semantics: List<SemanticValue<*>>,
     ): CanBeLastSegment {
         toBreakpointImpl(breakpoint, key, semantics)
-        jumpToImpl(from, spring, guarantee)
+        jumpToImpl(from, spring, guarantee, breakpointHaptics)
         continueWithFractionalInputImpl(fraction)
         return CanBeLastSegmentImpl
     }
@@ -174,13 +197,14 @@ internal open class DirectionalBuilderImpl(
         breakpoint: Float,
         fraction: Float,
         delta: Float,
+        breakpointHaptics: BreakpointHaptics,
         spring: SpringParameters,
         guarantee: Guarantee,
         key: BreakpointKey,
         semantics: List<SemanticValue<*>>,
     ): CanBeLastSegment {
         toBreakpointImpl(breakpoint, key, semantics)
-        jumpByImpl(delta, spring, guarantee)
+        jumpByImpl(delta, spring, guarantee, breakpointHaptics)
         continueWithFractionalInputImpl(fraction)
         return CanBeLastSegmentImpl
     }
@@ -188,13 +212,14 @@ internal open class DirectionalBuilderImpl(
     override fun fixedValue(
         breakpoint: Float,
         value: Float,
+        breakpointHaptics: BreakpointHaptics,
         spring: SpringParameters,
         guarantee: Guarantee,
         key: BreakpointKey,
         semantics: List<SemanticValue<*>>,
     ): CanBeLastSegment {
         toBreakpointImpl(breakpoint, key, semantics)
-        jumpToImpl(value, spring, guarantee)
+        jumpToImpl(value, spring, guarantee, breakpointHaptics)
         continueWithFixedValueImpl()
         return CanBeLastSegmentImpl
     }
@@ -202,13 +227,14 @@ internal open class DirectionalBuilderImpl(
     override fun fixedValueFromCurrent(
         breakpoint: Float,
         delta: Float,
+        breakpointHaptics: BreakpointHaptics,
         spring: SpringParameters,
         guarantee: Guarantee,
         key: BreakpointKey,
         semantics: List<SemanticValue<*>>,
     ): CanBeLastSegment {
         toBreakpointImpl(breakpoint, key, semantics)
-        jumpByImpl(delta, spring, guarantee)
+        jumpByImpl(delta, spring, guarantee, breakpointHaptics)
         continueWithFixedValueImpl()
         return CanBeLastSegmentImpl
     }
@@ -219,10 +245,11 @@ internal open class DirectionalBuilderImpl(
         guarantee: Guarantee,
         key: BreakpointKey,
         semantics: List<SemanticValue<*>>,
+        breakpointHaptics: BreakpointHaptics,
         mapping: Mapping,
     ): CanBeLastSegment {
         toBreakpointImpl(breakpoint, key, semantics)
-        continueWithImpl(mapping, spring, guarantee)
+        continueWithImpl(mapping, spring, guarantee, breakpointHaptics)
         return CanBeLastSegmentImpl
     }
 
@@ -242,28 +269,45 @@ internal open class DirectionalBuilderImpl(
         check(sourceValue.isFinite())
 
         mappings.add(Mapping.Fixed(sourceValue))
+        segmentHaptics.add(currentSegmentHaptics)
         sourceValue = Float.NaN
     }
 
-    private fun jumpToImpl(value: Float, spring: SpringParameters, guarantee: Guarantee) {
+    private fun jumpToImpl(
+        value: Float,
+        spring: SpringParameters,
+        guarantee: Guarantee,
+        breakpointHaptics: BreakpointHaptics,
+    ) {
         check(sourceValue.isNaN())
 
-        doAddBreakpointImpl(spring, guarantee)
+        doAddBreakpointImpl(spring, guarantee, breakpointHaptics)
         sourceValue = value
     }
 
-    private fun jumpByImpl(delta: Float, spring: SpringParameters, guarantee: Guarantee) {
+    private fun jumpByImpl(
+        delta: Float,
+        spring: SpringParameters,
+        guarantee: Guarantee,
+        breakpointHaptics: BreakpointHaptics,
+    ) {
         check(sourceValue.isNaN())
 
-        val breakpoint = doAddBreakpointImpl(spring, guarantee)
+        val breakpoint = doAddBreakpointImpl(spring, guarantee, breakpointHaptics)
         sourceValue = mappings.last().map(breakpoint.position) + delta
     }
 
-    private fun continueWithImpl(mapping: Mapping, spring: SpringParameters, guarantee: Guarantee) {
+    private fun continueWithImpl(
+        mapping: Mapping,
+        spring: SpringParameters,
+        guarantee: Guarantee,
+        breakpointHaptics: BreakpointHaptics,
+    ) {
         check(sourceValue.isNaN())
 
-        doAddBreakpointImpl(spring, guarantee)
+        doAddBreakpointImpl(spring, guarantee, breakpointHaptics)
         mappings.add(mapping)
+        segmentHaptics.add(currentSegmentHaptics)
     }
 
     private fun toBreakpointImpl(
@@ -301,6 +345,7 @@ internal open class DirectionalBuilderImpl(
                 }
 
             mappings.add(mapping)
+            segmentHaptics.add(currentSegmentHaptics)
             targetValue = Float.NaN
             sourceValue = Float.NaN
             fractionalMapping = Float.NaN
@@ -320,6 +365,7 @@ internal open class DirectionalBuilderImpl(
     private fun doAddBreakpointImpl(
         springSpec: SpringParameters,
         guarantee: Guarantee,
+        breakpointHaptics: BreakpointHaptics,
     ): Breakpoint {
         val breakpoint =
             Breakpoint.create(
@@ -327,6 +373,7 @@ internal open class DirectionalBuilderImpl(
                 breakpointPosition,
                 springSpec,
                 guarantee,
+                breakpointHaptics,
             )
 
         breakpoints.add(breakpoint)
@@ -334,6 +381,27 @@ internal open class DirectionalBuilderImpl(
         breakpointKey = null
 
         return breakpoint
+    }
+
+    private fun beginHaptics(segmentHaptics: SegmentHaptics) {
+        currentSegmentHaptics = segmentHaptics
+    }
+
+    private fun endHaptics() {
+        currentSegmentHaptics = SegmentHaptics.None
+    }
+
+    @HapticsExperimentalApi
+    override fun <T> haptics(
+        segmentHaptics: SegmentHaptics,
+        block: DirectionalBuilderScope.() -> T,
+    ) {
+        beginHaptics(segmentHaptics)
+        try {
+            block()
+        } finally {
+            endHaptics()
+        }
     }
 }
 

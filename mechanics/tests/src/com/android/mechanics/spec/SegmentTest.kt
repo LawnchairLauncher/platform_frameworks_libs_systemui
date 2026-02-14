@@ -17,6 +17,8 @@
 package com.android.mechanics.spec
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.android.mechanics.haptics.BreakpointHaptics
+import com.android.mechanics.haptics.SegmentHaptics
 import com.android.mechanics.spring.SpringParameters
 import com.google.common.truth.Truth.assertThat
 import com.google.common.truth.Truth.assertWithMessage
@@ -26,34 +28,61 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class SegmentTest {
 
-    private val fakeSpec = MotionSpec.Empty
+    private val fakeSpec = MotionSpec.Identity
 
     @Test
     fun segmentData_isValidForInput_betweenBreakpointsSameDirection_isTrue() {
-        val breakpoint1 = Breakpoint(B1, position = 10f, Spring, Guarantee.None)
-        val breakpoint2 = Breakpoint(B2, position = 20f, Spring, Guarantee.None)
+        val breakpoint1 =
+            Breakpoint(B1, position = 10f, Spring, Guarantee.None, BreakpointHaptics.None)
+        val breakpoint2 =
+            Breakpoint(B2, position = 20f, Spring, Guarantee.None, BreakpointHaptics.None)
         val underTest =
-            SegmentData(fakeSpec, breakpoint1, breakpoint2, InputDirection.Max, Mapping.Identity)
+            SegmentData(
+                fakeSpec,
+                breakpoint1,
+                breakpoint2,
+                InputDirection.Max,
+                Mapping.Identity,
+                SegmentHaptics.None,
+            )
 
         assertThat(underTest.isValidForInput(15f, InputDirection.Max)).isTrue()
     }
 
     @Test
     fun segmentData_isValidForInput_betweenBreakpointsOppositeDirection_isFalse() {
-        val breakpoint1 = Breakpoint(B1, position = 10f, Spring, Guarantee.None)
-        val breakpoint2 = Breakpoint(B2, position = 20f, Spring, Guarantee.None)
+        val breakpoint1 =
+            Breakpoint(B1, position = 10f, Spring, Guarantee.None, BreakpointHaptics.None)
+        val breakpoint2 =
+            Breakpoint(B2, position = 20f, Spring, Guarantee.None, BreakpointHaptics.None)
         val underTest =
-            SegmentData(fakeSpec, breakpoint1, breakpoint2, InputDirection.Max, Mapping.Identity)
+            SegmentData(
+                fakeSpec,
+                breakpoint1,
+                breakpoint2,
+                InputDirection.Max,
+                Mapping.Identity,
+                SegmentHaptics.None,
+            )
 
         assertThat(underTest.isValidForInput(15f, InputDirection.Min)).isFalse()
     }
 
     @Test
     fun segmentData_isValidForInput_inMaxDirection_sampledAtVariousPositions_matchesExpectation() {
-        val breakpoint1 = Breakpoint(B1, position = 10f, Spring, Guarantee.None)
-        val breakpoint2 = Breakpoint(B2, position = 20f, Spring, Guarantee.None)
+        val breakpoint1 =
+            Breakpoint(B1, position = 10f, Spring, Guarantee.None, BreakpointHaptics.None)
+        val breakpoint2 =
+            Breakpoint(B2, position = 20f, Spring, Guarantee.None, BreakpointHaptics.None)
         val underTest =
-            SegmentData(fakeSpec, breakpoint1, breakpoint2, InputDirection.Max, Mapping.Identity)
+            SegmentData(
+                fakeSpec,
+                breakpoint1,
+                breakpoint2,
+                InputDirection.Max,
+                Mapping.Identity,
+                SegmentHaptics.None,
+            )
 
         for ((samplePosition, expectedResult) in
             listOf(5f to true, 10f to true, 15f to true, 20f to false, 25f to false)) {
@@ -65,10 +94,19 @@ class SegmentTest {
 
     @Test
     fun segmentData_isValidForInput_inMinDirection_sampledAtVariousPositions_matchesExpectation() {
-        val breakpoint1 = Breakpoint(B1, position = 10f, Spring, Guarantee.None)
-        val breakpoint2 = Breakpoint(B2, position = 20f, Spring, Guarantee.None)
+        val breakpoint1 =
+            Breakpoint(B1, position = 10f, Spring, Guarantee.None, BreakpointHaptics.None)
+        val breakpoint2 =
+            Breakpoint(B2, position = 20f, Spring, Guarantee.None, BreakpointHaptics.None)
         val underTest =
-            SegmentData(fakeSpec, breakpoint1, breakpoint2, InputDirection.Min, Mapping.Identity)
+            SegmentData(
+                fakeSpec,
+                breakpoint1,
+                breakpoint2,
+                InputDirection.Min,
+                Mapping.Identity,
+                SegmentHaptics.None,
+            )
 
         for ((samplePosition, expectedResult) in
             listOf(5f to false, 10f to false, 15f to true, 20f to true, 25f to true)) {
@@ -80,20 +118,38 @@ class SegmentTest {
 
     @Test
     fun segmentData_entryBreakpoint_maxDirection_returnsMinBreakpoint() {
-        val breakpoint1 = Breakpoint(B1, position = 10f, Spring, Guarantee.None)
-        val breakpoint2 = Breakpoint(B2, position = 20f, Spring, Guarantee.None)
+        val breakpoint1 =
+            Breakpoint(B1, position = 10f, Spring, Guarantee.None, BreakpointHaptics.None)
+        val breakpoint2 =
+            Breakpoint(B2, position = 20f, Spring, Guarantee.None, BreakpointHaptics.None)
         val underTest =
-            SegmentData(fakeSpec, breakpoint1, breakpoint2, InputDirection.Max, Mapping.Identity)
+            SegmentData(
+                fakeSpec,
+                breakpoint1,
+                breakpoint2,
+                InputDirection.Max,
+                Mapping.Identity,
+                SegmentHaptics.None,
+            )
 
         assertThat(underTest.entryBreakpoint).isSameInstanceAs(breakpoint1)
     }
 
     @Test
     fun segmentData_entryBreakpoint_minDirection_returnsMaxBreakpoint() {
-        val breakpoint1 = Breakpoint(B1, position = 10f, Spring, Guarantee.None)
-        val breakpoint2 = Breakpoint(B2, position = 20f, Spring, Guarantee.None)
+        val breakpoint1 =
+            Breakpoint(B1, position = 10f, Spring, Guarantee.None, BreakpointHaptics.None)
+        val breakpoint2 =
+            Breakpoint(B2, position = 20f, Spring, Guarantee.None, BreakpointHaptics.None)
         val underTest =
-            SegmentData(fakeSpec, breakpoint1, breakpoint2, InputDirection.Min, Mapping.Identity)
+            SegmentData(
+                fakeSpec,
+                breakpoint1,
+                breakpoint2,
+                InputDirection.Min,
+                Mapping.Identity,
+                SegmentHaptics.None,
+            )
 
         assertThat(underTest.entryBreakpoint).isSameInstanceAs(breakpoint2)
     }

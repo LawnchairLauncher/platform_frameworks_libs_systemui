@@ -16,6 +16,7 @@
 
 package com.android.mechanics.testing
 
+import com.android.mechanics.haptics.SegmentHaptics
 import com.android.mechanics.spec.Breakpoint
 import com.android.mechanics.spec.BreakpointKey
 import com.android.mechanics.spec.DirectionalMotionSpec
@@ -29,7 +30,6 @@ import com.google.common.truth.FailureMetadata
 import com.google.common.truth.FloatSubject
 import com.google.common.truth.IterableSubject
 import com.google.common.truth.Subject
-import com.google.common.truth.Subject.Factory
 import com.google.common.truth.Truth
 
 /** Subject to verify the definition of a [MotionSpec]. */
@@ -102,6 +102,13 @@ internal constructor(failureMetadata: FailureMetadata, private val actual: Direc
         isNotNull()
 
         return check("mappings").about(MappingsSubject.SubjectFactory).that(actual)
+    }
+
+    /** Assert on the segment haptics. */
+    fun segmentHaptics(): SegmentHapticsSubject {
+        isNotNull()
+
+        return check("segmentHaptics").about(SegmentHapticsSubject.SubjectFactory).that(actual)
     }
 
     /** Assert that the mappings contain exactly the specified mappings, in order . */
@@ -283,6 +290,37 @@ internal constructor(failureMetadata: FailureMetadata, private val actual: Mappi
         /** Shortcut for `Truth.assertAbout(subjectFactory).that(mapping)`. */
         fun assertThat(mapping: Mapping): MappingSubject =
             Truth.assertAbout(SubjectFactory).that(mapping)
+    }
+}
+
+class SegmentHapticsSubject
+internal constructor(failureMetadata: FailureMetadata, private val actual: DirectionalMotionSpec?) :
+    IterableSubject(failureMetadata, actual?.haptics) {
+
+    /** Assert on the mapping at or after the specified position. */
+    fun at(position: Float): SegmentHapticSubject {
+        return check("segment haptics @ $position")
+            .about(SegmentHapticSubject.SubjectFactory)
+            .that(actual?.run { haptics[findBreakpointIndex(position)] })
+    }
+
+    companion object {
+        /** Returns a factory to be used with [Truth.assertAbout]. */
+        val SubjectFactory =
+            Factory<SegmentHapticsSubject, DirectionalMotionSpec> { failureMetadata, subject ->
+                SegmentHapticsSubject(failureMetadata, subject)
+            }
+    }
+}
+
+class SegmentHapticSubject
+internal constructor(failureMetadata: FailureMetadata, private val actual: SegmentHaptics?) :
+    Subject(failureMetadata, actual) {
+    companion object {
+        val SubjectFactory =
+            Factory<SegmentHapticSubject, SegmentHaptics> { failureMetadata, subject ->
+                SegmentHapticSubject(failureMetadata, subject)
+            }
     }
 }
 
