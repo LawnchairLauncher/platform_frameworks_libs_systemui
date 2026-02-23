@@ -34,7 +34,7 @@ import android.graphics.RectF;
  */
 public class ShadowGenerator {
 
-    public static final boolean ENABLE_SHADOWS = true;
+    public static boolean ENABLE_SHADOWS = true;
 
     public static final float BLUR_FACTOR = 1.68f/48;
 
