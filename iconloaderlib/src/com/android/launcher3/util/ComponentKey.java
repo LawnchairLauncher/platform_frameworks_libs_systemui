@@ -76,7 +76,7 @@ public class ComponentKey {
         }
         try {
             return new ComponentKey(componentName,
-                    UserHandle.getUserHandleForUid(Integer.parseInt(str.substring(sep + 1))));
+                    UserHandle.of(Integer.parseInt(str.substring(sep + 1))));
         } catch (NumberFormatException ex) {
             return null;
         }
