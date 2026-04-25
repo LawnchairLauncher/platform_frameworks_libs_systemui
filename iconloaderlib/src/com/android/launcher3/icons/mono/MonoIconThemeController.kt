@@ -17,6 +17,7 @@
 package com.android.launcher3.icons.mono
 
 import android.annotation.TargetApi
+import android.app.ActivityThread
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Bitmap.Config.ALPHA_8
@@ -93,7 +94,7 @@ class MonoIconThemeController(
         if (mono != null) {
             return ClippedMonoDrawable(mono, shapePath)
         }
-        if (shouldForceMonochrome() && shouldForceThemeIcon && !isFileDrawable) {
+        if (ActivityThread.currentApplication().applicationContext.shouldForceMonochrome() && shouldForceThemeIcon && !isFileDrawable) {
             return MonochromeIconFactory(info.icon.width).wrap(base, shapePath)
         }
         return null

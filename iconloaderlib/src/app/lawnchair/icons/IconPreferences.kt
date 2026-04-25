@@ -1,6 +1,5 @@
 package app.lawnchair.icons
 
-import android.app.ActivityThread
 import android.content.Context
 import android.content.SharedPreferences
 import android.content.pm.LauncherActivityInfo
@@ -25,17 +24,10 @@ fun Context.shouldShadowBGIcons(): Boolean = prefs.getBoolean("pref_shadowBGIcon
 fun Context.isThemedIconsEnabled(): Boolean = prefs.getBoolean("themed_icons", false)
 fun Context.shouldTintIconPackBackgrounds(): Boolean = prefs.getBoolean("tint_icon_pack_backgrounds", false)
 
-val prefsNoContext: SharedPreferences get() = ActivityThread.currentApplication()
-    .getSharedPreferences(SHARED_PREFERENCES_KEY, Context.MODE_PRIVATE)
+fun Context.shouldForceMonochrome(): Boolean = prefs.getBoolean("pref_forceIconMonochrome", false)
 
-fun shouldForceMonochrome(): Boolean {
-    val prefs = prefsNoContext
-
-    return prefs.getBoolean("pref_forceIconMonochrome", false)
-}
-
-private fun getCustomAppNameMap(): Map<ComponentKey, String> {
-    val prefs = prefsNoContext
+private fun getCustomAppNameMap(context: Context): Map<ComponentKey, String> {
+    val prefs = context.prefs
 
     val customLabel = prefs.getString("pref_appNameMap", "{}")
     if (customLabel.isNullOrEmpty()) return emptyMap()
@@ -51,9 +43,9 @@ private fun getCustomAppNameMap(): Map<ComponentKey, String> {
     return map
 }
 
-fun getCustomAppNameForComponent(info: LauncherActivityInfo): CharSequence? {
+fun getCustomAppNameForComponent(context: Context, info: LauncherActivityInfo): CharSequence? {
     val key = ComponentKey(info.componentName, info.user)
-    val customLabel = getCustomAppNameMap()[key]
+    val customLabel = getCustomAppNameMap(context)[key]
     if (!customLabel.isNullOrEmpty()) {
         return customLabel
     }

@@ -16,9 +16,9 @@
 
 package com.android.launcher3.icons.cache
 
+import android.app.ActivityThread
 import android.content.ComponentName
 import android.content.Context
-import android.content.pm.ActivityInfo
 import android.content.pm.LauncherActivityInfo
 import android.os.Build
 import android.os.Build.VERSION
@@ -38,7 +38,7 @@ object LauncherActivityCachingLogic : CachingLogic<LauncherActivityInfo> {
 
     override fun getUser(info: LauncherActivityInfo): UserHandle = info.user
 
-    override fun getLabel(info: LauncherActivityInfo): CharSequence? = getCustomAppNameForComponent(info)
+    override fun getLabel(info: LauncherActivityInfo): CharSequence? = getCustomAppNameForComponent(ActivityThread.currentApplication().applicationContext, info)
 
     override fun getApplicationInfo(info: LauncherActivityInfo) = info.applicationInfo
 
