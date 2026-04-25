@@ -233,7 +233,7 @@ open class BitmapInfo(
      * @param drawableRes Drawable resource for the badge.
      * @param colorRes Color resource to tint the badge.
      */
-    @JvmRecord
+//    @JvmRecord LC-Note: May crash with NCDFE of BadgeDrawableInfo with r8 RecordTag as the reason
     data class BadgeDrawableInfo(
         @field:DrawableRes @param:DrawableRes val drawableRes: Int,
         @field:ColorRes @param:ColorRes val colorRes: Int
