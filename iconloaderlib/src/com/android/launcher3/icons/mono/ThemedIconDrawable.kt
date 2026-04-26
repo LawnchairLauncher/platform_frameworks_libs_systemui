@@ -15,20 +15,17 @@
  */
 package com.android.launcher3.icons.mono
 
-import android.annotation.ColorInt
 import android.content.Context
-import android.content.res.Configuration.UI_MODE_NIGHT_MASK
-import android.content.res.Configuration.UI_MODE_NIGHT_YES
 import android.graphics.Bitmap
 import android.graphics.BlendMode.SRC_IN
 import android.graphics.BlendModeColorFilter
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.PorterDuff
 import android.graphics.PorterDuffColorFilter
 import android.graphics.Rect
 import android.os.Build
-import androidx.core.graphics.ColorUtils
 import com.android.launcher3.icons.BitmapInfo
 import com.android.launcher3.icons.FastBitmapDrawable
 import com.android.launcher3.icons.R
@@ -111,27 +108,15 @@ class ThemedIconDrawable(constantState: ThemedConstantState) :
     companion object {
         const val TAG: String = "ThemedIconDrawable"
 
-        @ColorInt
-        fun getThemedColors(context: Context): IntArray {
-            val result = getColors(context)
-            if (!context.shouldTransparentBGIcons()) {
-                return result
-            }
-            if ((context.getResources()
-                    .getConfiguration().uiMode and UI_MODE_NIGHT_MASK) !== UI_MODE_NIGHT_YES
-            ) {
-                //Get Composite color for light mode or non dark mode
-                result[1] = ColorUtils.compositeColors(
-                    context.getResources().getColor(android.R.color.black), result[1],
-                )
-            }
-            result[0] = 0
-            return result
-        }
-
         /** Get an int array representing background and foreground colors for themed icons */
         @JvmStatic
         fun getColors(context: Context): IntArray {
+            if (context.shouldTransparentBGIcons()) {
+                return intArrayOf(
+                    Color.TRANSPARENT,
+                    context.resources.getColor(R.color.themed_icon_color),
+                )
+            }
             if (COLORS_LOADER != null) {
                 return COLORS_LOADER(context);
             }
