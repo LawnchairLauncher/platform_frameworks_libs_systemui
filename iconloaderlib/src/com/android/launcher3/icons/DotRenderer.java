@@ -160,7 +160,7 @@ public class DotRenderer {
     /**
      * LC: Draw a circle on top of the canvas according to the given params.
      * 
-     * Include: notification number counter
+     * Include: custom colour, notification number counter
      */
     public void draw(Canvas canvas, DrawParams params, int numNotifications) {
         if (params == null) {
@@ -187,7 +187,7 @@ public class DotRenderer {
 
         mCirclePaint.setColor(Color.BLACK);
         canvas.drawBitmap(mBackgroundWithShadow, mBitmapOffset, mBitmapOffset, mCirclePaint);
-        mCirclePaint.setColor(params.dotColor);
+        mCirclePaint.setColor(mColor != 0 ? mColor : params.dotColor);
         canvas.drawCircle(0, 0, mCircleRadius, mCirclePaint);
 
         if (mDisplayCount && numNotifications > 0) {
