@@ -188,36 +188,9 @@ public class IconProvider {
     @Nullable
     protected Drawable loadPackageIcon(
             @NonNull PackageItemInfo info, @NonNull ApplicationInfo appInfo, int density) {
-        final PackageManager pm = mContext.getPackageManager();
-
-        // Lawnchair: First try loading via PackageManager APIs that Samsung
-        // intercepts for Theme Park / Good Lock icon theming.
-        // Samsung's SemApplicationPackageManager overrides getActivityIcon()
-        // and getApplicationIcon() to return themed icons.
         try {
-            Drawable systemIcon = null;
-
-            // For activities, try getActivityIcon first
-            if (info instanceof android.content.pm.ActivityInfo && info.name != null) {
-                ComponentName cn = new ComponentName(info.packageName, info.name);
-                systemIcon = pm.getActivityIcon(cn);
-            }
-
-            // Fallback to getApplicationIcon
-            if (systemIcon == null) {
-                systemIcon = pm.getApplicationIcon(info.packageName);
-            }
-
-            if (systemIcon != null
-                    && (Build.VERSION.SDK_INT < 30
-                        || !pm.isDefaultApplicationIcon(systemIcon))) {
-                return systemIcon;
-            }
-        } catch (Exception ignored) { }
-
-        // Fallback: load directly from app resources with specific density
-        try {
-            final Resources resources = pm.getResourcesForApplication(appInfo);
+            final Resources resources = mContext.getPackageManager()
+                    .getResourcesForApplication(appInfo);
             // Try to load the package item icon first
             if (info != appInfo && info.icon != 0) {
                 try {
