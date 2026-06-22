@@ -491,8 +491,10 @@ public class BaseIconFactory implements AutoCloseable {
             Path shapePath = getShapePath(aid, icon.getBounds());
             int count = canvas.save();
             canvas.translate(offset, offset);
-            if (bitmapGenerationMode == MODE_WITH_SHADOW
-                    || bitmapGenerationMode == MODE_HARDWARE_WITH_SHADOW) {
+            // Lawnchair: skip shadow when transparent backgrounds are enabled.
+            boolean skipShadow = IconPreferencesKt.shouldTransparentBGIcons(mContext);
+            if (!skipShadow && (bitmapGenerationMode == MODE_WITH_SHADOW
+                    || bitmapGenerationMode == MODE_HARDWARE_WITH_SHADOW)) {
                 getShadowGenerator().addPathShadow(shapePath, canvas);
             }
 
@@ -534,7 +536,11 @@ public class BaseIconFactory implements AutoCloseable {
             icon.draw(canvas);
             canvas.restore();
 
-            if (bitmapGenerationMode == MODE_WITH_SHADOW && targetBitmap != null) {
+            if (bitmapGenerationMode == MODE_WITH_SHADOW && targetBitmap != null
+                    // Lawnchair: skip shadow on non-adaptive icons (e.g. icon pack icons)
+                    // when transparent backgrounds are enabled, as drawShadow creates
+                    // a white/gray glow on transparent/glass icons.
+                    && !IconPreferencesKt.shouldTransparentBGIcons(mContext)) {
                 // Shadow extraction only works in software mode
                 getShadowGenerator().drawShadow(targetBitmap, canvas);
 
