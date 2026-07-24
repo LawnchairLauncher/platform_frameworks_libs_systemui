@@ -17,15 +17,12 @@ package com.android.launcher3.icons.mono
 
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BlendMode.SRC_IN
-import android.graphics.BlendModeColorFilter
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.PorterDuff
-import android.graphics.PorterDuffColorFilter
 import android.graphics.Rect
-import android.os.Build
+import androidx.core.graphics.BlendModeColorFilterCompat
+import androidx.core.graphics.BlendModeCompat
 import com.android.launcher3.icons.BitmapInfo
 import com.android.launcher3.icons.FastBitmapDrawable
 import com.android.launcher3.icons.R
@@ -40,20 +37,12 @@ class ThemedIconDrawable(constantState: ThemedConstantState) :
 
     // The foreground/monochrome icon for the app
     private val monoIcon = constantState.mono
-    private val monoFilter = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        BlendModeColorFilter(colorFg, SRC_IN)
-    } else {
-        PorterDuffColorFilter(colorFg, PorterDuff.Mode.SRC_IN)
-    }
+    private val monoFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(colorFg, BlendModeCompat.SRC_IN)
     private val monoPaint =
         Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply { colorFilter = monoFilter }
 
     private val bgBitmap = constantState.whiteShadowLayer
-    private val bgFilter = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        BlendModeColorFilter(colorBg, SRC_IN)
-    } else {
-        PorterDuffColorFilter(colorBg, PorterDuff.Mode.SRC_IN)
-    }
+    private val bgFilter = BlendModeColorFilterCompat.createBlendModeColorFilterCompat(colorBg, BlendModeCompat.SRC_IN)
     private val mBgPaint =
         Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG).apply { colorFilter = bgFilter }
 
@@ -67,23 +56,12 @@ class ThemedIconDrawable(constantState: ThemedConstantState) :
         val alpha = if (isDisabled) (disabledAlpha * FULLY_OPAQUE).toInt() else FULLY_OPAQUE
         mBgPaint.alpha = alpha
         mBgPaint.setColorFilter(
-            if (isDisabled) if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                BlendModeColorFilter(getDisabledColor(colorBg), SRC_IN)
-            } else {
-                PorterDuffColorFilter(getDisabledColor(colorBg), PorterDuff.Mode.SRC_IN)
-            } else bgFilter,
+            if (isDisabled) BlendModeColorFilterCompat.createBlendModeColorFilterCompat(getDisabledColor(colorBg), BlendModeCompat.SRC_IN) else bgFilter,
         )
 
         monoPaint.alpha = alpha
         monoPaint.setColorFilter(
-            if (isDisabled) if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                BlendModeColorFilter(
-                    getDisabledColor(colorFg),
-                    SRC_IN,
-                )
-            } else {
-                PorterDuffColorFilter(getDisabledColor(colorFg), PorterDuff.Mode.SRC_IN)
-            } else monoFilter,
+            if (isDisabled) BlendModeColorFilterCompat.createBlendModeColorFilterCompat(getDisabledColor(colorFg), BlendModeCompat.SRC_IN) else monoFilter,
         )
     }
 
