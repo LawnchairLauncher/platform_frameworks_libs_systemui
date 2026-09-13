@@ -89,23 +89,24 @@ class ThemedIconDrawable(constantState: ThemedConstantState) :
         /** Get an int array representing background and foreground colors for themed icons */
         @JvmStatic
         fun getColors(context: Context): IntArray {
-            if (context.shouldTransparentBGIcons()) {
-                return intArrayOf(
-                    Color.TRANSPARENT,
-                    context.resources.getColor(R.color.themed_icon_color),
-                )
+            // Always resolve through COLORS_LOADER so the host app's theme (which may follow an
+            // in-app preference rather than the system night mode) decides the colors. Transparent
+            // backgrounds only drop the background color; the foreground still comes from the host.
+            val colors = COLORS_LOADER(context)
+            return if (context.shouldTransparentBGIcons()) {
+                intArrayOf(Color.TRANSPARENT, colors[1])
+            } else {
+                colors
             }
-            if (COLORS_LOADER != null) {
-                return COLORS_LOADER(context);
-            }
+        }
+
+        @JvmStatic
+        var COLORS_LOADER: (Context) -> IntArray = { context ->
             val res = context.resources
-            return intArrayOf(
+            intArrayOf(
                 res.getColor(R.color.themed_icon_background_color),
                 res.getColor(R.color.themed_icon_color),
             )
         }
-
-        @JvmStatic
-        var COLORS_LOADER: (Context) -> IntArray = { context -> getColors(context) }
     }
 }
