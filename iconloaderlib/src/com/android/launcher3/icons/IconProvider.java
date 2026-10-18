@@ -33,6 +33,7 @@ import android.content.pm.ComponentInfo;
 import android.content.pm.PackageItemInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.drawable.AdaptiveIconDrawable;
@@ -44,6 +45,7 @@ import android.os.Handler;
 import android.os.Process;
 import android.os.UserHandle;
 import android.os.UserManager;
+import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -55,10 +57,12 @@ import com.android.launcher3.icons.cache.CachingLogic;
 import com.android.launcher3.util.ComponentKey;
 import com.android.launcher3.util.SafeCloseable;
 
+import java.io.File;
 import java.util.Calendar;
 import java.util.Objects;
 
 import app.lawnchair.icons.CustomAdaptiveIconDrawable;
+import app.lawnchair.icons.IconPreferencesKt;
 
 /**
  * Class to handle icon loading from different packages
@@ -74,12 +78,24 @@ public class IconProvider {
 
     private static final String SYSTEM_STATE_SEPARATOR = " ";
 
+    // Lawnchair: One UI applies Galaxy Themes / Theme Park icon themes inside
+    // PackageManager#loadUnbadgedItemIcon, never through the app's own resources.
+    private static final boolean IS_SAMSUNG = "samsung".equalsIgnoreCase(Build.MANUFACTURER);
+    private static final String SAMSUNG_ICON_THEME_SETTING = "current_sec_appicon_theme_package";
+    private static final String SAMSUNG_THEME_PARK_ICON_DIR = "/data/overlays/themepark/icons/";
+
     protected final Context mContext;
     protected final ComponentName mCalendar;
     protected final ComponentName mClock;
 
     @NonNull
     protected String mSystemState = "";
+
+    /** Id of the active Samsung icon theme, or null when icons come from app resources. */
+    @Nullable
+    private volatile String mSamsungIconTheme;
+    private volatile boolean mSamsungIconThemeLoaded;
+    private boolean mLoggedIconThemeSettingDenied;
 
     public IconProvider(Context context) {
         mContext = context;
@@ -148,7 +164,9 @@ public class IconProvider {
         ThemeData td = getThemeDataForPackage(packageName);
 
         Drawable icon = null;
-        if (mCalendar != null && mCalendar.getPackageName().equals(packageName)) {
+        // Lawnchair: a Samsung icon theme replaces the calendar's dynamic date icon, as in One UI
+        if (mCalendar != null && mCalendar.getPackageName().equals(packageName)
+                && !isSamsungIconThemeActive()) {
             icon = loadCalendarDrawable(iconDpi, td);
         } else if (mClock != null && mClock.getPackageName().equals(packageName)) {
             icon = ClockDrawableWrapper.forPackage(mContext, mClock.getPackageName(), iconDpi);
@@ -188,6 +206,10 @@ public class IconProvider {
     @Nullable
     protected Drawable loadPackageIcon(
             @NonNull PackageItemInfo info, @NonNull ApplicationInfo appInfo, int density) {
+        if (isSamsungIconThemeActive()) {
+            Drawable themed = loadSamsungThemedIcon(info);
+            if (themed != null) return themed;
+        }
         try {
             final Resources resources = mContext.getPackageManager()
                     .getResourcesForApplication(appInfo);
@@ -206,6 +228,100 @@ public class IconProvider {
             }
         } catch (NameNotFoundException | Resources.NotFoundException exc) { }
         return null;
+    }
+
+    /**
+     * Lawnchair: Loads the icon through PackageManager so that the Samsung icon theme is applied.
+     * This is the call One UI's LauncherActivityInfo#getIcon(int) makes while a theme is active,
+     * which is what Lawnchair 15 relied on. The item's own ApplicationInfo keeps work profile apps
+     * on their own user, and the unbadged variant leaves the user badge to BaseIconFactory.
+     * The theme engine ignores the requested density and renders at the display density.
+     */
+    @Nullable
+    private Drawable loadSamsungThemedIcon(@NonNull PackageItemInfo info) {
+        final PackageManager pm = mContext.getPackageManager();
+        try {
+            Drawable icon = info.loadUnbadgedIcon(pm);
+            if (icon == null || (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R
+                    && pm.isDefaultApplicationIcon(icon))) {
+                return null;
+            }
+            return icon;
+        } catch (RuntimeException e) {
+            // Vendor theme engine code: one bad icon must not crash the model loader, and the
+            // resource path is always a safe fallback
+            Log.w(TAG, "Samsung themed icon failed for " + info.packageName, e);
+            return null;
+        }
+    }
+
+    /**
+     * Lawnchair: Whether icons should come from the active Samsung icon theme. Lawnchair themed
+     * icons need the app's own adaptive icon, so they win.
+     */
+    private boolean isSamsungIconThemeActive() {
+        return IS_SAMSUNG && getSamsungIconTheme() != null
+                && !IconPreferencesKt.isThemedIconsEnabled(mContext);
+    }
+
+    /**
+     * Lawnchair: Returns the Samsung icon theme, reading it on first use for providers that never
+     * call {@link #updateSystemState()} (Recents, split screen, PiP).
+     */
+    @Nullable
+    private String getSamsungIconTheme() {
+        if (!mSamsungIconThemeLoaded) {
+            mSamsungIconTheme = readSamsungIconTheme();
+            mSamsungIconThemeLoaded = true;
+        }
+        return mSamsungIconTheme;
+    }
+
+    /**
+     * Lawnchair: Returns an id for the icon theme One UI applies to app icons, or null if there is
+     * none. Mirrors the theme engine's own check: an icon theme package in Settings.System or a
+     * Theme Park icon folder, where a theme package in desk mode (e.g. DeX) turns both off.
+     * The id changes with the theme package version and the night mode, since One UI themed icons
+     * have a night variant.
+     */
+    @Nullable
+    private String readSamsungIconTheme() {
+        if (!IS_SAMSUNG) return null;
+        final Configuration config = mContext.getResources().getConfiguration();
+        String themePackage = null;
+        try {
+            themePackage = Settings.System.getString(
+                    mContext.getContentResolver(), SAMSUNG_ICON_THEME_SETTING);
+        } catch (SecurityException e) {
+            // One UI catches this too, which leaves only the Theme Park check
+            if (!mLoggedIconThemeSettingDenied) {
+                mLoggedIconThemeSettingDenied = true;
+                Log.d(TAG, "Samsung icon theme setting is not readable", e);
+            }
+        }
+
+        final StringBuilder id = new StringBuilder();
+        if (!TextUtils.isEmpty(themePackage)) {
+            if ((config.uiMode & Configuration.UI_MODE_TYPE_MASK)
+                    == Configuration.UI_MODE_TYPE_DESK) {
+                return null;
+            }
+            id.append("secIcons=").append(themePackage);
+            try {
+                id.append('@').append(mContext.getPackageManager()
+                        .getPackageInfo(themePackage, 0).lastUpdateTime);
+            } catch (NameNotFoundException e) {
+                Log.d(TAG, "Samsung icon theme package not found: " + themePackage);
+            }
+        }
+        final File themePark = new File(SAMSUNG_THEME_PARK_ICON_DIR);
+        if (themePark.exists()) {
+            if (id.length() > 0) id.append(',');
+            id.append("themePark=").append(themePark.lastModified());
+        }
+        if (id.length() == 0) return null;
+        return id.append(",night=").append(config.uiMode & Configuration.UI_MODE_NIGHT_MASK)
+                .toString();
     }
 
     @TargetApi(Build.VERSION_CODES.TIRAMISU)
@@ -289,6 +405,15 @@ public class IconProvider {
     public void updateSystemState() {
         mSystemState = mContext.getResources().getConfiguration().getLocales().toLanguageTags()
                 + "," + Build.VERSION.SDK_INT;
+        if (IS_SAMSUNG) {
+            String iconTheme = readSamsungIconTheme();
+            mSamsungIconTheme = iconTheme;
+            mSamsungIconThemeLoaded = true;
+            if (iconTheme != null) {
+                // Lawnchair: re-render cached icons when the Samsung icon theme changes
+                mSystemState += "," + iconTheme;
+            }
+        }
     }
 
     /**
