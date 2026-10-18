@@ -128,6 +128,7 @@ public class BaseIconFactory implements AutoCloseable {
 
     protected void clear() {
         mWrapperBackgroundColor = DEFAULT_WRAPPER_BACKGROUND;
+        mWhiteShadowLayer = null;
     }
 
     @NonNull
@@ -300,9 +301,11 @@ public class BaseIconFactory implements AutoCloseable {
     @NonNull
     public Bitmap getWhiteShadowLayer() {
         if (mWhiteShadowLayer == null) {
+            boolean skipShadow = IconPreferencesKt.shouldTransparentBGIcons(mContext)
+                && IconPreferencesKt.isThemedIconsEnabled(mContext);
             mWhiteShadowLayer = createScaledBitmap(
-                    new AdaptiveIconDrawable(new ColorDrawable(Color.WHITE), null),
-                    MODE_HARDWARE_WITH_SHADOW);
+                new AdaptiveIconDrawable(new ColorDrawable(Color.WHITE), null),
+                skipShadow ? MODE_HARDWARE : MODE_HARDWARE_WITH_SHADOW);
         }
         return mWhiteShadowLayer;
     }
@@ -491,10 +494,8 @@ public class BaseIconFactory implements AutoCloseable {
             Path shapePath = getShapePath(aid, icon.getBounds());
             int count = canvas.save();
             canvas.translate(offset, offset);
-            // Lawnchair: skip shadow when transparent backgrounds are enabled.
-            boolean skipShadow = IconPreferencesKt.shouldTransparentBGIcons(mContext);
-            if (!skipShadow && (bitmapGenerationMode == MODE_WITH_SHADOW
-                    || bitmapGenerationMode == MODE_HARDWARE_WITH_SHADOW)) {
+            if (bitmapGenerationMode == MODE_WITH_SHADOW
+                    || bitmapGenerationMode == MODE_HARDWARE_WITH_SHADOW) {
                 getShadowGenerator().addPathShadow(shapePath, canvas);
             }
 
@@ -536,11 +537,7 @@ public class BaseIconFactory implements AutoCloseable {
             icon.draw(canvas);
             canvas.restore();
 
-            if (bitmapGenerationMode == MODE_WITH_SHADOW && targetBitmap != null
-                    // Lawnchair: skip shadow on non-adaptive icons (e.g. icon pack icons)
-                    // when transparent backgrounds are enabled, as drawShadow creates
-                    // a white/gray glow on transparent/glass icons.
-                    && !IconPreferencesKt.shouldTransparentBGIcons(mContext)) {
+            if (bitmapGenerationMode == MODE_WITH_SHADOW && targetBitmap != null) {
                 // Shadow extraction only works in software mode
                 getShadowGenerator().drawShadow(targetBitmap, canvas);
 
