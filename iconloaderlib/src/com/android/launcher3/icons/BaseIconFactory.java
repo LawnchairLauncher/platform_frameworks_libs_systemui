@@ -286,7 +286,16 @@ public class BaseIconFactory implements AutoCloseable {
         if (info == null) {
             // Simple check to check if the provided user is work profile or not based on badging
             NoopDrawable d = new NoopDrawable();
-            boolean isWork = (d != mPm.getUserBadgedIcon(d, user));
+            // OEM badging implementations may clone the probe drawable into a bitmap sized
+            // by its bounds and crash on the unset 0x0 bounds (vivo ImageUtil#getCloneBitmap).
+            // Give the probe non-empty bounds and fall back to "not a work profile" on failure.
+            d.setBounds(0, 0, 1, 1);
+            boolean isWork = false;
+            try {
+                isWork = (d != mPm.getUserBadgedIcon(d, user));
+            } catch (Throwable t) {
+                // Ignore
+            }
             info = new UserIconInfo(user, isWork ? UserIconInfo.TYPE_WORK : UserIconInfo.TYPE_MAIN);
             mCachedUserInfo.put(key, info);
         }
