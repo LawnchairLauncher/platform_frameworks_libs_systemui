@@ -21,6 +21,7 @@ import android.app.ActivityThread
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Bitmap.Config.ALPHA_8
+import android.graphics.Bitmap.Config.ARGB_8888
 import android.graphics.Bitmap.Config.HARDWARE
 import android.graphics.BlendMode.SRC_IN
 import android.graphics.BlendModeColorFilter
@@ -34,6 +35,7 @@ import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.InsetDrawable
 import android.os.Build
+import android.util.Log
 import app.lawnchair.icons.shouldForceMonochrome
 import com.android.launcher3.Flags
 import com.android.launcher3.icons.BaseIconFactory
@@ -132,13 +134,25 @@ class MonoIconThemeController(
         if (monoDrawable == null) {
             info?.themedBitmap?.let { themedBitmap ->
                 if (themedBitmap is MonoThemedBitmap) {
+                    val bitmap = themedBitmap.mono
+                    val drawableBitmap =
+                        if (bitmap.config == HARDWARE) {
+                            // LC-Note: AdaptiveIconDrawable rasterise layers on a software canvas
+                            // Memory usage should be negatable enough
+                            bitmap.copy(ARGB_8888, false) ?: run {
+                                Log.w("LC-MonoIconThemeController", "Unable to copy themed icon to software bitmap")
+                                return originalIcon
+                            }
+                        } else {
+                            bitmap
+                        }
                     // Inject a previously generated monochrome icon
                     // Use BitmapDrawable instead of FastBitmapDrawable so that the colorState is
                     // preserved in constantState
                     // Inset the drawable according to the AdaptiveIconDrawable layers
                     monoDrawable =
                         InsetDrawable(
-                            BitmapDrawable(themedBitmap.mono).apply {
+                            BitmapDrawable(drawableBitmap).apply {
                                 colorFilter = BlendModeColorFilter(colors[1], SRC_IN)
                             },
                             AdaptiveIconDrawable.getExtraInsetFraction() / 2,
